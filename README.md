@@ -26,7 +26,7 @@ No developer experience needed. It takes about two minutes.
 2. Paste this line and press Enter:
 
    ```sh
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/KASOGIT/vivarc/main/install.sh)"
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/gulin-desigenr/vivarc/main/install.sh)"
    ```
 
 3. Follow what it says. It offers to close Vivaldi for you, and if macOS asks for a permission (**App Management**) it opens the right settings page and waits while you switch it on for Terminal.
@@ -45,7 +45,7 @@ Requires macOS and Vivaldi 8.x. If your Mac has never had developer tools, macOS
 ### For developers
 
 ```sh
-git clone https://github.com/KASOGIT/vivarc.git && cd vivarc
+git clone https://github.com/gulin-desigenr/vivarc.git && cd vivarc
 ./vivarc.py install       # also: apply, status, uninstall, import-arc
 ```
 
