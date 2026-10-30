@@ -663,3 +663,16 @@
 .vm-set-value { margin-left: 4px; font-weight: 500; opacity: 0.6; font-variant-numeric: tabular-nums; }
 .vm-set-slider { width: 100%; margin: 8px 0 0; accent-color: var(--colorHighlightBg, #6b63a0); }
 .vm-set-ends { display: flex; justify-content: space-between; margin-top: 2px; opacity: 0.5; font-size: 12px; }
+
+/* Keep the page surface intact and let Vivaldi's own theme wallpaper fill the sidebar. */
+#browser.vm-on.vm-sidebar-wallpaper #tabs-tabbar-container {
+  background-color: var(--browserBackgroundColor, var(--colorBg)) !important;
+  background-image: var(--browserBackgroundImage, none) !important;
+  background-position: var(--browserBackgroundPosition, center) !important;
+  background-repeat: var(--browserBackgroundRepeat, no-repeat) !important;
+  background-size: var(--browserBackgroundSize, cover) !important;
+  background-attachment: fixed;
+  backdrop-filter: none !important;
+  color: var(--colorImageFg, var(--vm-fg, var(--colorFg)));
+}
+#browser.vm-on.vm-sidebar-wallpaper #tabs-tabbar-container::after { display: none; }
