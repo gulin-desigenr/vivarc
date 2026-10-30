@@ -433,6 +433,7 @@ def write_bundle(resources, with_peek):
         extras.append(("VividPeek.js", read_text(os.path.join(peek_dir, "VividPeek.js"))))
         extras.append(("VividPeek.css", style_script("vivarc-peek-css", read_text(os.path.join(peek_dir, "VividPeek.css")))))
         extras.append(("peek-motion.js", read_text(os.path.join(HERE, "src/optional/peek-motion.js"))))
+        extras.append(("peek-groups.js", read_text(os.path.join(HERE, "src/optional/peek-groups.js"))))
     start_page = pathlib.Path(HOME_DIR, "start", "index.html").as_uri()
     config = {**load_config(), "startUrl": start_page}
     bundle = build_bundle(os.path.join(HERE, "src/js"), config, extras, pre)

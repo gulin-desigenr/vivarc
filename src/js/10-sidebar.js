@@ -8,6 +8,7 @@
 
   const store = window.__vm.store;
   const openFolders = new Set();
+  const collapsedStacks = new Set();
   const seedIcons = window.__vmIcons || {};
   let icons = {};
   const saveOpen = () => store.set("open", [...openFolders]);
@@ -454,6 +455,40 @@
     return tile;
   };
 
+  const tabStackId = (tab) => {
+    try { return JSON.parse(tab?.vivExtData || "{}").group || ""; } catch (_) { return ""; }
+  };
+
+  const tabStack = (id, tabs) => {
+    const wrap = el("div", "vm-folder vm-tab-stack");
+    const head = el("div", "vm-row vm-folder-head vm-stack-head");
+    head.setAttribute("role", "button");
+    head.tabIndex = 0;
+    const glyph = el("span", "vm-glyph");
+    const source = tabs.slice().sort((a, b) => a.index - b.index)[0];
+    const label = el("span", "vm-title", source?.title || source?.url || "Tab stack");
+    const count = el("span", "vm-stack-count", String(tabs.length));
+    head.append(glyph, label, count);
+    if (tabs.some((tab) => tab.active)) head.classList.add("active");
+    const body = el("div", "vm-folder-body");
+    const content = el("div", "vm-folder-content vm-stack-content");
+    tabs.slice().sort((a, b) => a.index - b.index).forEach((tab) => content.append(tabRow(tab)));
+    body.append(content);
+    const sync = () => {
+      const open = !collapsedStacks.has(id);
+      wrap.classList.toggle("open", open);
+      content.inert = !open;
+      head.setAttribute("aria-expanded", String(open));
+      glyph.innerHTML = open ? ICON_OPEN : ICON_CLOSED;
+    };
+    const toggle = () => { collapsedStacks.has(id) ? collapsedStacks.delete(id) : collapsedStacks.add(id); sync(); };
+    head.addEventListener("click", toggle);
+    head.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+    sync();
+    wrap.append(head, body);
+    return wrap;
+  };
+
   const tabRow = (tab) => {
     const row = el("div", "vm-row vm-tab");
     row.style.paddingLeft = "8px";
@@ -679,13 +714,21 @@
 
     const taken = new Set([...state.bound.values()].map((t) => t.id));
     const blank = state.tabs.filter((t) => BLANK.test(t.url || ""));
-    const open = state.tabs.filter((t) => !BLANK.test(t.url || "") && !taken.has(t.id));
+    const nonblank = state.tabs.filter((t) => !BLANK.test(t.url || ""));
+    const stacks = new Map();
+    for (const tab of nonblank) {
+      const id = tabStackId(tab);
+      if (id) { if (!stacks.has(id)) stacks.set(id, []); stacks.get(id).push(tab); }
+    }
+    for (const [id, tabs] of stacks) if (tabs.length < 2) stacks.delete(id);
+    const clearable = nonblank.filter((t) => !taken.has(t.id));
+    const open = clearable.filter((t) => !stacks.has(tabStackId(t)));
     const divider = el("div", "vm-divider");
     const clear = el("span", "vm-clear", "Clear");
     clear.addEventListener("click", async () => {
-      if (!open.length) return;
-      if (open.length + blank.length === state.tabs.length) await chrome.tabs.create({});
-      chrome.tabs.remove(open.map((t) => t.id));
+      if (!clearable.length) return;
+      if (clearable.length + blank.length === state.tabs.length) await chrome.tabs.create({});
+      chrome.tabs.remove(clearable.map((t) => t.id));
     });
     divider.append(clear);
     wireDrop(divider, { accept: isBookmark, onDrop: (_zone, data) => unpin(data) });
@@ -696,7 +739,11 @@
     fresh.addEventListener("click", () => window.dispatchEvent(new CustomEvent("vm-open-command-bar")));
     wireDrop(fresh, { accept: isBookmark, onDrop: (_zone, data) => unpin(data) });
     body.append(fresh);
-    open.sort((a, b) => b.index - a.index).forEach((t) => body.append(tabRow(t)));
+    const entries = [
+      ...open.map((tab) => ({ index: tab.index, node: () => tabRow(tab) })),
+      ...[...stacks.entries()].map(([id, tabs]) => ({ index: Math.max(...tabs.map((tab) => tab.index)), node: () => tabStack(id, tabs) })),
+    ];
+    entries.sort((a, b) => b.index - a.index).forEach((entry) => body.append(entry.node()));
 
     const bar = spaceBar();
     panel.replaceChildren(...(grid ? [grid] : []), body, ...(bar ? [bar] : []));
@@ -806,7 +853,16 @@
     try { return (await vivaldi.prefs.get("vivaldi.workspaces.list"))?.value || []; } catch (_) { return []; }
   };
   const loadTabs = async () => {
-    state.allTabs = await chrome.tabs.query({ currentWindow: true });
+    // Peek uses temporary runtime/preload tabs; keep them out of the sidebar until promoted.
+    const temporary = new Set();
+    for (const data of window.ArcPeekDebug?.webviews?.values?.() || []) {
+      if (data.relatedTabId) temporary.add(Number(data.relatedTabId));
+      if (data.parallelTabId) temporary.add(Number(data.parallelTabId));
+    }
+    state.allTabs = (await chrome.tabs.query({ currentWindow: true })).filter((tab) => {
+      if (temporary.has(tab.id)) return false;
+      try { return !JSON.parse(tab.vivExtData || "{}").arcPeekRuntime; } catch (_) { return true; }
+    });
     state.workspaces = await readWorkspaces();
     ({ active: state.active, tabs: state.tabs } = spacesOf.scope(state.allTabs, state.workspaces));
   };
@@ -895,6 +951,8 @@
     }).observe(document.body, { childList: true, subtree: true });
     place();
     window.addEventListener("resize", fitHeight);
+    window.addEventListener("vm-refresh-sidebar", () => refresh(false));
+    window.addEventListener("arcpeek-state-changed", () => refresh(false));
     window.__vm.settings.onChange(fitHeight);
     for (const ev of ["onCreated", "onRemoved", "onChanged", "onMoved", "onImportEnded"]) {
       chrome.bookmarks[ev]?.addListener(() => refresh(true));

@@ -1,6 +1,6 @@
 # Estado do Vivarc
 
-Atualizado em 29/10/2026.
+Atualizado em 30/10/2026.
 
 ## Projeto e instalação
 
@@ -17,6 +17,7 @@ Atualizado em 29/10/2026.
 - Clique duplo dentro da barra lateral não aciona o comando nativo de nova aba; relatado na issue upstream #55.
 - Pastas expandem e recolhem em 220 ms, respeitando `prefers-reduced-motion`.
 - O Peek mantém os arquivos originais verificados e recebe uma camada local de movimento em `src/optional/peek-motion.js`, aplicada na montagem do bundle.
+- Ao promover uma prévia, `src/optional/peek-groups.js` tenta agrupá-la nativamente com a aba de origem; a barra lateral exibe pilhas e oculta abas temporárias do Peek.
 - O acionamento interno de workspace depende de implementação privada do Vivaldi e deve ser revalidado após atualizações do navegador.
 
 ## Verificação
