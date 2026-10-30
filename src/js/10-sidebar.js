@@ -592,10 +592,21 @@
       window.dispatchEvent(new CustomEvent("vm-toast", { detail: "Could not switch space. Use Vivaldi's Workspaces button." }));
       return;
     }
+    // An empty workspace can already have a blank landing tab from an earlier visit.
+    const tabs = await chrome.tabs.query({ currentWindow: true });
+    const targetTabs = spacesOf.tabsIn(tabs, item.id);
+    const empty = targetTabs.every((tab) => BLANK.test(tab.pendingUrl || tab.url || ""));
     window.__vm.switchingSpace = true;
     try { await activate(window.vivaldiWindowId, item.id); }
     finally { window.__vm.switchingSpace = false; }
     refresh(false);
+    if (empty) {
+      const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
+      // Do not open over another workspace if the user switched again while activation was in flight.
+      if (active && spacesOf.of(active) === item.id && BLANK.test(active.pendingUrl || active.url || "")) {
+        window.dispatchEvent(new CustomEvent("vm-open-command-bar"));
+      }
+    }
   };
 
   const spacePill = (item) => {

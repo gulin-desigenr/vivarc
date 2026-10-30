@@ -13,7 +13,7 @@ Atualizado em 29/10/2026.
 
 ## Personalizações
 
-- Troca de spaces vazios usa a ativação nativa do workspace; relatada na issue upstream #54.
+- Troca de spaces vazios usa a ativação nativa do workspace e abre a command bar após a ativação; a falha original foi relatada na issue upstream #54.
 - Clique duplo dentro da barra lateral não aciona o comando nativo de nova aba; relatado na issue upstream #55.
 - Pastas expandem e recolhem em 220 ms, respeitando `prefers-reduced-motion`.
 - O acionamento interno de workspace depende de implementação privada do Vivaldi e deve ser revalidado após atualizações do navegador.
