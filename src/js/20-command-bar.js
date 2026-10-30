@@ -447,7 +447,7 @@
   });
 
   chrome.tabs.onCreated.addListener((tab) => {
-    if (Date.now() - startedAt < 5000 || !isBlank(tab) || tab.active === false) return;
+    if (window.__vm.switchingSpace || Date.now() - startedAt < 5000 || !isBlank(tab) || tab.active === false) return;
     const previous = activeHistory.filter((id) => id !== tab.id).pop();
     open(tab.id);
     if (previous != null) {

@@ -90,8 +90,26 @@
     return null;
   };
 
+  // Use the same workspace activation action as Vivaldi's own workspace menu.
+  const findSwitcher = (chunks) => {
+    try {
+      let load;
+      chunks.push([[Symbol("vivarc-switch")], {}, (require) => { load = require; }]);
+      for (const [id, factory] of Object.entries(load?.m || {})) {
+        if (!String(factory).includes("setActiveWorkspace:")) continue;
+        let exported;
+        try { exported = load(id); } catch (_) { continue; }
+        for (const key of Object.keys(exported || {})) {
+          const actions = exported[key];
+          if (typeof actions?.setActiveWorkspace === "function") return (windowId, workspaceId) => actions.setActiveWorkspace(windowId, workspaceId || undefined);
+        }
+      }
+    } catch (_) {}
+    return null;
+  };
+
   const removalLabel = (name, tabCount) =>
     `Delete \u201c${name}\u201d${tabCount ? ` and close its ${tabCount} ${tabCount === 1 ? "tab" : "tabs"}` : ""}`;
 
-  window.__vm.workspaces = { of, tabsIn, activeId, scope, items, recentTab, label, assign, stamp, findRemover, removalLabel, CREATE_HINT };
+  window.__vm.workspaces = { of, tabsIn, activeId, scope, items, recentTab, label, assign, stamp, findRemover, findSwitcher, removalLabel, CREATE_HINT };
 })();

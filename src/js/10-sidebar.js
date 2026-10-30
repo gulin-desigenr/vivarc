@@ -584,9 +584,15 @@
   // ---- space bar: Vivaldi workspaces as Arc-style spaces ----
   const switchSpace = async (item) => {
     if (item.id === state.active) return;
-    const tab = spacesOf.recentTab(state.allTabs, item.id);
-    if (tab) await chrome.tabs.update(tab.id, { active: true });
-    else await chrome.tabs.create({ active: true, vivExtData: JSON.stringify({ workspaceId: item.id }) });
+    const activate = spacesOf.findSwitcher(chrome.extension.getBackgroundPage?.()?.webpackChunkgapp_browser_react);
+    if (!activate) {
+      window.dispatchEvent(new CustomEvent("vm-toast", { detail: "Could not switch space. Use Vivaldi's Workspaces button." }));
+      return;
+    }
+    window.__vm.switchingSpace = true;
+    try { await activate(window.vivaldiWindowId, item.id); }
+    finally { window.__vm.switchingSpace = false; }
+    refresh(false);
   };
 
   const spacePill = (item) => {
@@ -829,6 +835,9 @@
     if (!panel) {
       panel = el("div");
       panel.id = "vm-panel";
+      // Vivaldi's vertical tab container opens a new tab on any double-click.
+      // Keep rapid clicks inside Vivarc controls from triggering that handler.
+      panel.addEventListener("dblclick", (e) => e.stopPropagation());
       panel.addEventListener("contextmenu", (e) => showMenu(e, [
         ["New Folder", async () => { await newFolder(null); }],
         ["Edit Theme…", () => window.dispatchEvent(new CustomEvent("vm-open-theme"))],
@@ -877,6 +886,7 @@
       chrome.bookmarks[ev]?.addListener(() => refresh(true));
     }
     chrome.tabs.onCreated.addListener((tab) => {
+      if (window.__vm.switchingSpace) return;
       const active = state.active;
       chrome.windows.getCurrent().then((win) => {
         const data = spacesOf.stamp(tab, active, win.id);
