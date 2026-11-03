@@ -968,6 +968,10 @@
     for (const ev of ["onCreated", "onRemoved", "onUpdated", "onMoved", "onActivated", "onAttached", "onDetached", "onReplaced"]) {
       chrome.tabs[ev]?.addListener(() => refresh(false));
     }
+    window.__vm.onShortcut((key) => {
+      const item = spacesOf.itemForShortcut(state.workspaces, state.defaultSpace ? spacesOf.label(state.defaultSpace) : "Home", key);
+      if (item) switchSpace(item).catch((e) => console.warn("[vivarc] space shortcut:", e));
+    });
     setInterval(async () => {
       const brief = (list) => JSON.stringify(list.map((w) => [w.id, w.name, w.emoji]));
       if (brief(await readWorkspaces()) !== brief(state.workspaces)) refresh(false);

@@ -49,6 +49,7 @@ BLOCK = f'{BEGIN}\n<script src="vivarc.js"></script>\n{END}'
 FREED_KEY = "meta+t"  # the command bar listens for Cmd+T itself
 COPY_URL_KEY = "shift+meta+c"
 PROFILE_KEYS = ("ctrl+meta+left", "ctrl+meta+right")  # the profile switcher's previous/next, handled by the JS
+SPACE_NUMBER_KEYS = tuple(f"ctrl+{n}" for n in range(1, 10))
 SPACE_KEYS = {"COMMAND_WORKSPACE_SWITCH_BACK_ORDER": "alt+meta+left", "COMMAND_WORKSPACE_SWITCH_FORWARD_ORDER": "alt+meta+right",
               "COMMAND_WORKSPACE_CREATE_NEW": "ctrl+meta+n"}  # like Arc's spaces; Ctrl+Cmd+N opens Vivaldi's own Create Workspace dialog
 TOGGLE_SIDEBAR_KEY = "meta+s"
@@ -153,7 +154,7 @@ def patch_preferences(prefs, default_actions):
     for name, cmd in defaults.items():
         if TOGGLE_SIDEBAR_KEY in cmd.get("shortcuts", []):
             _command(actions, defaults, name)
-    taken = PROFILE_KEYS + tuple(SPACE_KEYS.values())
+    taken = PROFILE_KEYS + SPACE_NUMBER_KEYS + tuple(SPACE_KEYS.values())
     for name, cmd in defaults.items():
         if any(key in cmd.get("shortcuts", []) for key in taken):
             _command(actions, defaults, name)

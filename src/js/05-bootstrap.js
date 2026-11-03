@@ -13,6 +13,7 @@
   const VERSION = 12;
   const TOGGLE = "meta+s";
   const PROFILE_KEYS = ["ctrl+meta+left", "ctrl+meta+right"]; // the profile switcher's previous/next, handled in 06-spaces.js
+  const SPACE_NUMBER_KEYS = Array.from({ length: 9 }, (_, i) => `ctrl+${i + 1}`);
   const SPACE_KEYS = { COMMAND_WORKSPACE_SWITCH_BACK_ORDER: "alt+meta+left", COMMAND_WORKSPACE_SWITCH_FORWARD_ORDER: "alt+meta+right",
     COMMAND_WORKSPACE_CREATE_NEW: "ctrl+meta+n" }; // like Arc's spaces; Ctrl+Cmd+N opens Vivaldi's own Create Workspace dialog
 
@@ -70,7 +71,7 @@
     if (!copy.shortcuts.includes(COPY_URL)) copy.shortcuts.push(COPY_URL);
     command("COMMAND_SAVE_PAGE").shortcuts = command("COMMAND_SAVE_PAGE").shortcuts.filter((s) => s !== TOGGLE);
     command("COMMAND_TOGGLE_AUTO_HIDE_TAB_BAR").shortcuts = [TOGGLE];
-    const taken = [...PROFILE_KEYS, ...Object.values(SPACE_KEYS)];
+    const taken = [...PROFILE_KEYS, ...SPACE_NUMBER_KEYS, ...Object.values(SPACE_KEYS)];
     for (const cmd of Object.values(table)) {
       if (Array.isArray(cmd?.shortcuts)) cmd.shortcuts = cmd.shortcuts.filter((s) => !taken.includes(s));
     }
@@ -107,6 +108,17 @@
   const configure = async () => {
     await ensureSideTabs();
     for (const delay of [4000, 12000, 30000]) setTimeout(() => ensureSideTabs().catch(() => {}), delay);
+    // Migrate existing profiles without repeating unrelated toolbar and appearance setup.
+    if (!(await window.__vm.store.get("spaceNumberShortcuts", false))) {
+      const actions = await get("vivaldi.actions");
+      if (Array.isArray(actions) && actions[0]) {
+        for (const cmd of Object.values(actions[0])) {
+          if (Array.isArray(cmd?.shortcuts)) cmd.shortcuts = cmd.shortcuts.filter((s) => !SPACE_NUMBER_KEYS.includes(s));
+        }
+        await set("vivaldi.actions", actions);
+        await window.__vm.store.set("spaceNumberShortcuts", true);
+      }
+    }
     if ((await window.__vm.store.get("bootstrap", 0)) >= VERSION) return;
     await bindShortcuts();
     await tidyToolbars();

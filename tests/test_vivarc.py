@@ -57,6 +57,11 @@ class PatchPreferences(unittest.TestCase):
         new, _ = vivarc.patch_preferences(prefs(), [DEFAULTS])
         self.assertEqual(new["vivaldi"]["actions"][0]["COMMAND_SOMETHING_ELSE"]["shortcuts"], ["f9"])
 
+    def test_ctrl_number_keys_are_freed_without_removing_other_shortcuts(self):
+        mine = {"COMMAND_CLOSE_TAB": {"shortcuts": ["ctrl+1", "ctrl+9", "meta+w"]}}
+        new, _ = vivarc.patch_preferences(prefs(vivaldi={"actions": [mine], "toolbars": {}}), [DEFAULTS])
+        self.assertEqual(new["vivaldi"]["actions"][0]["COMMAND_CLOSE_TAB"]["shortcuts"], ["meta+w"])
+
     def test_patching_twice_does_not_duplicate_the_workspace_shortcuts(self):
         once, _ = vivarc.patch_preferences(prefs(), [DEFAULTS])
         twice, _ = vivarc.patch_preferences(once, [DEFAULTS])

@@ -28,6 +28,11 @@
     return [{ id: 0, name: defaultName, emoji: "" }, ...list.map((w) => ({ id: w.id, name: w.name, emoji: w.emoji || "" }))];
   };
 
+  const itemForShortcut = (list, defaultName, combo) => {
+    const match = /^(?:ctrl\+([1-9])|([1-9])\+ctrl)$/.exec(String(combo).toLowerCase().replace(/\s/g, ""));
+    return match ? items(list, defaultName)[Number(match[1] || match[2]) - 1] || null : null;
+  };
+
   // Where switching to a space lands: its most recently used tab (Vivaldi then switches the workspace by itself).
   const recentTab = (tabs, id) => {
     const own = tabsIn(tabs, id);
@@ -111,5 +116,5 @@
   const removalLabel = (name, tabCount) =>
     `Delete \u201c${name}\u201d${tabCount ? ` and close its ${tabCount} ${tabCount === 1 ? "tab" : "tabs"}` : ""}`;
 
-  window.__vm.workspaces = { of, tabsIn, activeId, scope, items, recentTab, label, assign, stamp, findRemover, findSwitcher, removalLabel, CREATE_HINT };
+  window.__vm.workspaces = { of, tabsIn, activeId, scope, items, itemForShortcut, recentTab, label, assign, stamp, findRemover, findSwitcher, removalLabel, CREATE_HINT };
 })();

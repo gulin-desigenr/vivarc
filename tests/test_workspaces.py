@@ -77,6 +77,15 @@ class SpaceList(unittest.TestCase):
         items = self.items([WORK, SIDE])
         self.assertEqual([(i["id"], i["name"]) for i in items], [(0, "Home"), (WORK["id"], "Work"), (SIDE["id"], "Side")])
 
+    def test_number_shortcuts_follow_the_display_order_and_ignore_other_combinations(self):
+        def pick(combo):
+            return js("workspaces.itemForShortcut(list, 'Home', combo)", list=[WORK, SIDE], combo=combo)
+        self.assertEqual(pick("ctrl+1")["id"], 0)
+        self.assertEqual(pick("2+ctrl")["id"], WORK["id"])
+        self.assertEqual(pick("ctrl+3")["id"], SIDE["id"])
+        for combo in ["ctrl+4", "ctrl+9", "ctrl+0", "ctrl+meta+2", "meta+2"]:
+            self.assertIsNone(pick(combo))
+
     def test_each_space_keeps_its_emoji_and_the_default_has_none(self):
         self.assertEqual([i["emoji"] for i in self.items([WORK])], ["", "📚"])
 
