@@ -1,4 +1,5 @@
 import json
+import plistlib
 import os
 import pathlib
 import shutil
@@ -42,6 +43,7 @@ class InstallFlow(unittest.TestCase):
         patches = [
             mock.patch.object(vivarc, "HOME_DIR", self.home),
             mock.patch.object(vivarc, "REMINDER_PLIST", os.path.join(self.tmp, "LaunchAgents", "reminder.plist")),
+            mock.patch.object(vivarc, "POINTER_PLIST", os.path.join(self.tmp, "LaunchAgents", "pointer.plist")),
             mock.patch.object(vivarc, "launchctl"),
             mock.patch.object(vivarc, "UPDATE_COMMAND", os.path.join(self.tmp, "home", "Update Vivarc.command")),
             mock.patch.object(vivarc, "UPDATE_APP", os.path.join(self.tmp, "Applications", "Update Vivarc.app")),
@@ -94,6 +96,18 @@ class InstallFlow(unittest.TestCase):
         with open(os.path.join(res, "window.html")) as f:
             self.assertNotIn("vivarc", f.read())
         self.assertFalse(os.path.exists(os.path.join(res, "vivarc.js")))
+
+    def test_install_runs_the_pointer_helper_and_uninstall_removes_it(self):
+        self.run_cli("install", "--no-peek")
+        with open(vivarc.POINTER_PLIST, "rb") as f:
+            agent = plistlib.load(f)
+        script = agent["ProgramArguments"][1]
+        self.assertTrue(script.startswith(self.home))
+        self.assertEqual(agent["ProgramArguments"][2:], ["serve", str(vivarc.POINTER_PORT)])
+        self.assertTrue(agent["KeepAlive"])
+        self.run_cli("uninstall")
+        self.assertFalse(os.path.exists(vivarc.POINTER_PLIST))
+        self.assertFalse(os.path.exists(script))
 
     def test_the_stylesheet_travels_inside_the_bundle(self):
         self.run_cli("install", "--no-peek")

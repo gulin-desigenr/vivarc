@@ -13,6 +13,7 @@
       fromConfig: (c) => c.compactBottomBar, onClass: "vm-compact-bottom" },
     { key: "searchSuggestions", label: "Search suggestions", hint: "Show DuckDuckGo suggestions in the command bar while you type.", default: true,
       fromConfig: (c) => (c.suggestions === undefined ? undefined : c.suggestions === "ddg") },
+    { key: "littleExternalLinks", label: "Little Vivarc for other apps", hint: "Open links clicked in other apps in a small, centred window instead of a new tab.", default: true },
   ];
 
   const resolve = (schema, config, saved) => Object.fromEntries(schema.map((s) => {

@@ -43,6 +43,9 @@ REMINDER_LABEL = "com.vivarc.reminder"
 REMINDER_PLIST = os.path.join(HOME, "Library", "LaunchAgents", f"{REMINDER_LABEL}.plist")
 REMIND_EVERY = 12 * 3600
 RESOURCES = "Contents/Frameworks/Vivaldi Framework.framework/Resources/vivaldi"
+POINTER_LABEL = "com.vivarc.pointer"  # tells Little Vivarc which screen the pointer is on
+POINTER_PLIST = os.path.join(HOME, "Library", "LaunchAgents", f"{POINTER_LABEL}.plist")
+POINTER_PORT = 47391  # keep in sync with src/js/15-little-arc.js
 
 BEGIN, END = "<!-- vivarc:begin -->", "<!-- vivarc:end -->"
 BLOCK = f'{BEGIN}\n<script src="vivarc.js"></script>\n{END}'
@@ -441,6 +444,35 @@ def write_bundle(resources, with_peek):
     write_atomic(os.path.join(resources, "vivarc.js"), bundle)
 
 
+def install_pointer_helper(home_dir=None, python=sys.executable):
+    """Run the pointer helper (src/native/pointer.py) on 127.0.0.1 from a LaunchAgent; Little Vivarc reads it."""
+    folder = os.path.join(home_dir or HOME_DIR, "native")
+    os.makedirs(folder, exist_ok=True)
+    script = os.path.join(folder, "vivarc-pointer.py")  # a copy: background jobs cannot read ~/Documents and friends
+    write_atomic(script, read_text(os.path.join(HERE, "src/native/pointer.py")))
+    agent = {"Label": POINTER_LABEL, "ProgramArguments": [python, script, "serve", str(POINTER_PORT)],
+             "RunAtLoad": True, "KeepAlive": True, "ProcessType": "Interactive"}
+    os.makedirs(os.path.dirname(POINTER_PLIST), exist_ok=True)
+    with open(POINTER_PLIST, "wb") as f:
+        plistlib.dump(agent, f)
+    domain = f"gui/{os.getuid()}"
+    launchctl("bootout", f"{domain}/{POINTER_LABEL}")
+    # bootout finishes asynchronously; bootstrapping too early fails with "Input/output error", so retry briefly.
+    for _ in range(20):
+        code = getattr(launchctl("bootstrap", domain, POINTER_PLIST), "returncode", 0)
+        if not isinstance(code, int) or code == 0:
+            return
+        time.sleep(0.25)
+    say("Note: the Little Vivarc helper did not start; run this command again.")
+
+
+def remove_pointer_helper(home_dir=None):
+    launchctl("bootout", f"gui/{os.getuid()}/{POINTER_LABEL}")
+    for path in (POINTER_PLIST, os.path.join(home_dir or HOME_DIR, "native", "vivarc-pointer.py")):
+        if os.path.exists(path):
+            os.remove(path)
+
+
 def apply_js(app, resources, with_peek):
     html_path = os.path.join(resources, "window.html")
     html = read_text(html_path)
@@ -524,7 +556,7 @@ def open_in_terminal(path):
 
 
 def launchctl(*args):
-    subprocess.run(["launchctl", *args], capture_output=True, check=False)
+    return subprocess.run(["launchctl", *args], capture_output=True, check=False)
 
 
 def enable_reminder(app):
@@ -603,6 +635,7 @@ def cmd_install(args):
 
     state["version"] = VERSION
     save_state(state)
+    install_pointer_helper()
 
     try:
         apply_js(app, resources, not args.no_peek)
@@ -627,6 +660,7 @@ def cmd_apply(args):
     check_owner(HOME_DIR)
     preflight(resources)
     sync_guide()
+    install_pointer_helper()
     try:
         apply_js(args.app, resources, os.path.exists(os.path.join(HOME_DIR, "peek", "VividPeek.js")))
     except PermissionError as error:
@@ -730,6 +764,7 @@ def cmd_uninstall(args):
     remove_update_command(UNINSTALL_COMMAND)
     remove_update_app(UNINSTALL_APP)
     disable_reminder()
+    remove_pointer_helper()
     if args.purge:
         shutil.rmtree(HOME_DIR, ignore_errors=True)
     say("Vivarc removed. Your bookmarks (including the Vivarc folder) were left alone.")

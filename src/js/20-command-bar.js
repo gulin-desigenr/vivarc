@@ -42,7 +42,8 @@
       const reply = await vivaldi.searchEngines.getTemplateUrls();
       const list = (reply.templateUrls || reply)
         .filter((t) => t.keyword && t.url && !t.keyword.startsWith("@"))
-        .map((t) => ({ keyword: t.keyword, name: t.name, url: t.url.replace(/\{(?!searchTerms\})[^}]*\}/g, "") }));
+        .map((t) => ({ keyword: t.keyword, name: t.name,
+          url: t.url.replace(/\{google:baseURL\}/g, "https://www.google.com/").replace(/\{(?!searchTerms\})[^}]*\}/g, "") }));
       const taken = new Set(list.map((t) => t.keyword.toLowerCase()));
       engines = [...list, ...SEED.filter((e) => !taken.has(e.keyword))];
     } catch (_) {}
@@ -144,6 +145,8 @@
     { label: "Close Tab", words: "quit remove", tab: true, run: (tab) => chrome.tabs.remove(tab.id) },
     { label: "Reopen Closed Tab", words: "restore undo", run: () => chrome.sessions.restore() },
     { label: "New Window", words: "open window", run: () => chrome.windows.create({}) },
+    { label: "New Little Vivarc", words: "little arc vivarc temporary popup window quick search", run: () => window.__vm.openLittleArc?.() },
+    { label: "Open Page in Little Vivarc", words: "little arc vivarc temporary popup window", tab: true, run: (tab) => window.__vm.openLittleArc?.(tab) },
     { label: "New Private Window", words: "incognito private", run: () => chrome.windows.create({ incognito: true }) },
     { label: "Vivarc Guide", words: "welcome help shortcuts tour start", run: () => {
       const url = window.__vm.config.startUrl;
@@ -218,7 +221,7 @@
     try {
       await chrome.search.query(id != null ? { text: query, tabId: id } : { text: query, disposition: "NEW_TAB" });
     } catch (_) {
-      const url = engineUrl(DEFAULT, query);
+      const url = (await window.__vm.defaultSearchUrl?.(query)) || engineUrl(DEFAULT, query);
       if (id != null) chrome.tabs.update(id, { url, active: true });
       else chrome.tabs.create({ url });
     }
@@ -481,7 +484,7 @@
   });
 
   chrome.tabs.onCreated.addListener((tab) => {
-    if (window.__vm.switchingSpace || Date.now() - startedAt < 5000 || !isBlank(tab) || tab.active === false) return;
+    if (tab.windowId !== window.vivaldiWindowId || window.__vm.switchingSpace || Date.now() - startedAt < 5000 || !isBlank(tab) || tab.active === false) return;
     const previous = activeHistory.filter((id) => id !== tab.id).pop();
     open(tab.id);
     if (previous != null) {
