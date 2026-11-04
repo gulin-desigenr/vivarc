@@ -225,11 +225,11 @@
   };
 
   const run = (row) => {
-    if (!row || (row.type === "search" && !row.query)) return;
+    if (!row || ((row.type === "search" || row.type === "suggest") && !row.query)) return;
     if (row.type === "tab") {
       chrome.tabs.update(row.tab.id, { active: true });
       close(true);
-    } else if (row.type === "search") {
+    } else if (row.type === "search" || row.type === "suggest") {
       if (row.engine === DEFAULT) defaultSearch(row.query);
       else go(engineUrl(row.engine, row.query));
     } else if (row.type === "engine") {
@@ -245,20 +245,35 @@
 
   const render = () => {
     if (!list) return;
-    list.replaceChildren(...rows.map((row, i) => {
-      const item = el("div", `vm-cmd-row${i === selected ? " sel" : ""}`);
-      if (row.type === "action" || row.type === "engine") {
-        const glyph = el("span", "vm-cmd-ico vm-cmd-glyph");
-        glyph.innerHTML = ACTION_SVG;
-        item.append(glyph, el("span", "vm-cmd-title", row.label));
-      } else if (row.type === "search" || row.type === "suggest") {
-        const glyph = el("span", "vm-cmd-ico vm-cmd-glyph");
-        glyph.innerHTML = SEARCH_SVG;
-        item.append(glyph, el("span", "vm-cmd-title", row.label));
-      } else {
-        item.append(iconFor(row.url, row.favicon), el("span", "vm-cmd-title", row.label));
-        if (row.sub) item.append(el("span", "vm-cmd-sub", `— ${row.sub}`));
+    const nodes = [];
+    let lastGroup = null;
+    rows.forEach((row, i) => {
+      const group = { tab: "Open tabs", action: "Actions", engine: "Search engines", search: "Search", suggest: "Suggestions", bookmark: "Bookmarks", history: "History", url: "Go to" }[row.type] || "Results";
+      if (group !== lastGroup) {
+        nodes.push(el("div", "vm-cmd-section", group));
+        lastGroup = group;
       }
+      const item = el("div", `vm-cmd-row${i === selected ? " sel" : ""}`);
+      item.id = `vm-cmd-option-${i}`;
+      item.setAttribute("role", "option");
+      item.setAttribute("aria-selected", String(i === selected));
+      let icon;
+      if (row.type === "action" || row.type === "engine") {
+        icon = el("span", "vm-cmd-ico vm-cmd-glyph");
+        icon.innerHTML = ACTION_SVG;
+      } else if (row.type === "search" || row.type === "suggest") {
+        icon = el("span", "vm-cmd-ico vm-cmd-glyph");
+        icon.innerHTML = SEARCH_SVG;
+      } else {
+        icon = iconFor(row.url, row.favicon);
+      }
+      icon.setAttribute("aria-hidden", "true");
+      const content = el("span", "vm-cmd-content");
+      content.append(el("span", "vm-cmd-title", row.label));
+      const detail = row.type === "tab" ? hostOf(row.url) : row.sub ||
+        ({ action: "Run action", engine: "Search with this engine", search: "Search the web", suggest: "Search the web", url: "Open address" }[row.type] || "");
+      if (detail) content.append(el("span", "vm-cmd-sub", detail));
+      item.append(icon, content);
       if (row.type === "tab" || row.type === "action" || row.type === "engine") {
         const hint = el("span", "vm-cmd-hint");
         hint.append(el("span", null, { tab: "Switch to Tab", action: "Run Action", engine: "Tab" }[row.type]));
@@ -270,13 +285,20 @@
       item.addEventListener("mousemove", () => {
         if (selected === i) return;
         selected = i;
-        list.querySelector(".sel")?.classList.remove("sel");
+        const previous = list.querySelector(".sel");
+        previous?.classList.remove("sel");
+        previous?.setAttribute("aria-selected", "false");
         item.classList.add("sel");
+        item.setAttribute("aria-selected", "true");
+        input.setAttribute("aria-activedescendant", item.id);
       });
       item.addEventListener("click", () => run(row));
-      return item;
-    }));
-    list.children[selected]?.scrollIntoView({ block: "nearest" });
+      nodes.push(item);
+    });
+    list.replaceChildren(...nodes);
+    if (rows.length) input.setAttribute("aria-activedescendant", `vm-cmd-option-${selected}`);
+    else input.removeAttribute("aria-activedescendant");
+    list.querySelector(`#vm-cmd-option-${selected}`)?.scrollIntoView({ block: "nearest" });
   };
 
   const allTabs = async () =>
@@ -351,7 +373,7 @@
       }
     }
     if (id !== seq) return;
-    rows = out.map((r) => (r.type === "suggest" ? { ...r, type: "search" } : r));
+    rows = out;
     selected = 0;
     render();
   };
@@ -421,9 +443,21 @@
     input.placeholder = "Search or Enter URL…";
     input.spellcheck = false;
     input.autocomplete = "off";
-    head.append(glyph, chipHolder, input);
+    input.setAttribute("aria-label", "Search or enter URL");
+    input.setAttribute("aria-controls", "vm-cmd-results");
+    input.setAttribute("role", "combobox");
+    input.setAttribute("aria-expanded", "true");
+    head.append(glyph, chipHolder, input, el("span", "vm-cmd-escape", "ESC"));
     list = el("div", "vm-cmd-list");
-    box.append(head, list);
+    list.id = "vm-cmd-results";
+    list.setAttribute("role", "listbox");
+    const footer = el("div", "vm-cmd-footer");
+    for (const [keys, label] of [["↑ ↓", "Navigate"], ["↵", "Open"], ["esc", "Close"]]) {
+      const hint = el("span", "vm-cmd-shortcut");
+      hint.append(el("kbd", null, keys), el("span", null, label));
+      footer.append(hint);
+    }
+    box.append(head, list, footer);
     bar.append(box);
     bar.addEventListener("mousedown", (e) => { if (e.target === bar) close(true); });
     input.addEventListener("keydown", onKey);
