@@ -20,6 +20,7 @@ Atualizado em 30/10/2026.
 - O Peek mantém os arquivos originais verificados e recebe uma camada local de movimento em `src/optional/peek-motion.js`, aplicada na montagem do bundle.
 - Ao promover uma prévia, `src/optional/peek-groups.js` tenta agrupá-la nativamente com a aba de origem; a barra lateral exibe pilhas e oculta abas temporárias do Peek.
 - O acionamento interno de workspace depende de implementação privada do Vivaldi e deve ser revalidado após atualizações do navegador.
+- Pesquisa, recursos e prioridades para aproximar o fork do Arc estão em `docs/ROADMAP-ARC.md`; o próximo trabalho escolhido é Little Arc.
 
 ## Verificação
 
