@@ -700,3 +700,16 @@
 #browser.vm-on.vm-sidebar-wallpaper #vm-panel .vm-fav.active {
   background: color-mix(in srgb, var(--vm-fg, var(--colorImageFg, var(--colorFg))) 24%, transparent);
 }
+
+/* Keep favorite tiles distinct from each custom space color, including with wallpaper disabled. */
+#browser.vm-on.vm-themed #vm-panel .vm-fav {
+  background: color-mix(in srgb, var(--vm-fav-color) var(--vm-fav-opacity), transparent);
+  outline: 1px solid color-mix(in srgb, var(--vm-fav-color) 18%, transparent);
+  outline-offset: -1px;
+}
+#browser.vm-on.vm-themed #vm-panel .vm-fav:hover {
+  background: color-mix(in srgb, var(--vm-fav-color) var(--vm-fav-hover-opacity), transparent);
+}
+#browser.vm-on.vm-themed #vm-panel .vm-fav.active {
+  background: color-mix(in srgb, var(--vm-fav-color) var(--vm-fav-active-opacity), transparent);
+}
