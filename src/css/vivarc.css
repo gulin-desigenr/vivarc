@@ -411,6 +411,9 @@
   isolation: isolate;
 }
 #browser.vm-themed:not(.vm-glass) #tabs-tabbar-container { background-image: none !important; }
+/* The window frame around the sidebar and the page (the strip under the sidebar, the rounded corners) takes the
+   space color too, like Arc, instead of Vivaldi's theme background. */
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) { background-color: var(--vm-tint) !important; background-image: none !important; }
 /* isolation makes the bar its own stacking context, painted under the page: lift it while the address bar or
    one of its popups (site permission requests) is open, or they are cut off at the sidebar's edge */
 #browser.vm-themed #tabs-tabbar-container:is(:focus-within, :has(.addressfield-popup-container)) { z-index: 1; }
@@ -851,3 +854,25 @@
   border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
   background: color-mix(in srgb, currentColor 6%, transparent);
 }
+
+/* Arc-style window controls (09-window-controls.js): no title bar revealed at the top edge, and room for the
+   native traffic lights at the start of the sidebar's first row. Row 1: traffic lights, tab menu, back, forward,
+   reload; row 2: the address; row 3: extensions. */
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #header { display: none !important; }
+/* Auto-hide reveals a second copy of the title bar at the top edge, outside #header. */
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) .auto-hide-wrapper.top #titlebar { display: none !important; }
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) .auto-hide-wrapper.top:not(:has(> :not(#titlebar))) { display: none !important; }
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc, .fullscreen) #tabs-tabbar-container.left .toolbar-tabbar-before > :first-child {
+  margin-left: var(--vm-traffic-lights, 76px);
+}
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-before {
+  > .toolbar-spacer-flexible { order: 1; }
+  > .button-toolbar:has(> [data-name="Back"]) { order: 2; }
+  > .button-toolbar:has(> [data-name="Forward"]) { order: 3; }
+  > .button-toolbar:has(> [data-name="Reload"]) { order: 4; }
+  > .UrlBar-AddressField { order: 5; }
+  > .toolbar-extensions { order: 6; flex: 1 0 100%; display: flex; flex-wrap: wrap; justify-content: flex-start; padding: 0 4px; }
+  > .toolbar-extensions:empty { display: none; }
+}
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-before { -webkit-app-region: drag; }
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-before :is(button, input, .UrlBar-AddressField, .button-toolbar) { -webkit-app-region: no-drag; }

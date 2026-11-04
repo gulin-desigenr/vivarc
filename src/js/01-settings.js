@@ -13,6 +13,7 @@
       fromConfig: (c) => c.compactBottomBar, onClass: "vm-compact-bottom" },
     { key: "searchSuggestions", label: "Search suggestions", hint: "Show DuckDuckGo suggestions in the command bar while you type.", default: true,
       fromConfig: (c) => (c.suggestions === undefined ? undefined : c.suggestions === "ddg") },
+    { key: "arcWindowControls", label: "Window controls in the sidebar", hint: "Keep the red, yellow and green buttons in the sidebar's top row, like Arc, instead of a title bar that appears at the top edge.", default: true },
     { key: "littleExternalLinks", label: "Little Vivarc for other apps", hint: "Open links clicked in other apps in a small, centred window instead of a new tab.", default: true },
   ];
 
