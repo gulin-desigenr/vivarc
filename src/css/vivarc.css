@@ -3,6 +3,8 @@
   --vm-surface: color-mix(in srgb, var(--colorBg, #1c1c20) 90%, black);
   --vm-css: 1; /* read by the JS to confirm this stylesheet is loaded */
   --vm-text: var(--colorFg, #f2f2f5);
+  --vm-native-fg: var(--colorFg, #f2f2f5);
+  --vm-address-fg: var(--vm-fg, var(--colorImageFg, var(--colorFg, #f2f2f5)));
   --vm-sel: color-mix(in srgb, var(--colorHighlightBg, #6b63a0) 40%, var(--vm-surface));
 }
 
@@ -14,34 +16,35 @@
 #browser.vm-on #tabs-tabbar-container .button-toolbar.newtab { display: none !important; }
 /* Vivaldi lets the side tab bar shrink to a few pixels; the sidebar is unusable below this width */
 #browser.vm-on #tabs-tabbar-container:is(.left, .right) { min-width: 220px; }
-#browser.vm-on #tabs-container > .vm-collapsed:not(:focus-within) {
-  height: 0 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  overflow: hidden;
+/* Keep Vivaldi's real address field on its own line above the favorites. */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField {
+  --colorFg: var(--vm-address-fg);
+  flex: 1 0 calc(100% - 16px);
+  width: calc(100% - 16px);
+  min-width: 0;
+  max-width: none;
+  height: 32px;
+  margin: 4px 8px 2px;
+  border: 1px solid color-mix(in srgb, var(--vm-address-fg) 10%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--vm-address-fg) 10%, transparent);
+  color: var(--vm-address-fg);
 }
-
-/* URL bar: collapsed until focused (Cmd+L), then floats over the sidebar. It also floats while one of its
-   popups is open: Vivaldi puts site permission requests (camera, microphone...) there, and they would be invisible. */
-#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField:not(:focus-within, :has(.addressfield-popup-container)) {
-  height: 0 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField:focus-within {
+  background: color-mix(in srgb, var(--vm-address-fg) 16%, transparent);
 }
-#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField:is(:focus-within, :has(.addressfield-popup-container)) {
-  position: absolute;
-  z-index: 100;
-  top: 8px;
-  left: 8px;
-  right: 8px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+/* Vivaldi draws the suggestion list behind the input; use its own foreground on that surface. */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField:has(.OmniDropdown) {
+  --colorFg: var(--vm-native-fg);
+  color: var(--vm-native-fg);
+}
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField :is(.button-popup, .addressfield-popup-container) {
+  --colorFg: var(--vm-native-fg);
+  color: var(--vm-native-fg);
+}
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField .UrlFragment-Wrapper {
+  --HighlightColor: var(--vm-address-fg) !important;
+  --LowlightColor: color-mix(in srgb, var(--vm-address-fg) 72%, transparent) !important;
 }
 
 #vm-panel {

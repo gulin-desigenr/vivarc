@@ -938,12 +938,6 @@
       refresh(true);
     }
     anchor.classList.add("vm-strip-hidden");
-    for (const row of container.children) {
-      if (row === panel || row === anchor) continue;
-      const bare = ![...row.querySelectorAll("button, a, [role=button], .button-toolbar")]
-        .some((n) => !n.closest(".UrlBar-AddressField"));
-      row.classList.toggle("vm-collapsed", bare && !!row.querySelector(".UrlBar-AddressField"));
-    }
     placeProfileBar();
     fitHeight();
     if (panel.parentElement !== container || panel.nextElementSibling !== anchor) {
