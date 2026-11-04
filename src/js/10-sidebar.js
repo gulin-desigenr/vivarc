@@ -215,6 +215,18 @@
   // ---- drag and drop ----
   let drag = null;
   let refreshAfterDrag = false;
+  // The window a chrome.tabs event belongs to, or undefined when the event does not say.
+  const eventWindowId = (ev, [first, second, third]) => ({
+    onCreated: first?.windowId, onUpdated: third?.windowId, onActivated: first?.windowId,
+    onRemoved: second?.windowId, onMoved: second?.windowId, onAttached: second?.newWindowId, onDetached: second?.oldWindowId,
+  })[ev];
+  let pressing = false;
+  let refreshAfterPress = false;
+  const released = () => {
+    if (!pressing) return;
+    pressing = false;
+    if (refreshAfterPress) { refreshAfterPress = false; refresh(false); }
+  };
   const clearDrop = () => {
     for (const n of panel?.querySelectorAll(".drop-before, .drop-after, .drop-into") ?? []) {
       n.classList.remove("drop-before", "drop-after", "drop-into");
@@ -638,8 +650,8 @@
   };
 
   // ---- space bar: Vivaldi workspaces as Arc-style spaces ----
-  const switchSpace = async (item) => {
-    if (item.id === state.active) return;
+  const switchSpace = async (item, { force = false } = {}) => {
+    if (item.id === state.active && !force) return;
     const activate = spacesOf.findSwitcher(chrome.extension.getBackgroundPage?.()?.webpackChunkgapp_browser_react);
     if (!activate) {
       window.dispatchEvent(new CustomEvent("vm-toast", { detail: "Could not switch space. Use Vivaldi's Workspaces button." }));
@@ -650,8 +662,16 @@
     const targetTabs = spacesOf.tabsIn(tabs, item.id);
     const empty = targetTabs.every((tab) => BLANK.test(tab.pendingUrl || tab.url || ""));
     window.__vm.switchingSpace = true;
-    try { await activate(window.vivaldiWindowId, item.id); }
-    finally { window.__vm.switchingSpace = false; }
+    try {
+      await activate(window.vivaldiWindowId, item.id);
+      // Vivaldi skips the switch when it believes it is already in that workspace (after a closed tab handed the
+      // focus to another space's tab), so land on the space's most recent tab ourselves.
+      const [after] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (after && spacesOf.of(after) !== item.id) {
+        const target = spacesOf.recentTab(await chrome.tabs.query({ currentWindow: true }), item.id);
+        if (target) await chrome.tabs.update(target.id, { active: true });
+      }
+    } finally { window.__vm.switchingSpace = false; }
     refresh(false);
     if (empty) {
       const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -901,6 +921,8 @@
     clearTimeout(timer);
     timer = setTimeout(async () => {
       if (drag) { refreshAfterDrag = true; return; } // re-rendering would detach the node being dragged
+      // Nor while a button is held: replacing the pressed node between mousedown and mouseup swallows the click.
+      if (pressing) { refreshAfterPress = true; return; }
       refreshAfterDrag = false;
       const bookmarks = wantBookmarks || !state.defaultSpace;
       wantBookmarks = false;
@@ -932,6 +954,7 @@
       // Vivaldi's vertical tab container opens a new tab on any double-click.
       // Keep rapid clicks inside Vivarc controls from triggering that handler.
       panel.addEventListener("dblclick", (e) => e.stopPropagation());
+      panel.addEventListener("pointerdown", () => { pressing = true; }, true);
       panel.addEventListener("contextmenu", (e) => showMenu(e, [
         ["New Folder", async () => { await newFolder(null); }],
         ["Edit Theme…", () => window.dispatchEvent(new CustomEvent("vm-open-theme"))],
@@ -969,6 +992,7 @@
     }).observe(document.body, { childList: true, subtree: true });
     place();
     window.addEventListener("resize", fitHeight);
+    for (const ev of ["pointerup", "pointercancel", "dragstart", "blur"]) window.addEventListener(ev, () => setTimeout(released), true);
     window.addEventListener("vm-refresh-sidebar", () => refresh(false));
     window.addEventListener("arcpeek-state-changed", () => refresh(false));
     window.__vm.settings.onChange(fitHeight);
@@ -983,8 +1007,35 @@
         if (data) chrome.tabs.update(tab.id, { vivExtData: data });
       }).catch(() => {});
     });
+    // Every window runs its own sidebar and sees the tab events of all windows (a Little Vivarc page loading,
+    // another window's titles): only this window's events, or ones that do not say, trigger a re-render.
+    // Closing the active tab (or sending it to Little Vivarc) keeps you in its space, like Arc.
+    let leaving = null;
+    const leftSpace = (tabId) => {
+      const tab = state.allTabs.find((t) => t.id === tabId);
+      if (!tab || !state.workspaces?.length || window.__vm.switchingSpace) return;
+      leaving ||= { space: spacesOf.of(tab), removed: new Set(), wasActive: false };
+      leaving.removed.add(tabId);
+      leaving.wasActive ||= !!tab.active;
+      clearTimeout(leaving.timer);
+      leaving.timer = setTimeout(async () => {
+        const { space, removed, wasActive } = leaving;
+        leaving = null;
+        if (!wasActive || window.__vm.switchingSpace) return;
+        const next = spacesOf.stayIn(await chrome.tabs.query({ currentWindow: true }), space, removed);
+        if (next?.tab) await chrome.tabs.update(next.tab.id, { active: true });
+        else if (next?.empty) await switchSpace({ id: space }, { force: true });
+      }, 150);
+    };
+    chrome.tabs.onRemoved.addListener((id, info) => {
+      if (info?.windowId === window.vivaldiWindowId && !info.isWindowClosing) leftSpace(id);
+    });
+    chrome.tabs.onDetached.addListener((id, info) => { if (info?.oldWindowId === window.vivaldiWindowId) leftSpace(id); });
     for (const ev of ["onCreated", "onRemoved", "onUpdated", "onMoved", "onActivated", "onAttached", "onDetached", "onReplaced"]) {
-      chrome.tabs[ev]?.addListener(() => refresh(false));
+      chrome.tabs[ev]?.addListener((...args) => {
+        const id = eventWindowId(ev, args);
+        if (id == null || id === window.vivaldiWindowId) refresh(false);
+      });
     }
     window.__vm.onShortcut((key) => {
       const item = spacesOf.itemForShortcut(state.workspaces, state.defaultSpace ? spacesOf.label(state.defaultSpace) : "Home", key);

@@ -41,6 +41,16 @@
       ((t.lastAccessed ?? 0) === (best.lastAccessed ?? 0) && t.index > best.index) ? t : best));
   };
 
+  // After the active tab of space `closed` closes or leaves the window, Vivaldi may activate a tab of another space
+  // (and then ignore a switch back, as it believes it is still in `closed`). Arc stays in the space: returns the
+  // tab to bring back, { empty: true } when the space has no tab left, or null when nothing needs doing.
+  const stayIn = (tabs, closed, removedIds = new Set()) => {
+    const active = tabs.find((t) => t.active);
+    if (!active || of(active) === closed) return null;
+    const tab = recentTab(tabs.filter((t) => !removedIds.has(t.id)), closed);
+    return tab ? { tab } : { empty: true };
+  };
+
   const label = (folder) => folder.title.startsWith(ARC_PREFIX) ? folder.title.slice(ARC_PREFIX.length) : folder.title;
   const same = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
@@ -116,5 +126,5 @@
   const removalLabel = (name, tabCount) =>
     `Delete \u201c${name}\u201d${tabCount ? ` and close its ${tabCount} ${tabCount === 1 ? "tab" : "tabs"}` : ""}`;
 
-  window.__vm.workspaces = { of, tabsIn, activeId, scope, items, itemForShortcut, recentTab, label, assign, stamp, findRemover, findSwitcher, removalLabel, CREATE_HINT };
+  window.__vm.workspaces = { of, tabsIn, activeId, scope, items, itemForShortcut, recentTab, stayIn, label, assign, stamp, findRemover, findSwitcher, removalLabel, CREATE_HINT };
 })();
