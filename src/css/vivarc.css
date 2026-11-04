@@ -733,8 +733,8 @@
 }
 #browser.vm-on #vm-cmd .vm-cmd-box,
 #browser.vm-on.vm-glass #vm-cmd .vm-cmd-box {
-  width: min(640px, calc(100vw - 32px));
-  max-height: min(76vh, 680px);
+  width: min(clamp(640px, min(33.333vw, 59.259vh), 896px), calc(100vw - 32px));
+  max-height: min(76vh, clamp(680px, min(35.417vw, 62.963vh), 952px));
   display: flex;
   flex-direction: column;
   border-radius: 13px;
@@ -746,43 +746,46 @@
 }
 #browser.vm-on #vm-cmd .vm-cmd-head {
   flex: none;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: clamp(10px, min(.521vw, .926vh), 14px);
+  padding: clamp(10px, min(.521vw, .926vh), 14px) clamp(14px, min(.729vw, 1.296vh), 19.6px);
   border-bottom: 1px solid var(--cmd-line);
 }
 #browser.vm-on #vm-cmd .vm-cmd-head > .vm-cmd-glyph { color: var(--cmd-muted); }
+#browser.vm-on #vm-cmd .vm-cmd-head > .vm-cmd-glyph svg { width: clamp(20px, min(1.042vw, 1.852vh), 28px); height: clamp(20px, min(1.042vw, 1.852vh), 28px); }
 #browser.vm-on #vm-cmd input {
-  height: 32px;
+  height: clamp(32px, min(1.667vw, 2.963vh), 44.8px);
   padding: 0 9px;
   border: 1px solid transparent;
   border-radius: 8px;
   color: var(--cmd-text);
-  font-size: 14px;
+  font-size: clamp(14px, min(.729vw, 1.296vh), 19.6px);
   outline: none;
 }
 #browser.vm-on #vm-cmd input:focus { border-color: transparent; box-shadow: none; }
 #browser.vm-on #vm-cmd input::placeholder { color: var(--cmd-muted); opacity: 1; }
-#browser.vm-on #vm-cmd .vm-cmd-chip { padding: 4px 10px; font-size: 12px; }
-#browser.vm-on #vm-cmd .vm-cmd-escape { color: var(--cmd-muted); font-size: 11px; }
+#browser.vm-on #vm-cmd .vm-cmd-chip { padding: 4px 10px; font-size: clamp(12px, min(.625vw, 1.111vh), 16.8px); }
+#browser.vm-on #vm-cmd .vm-cmd-escape { color: var(--cmd-muted); font-size: clamp(11px, min(.573vw, 1.019vh), 15.4px); }
 #browser.vm-on #vm-cmd .vm-cmd-list { flex: 0 1 auto; min-height: 0; max-height: 58vh; overflow-y: auto; padding: 8px; scrollbar-width: thin; }
-#browser.vm-on #vm-cmd .vm-cmd-section { padding: 10px 10px 5px; color: var(--cmd-muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+#browser.vm-on #vm-cmd .vm-cmd-section { padding: 10px 10px 5px; color: var(--cmd-muted); font-size: clamp(11px, min(.573vw, 1.019vh), 15.4px); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
 #browser.vm-on #vm-cmd .vm-cmd-row {
-  min-height: 47px;
+  min-height: clamp(47px, min(2.448vw, 4.352vh), 65.8px);
   height: auto;
-  gap: 11px;
-  padding: 6px 10px;
+  gap: clamp(11px, min(.573vw, 1.019vh), 15.4px);
+  padding: clamp(6px, min(.313vw, .556vh), 8.4px) clamp(10px, min(.521vw, .926vh), 14px);
   border-radius: 7px;
   color: var(--cmd-text);
-  font-size: 13px;
+  font-size: clamp(13px, min(.677vw, 1.204vh), 18.2px);
 }
 #browser.vm-on #vm-cmd .vm-cmd-row.sel,
 #browser.vm-on.vm-glass #vm-cmd .vm-cmd-row.sel { background: var(--cmd-selected); box-shadow: none; }
-#browser.vm-on #vm-cmd .vm-cmd-ico { width: 22px; height: 22px; }
+#browser.vm-on #vm-cmd .vm-cmd-ico { width: clamp(22px, min(1.146vw, 2.037vh), 30.8px); height: clamp(22px, min(1.146vw, 2.037vh), 30.8px); }
+#browser.vm-on #vm-cmd .vm-cmd-ico svg { width: 80%; height: 80%; }
+#browser.vm-on #vm-cmd .vm-cmd-letter { font-size: clamp(13px, min(.677vw, 1.204vh), 18.2px); }
 #browser.vm-on #vm-cmd .vm-cmd-content { display: flex; flex: 1 1 auto; min-width: 0; flex-direction: column; gap: 2px; }
 #browser.vm-on #vm-cmd .vm-cmd-title { font-weight: 500; }
-#browser.vm-on #vm-cmd .vm-cmd-sub { flex: none; color: var(--cmd-muted); font-size: 12px; font-weight: 400; }
-#browser.vm-on #vm-cmd .vm-cmd-hint { color: var(--cmd-muted); font-size: 11px; font-weight: 500; }
+#browser.vm-on #vm-cmd .vm-cmd-sub { flex: none; color: var(--cmd-muted); font-size: clamp(12px, min(.625vw, 1.111vh), 16.8px); font-weight: 400; }
+#browser.vm-on #vm-cmd .vm-cmd-hint { color: var(--cmd-muted); font-size: clamp(11px, min(.573vw, 1.019vh), 15.4px); font-weight: 500; }
 #browser.vm-on #vm-cmd .vm-cmd-arrow { width: 24px; height: 24px; background: transparent; color: var(--cmd-muted); }
-#browser.vm-on #vm-cmd .vm-cmd-footer { display: flex; flex: none; gap: 16px; align-items: center; padding: 8px 16px; border-top: 1px solid var(--cmd-line); color: var(--cmd-muted); font-size: 11px; }
+#browser.vm-on #vm-cmd .vm-cmd-footer { display: flex; flex: none; gap: 16px; align-items: center; padding: 8px 16px; border-top: 1px solid var(--cmd-line); color: var(--cmd-muted); font-size: clamp(11px, min(.573vw, 1.019vh), 15.4px); }
 #browser.vm-on #vm-cmd .vm-cmd-shortcut { display: flex; align-items: center; gap: 5px; }
 #browser.vm-on #vm-cmd kbd { padding: 1px 5px; border: 1px solid var(--cmd-line); border-radius: 4px; color: var(--cmd-muted); font: inherit; }
