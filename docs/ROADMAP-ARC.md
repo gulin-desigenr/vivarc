@@ -15,6 +15,7 @@ Pesquisa e prioridades registradas em 4 de novembro de 2026 para o fork pessoal.
 - **Arquivamento de abas** (novembro de 2026): arquivo manual pesquisável pela command bar, restauração no space de origem, Clear arquivando e arquivamento automático configurável (padrão 12 h).
 - **Command palette** (novembro de 2026): mover a aba para outro space, trocar de space pelo nome, fixar em uma pasta, renomear a aba e voltar à página original do fixado.
 - **Backup das personalizações** (novembro de 2026): exportar/importar arquivo e cópia diária automática em `~/.vivarc/backups`, com temas associados aos spaces pelo nome.
+- **Tidy Tabs, versão local** (novembro de 2026): agrupar abas soltas em pilhas com nome por site, origem e palavras do título, com Undo. Uma versão com IA (Claude por chave de API, ou LM Studio local) fica como próximo passo, se a local não bastar.
 
 ## Backlog
 
@@ -22,8 +23,6 @@ Pesquisa e prioridades registradas em 4 de novembro de 2026 para o fork pessoal.
 2. **Boosts:** gerenciador local de CSS por domínio, com prévia, desativação e exportação; editor visual completo fica para avaliação posterior. [Boosts no Arc](https://start.arc.net/paint-the-internet).
 3. **Personalização de spaces:** gradientes, combinação com papel de parede e melhor acesso a nome, ícone e ordem dos spaces. Verificar funções nativas de [Workspaces do Vivaldi](https://help.vivaldi.com/desktop/tabs/workspaces/).
 4. **Tradução para português:** interface do Vivarc em pt-BR (command bar, menus, ajustes, avisos, Little Vivarc), seguindo o idioma do Vivaldi e mantendo o inglês como fallback. Hoje todos os textos estão em inglês dentro dos módulos; centralizar as strings antes de traduzir.
-
-- **Tidy Tabs, versão local** (novembro de 2026): agrupar abas soltas em pilhas com nome por site, origem e palavras do título, com Undo. Uma versão com IA (Claude por chave de API, ou LM Studio local) fica como próximo passo, se a local não bastar.
 
 ## Ideias guardadas
 
