@@ -173,8 +173,8 @@
 #vm-panel .vm-row.discarded { opacity: 0.6; }
 #vm-panel .vm-folder-head { font-weight: 500; }
 /* Like Vivaldi's tabs: a hovered or active tab is painted with its page's colour (10-sidebar.js sets
-   --vm-tab-bg/--vm-tab-fg per origin, fg picked for contrast). Folders take the space's solid colour when hovered
-   or open (--vm-space-solid from 40-theme.js; Vivaldi's highlight colour without a space theme). */
+   --vm-tab-bg/--vm-tab-fg per origin, fg picked for contrast). Folders take the space's solid colour while the tab
+   you are on is inside them (open or closed); otherwise their hover is the plain one (--vm-space-solid from 40-theme.js; Vivaldi's highlight colour without a space theme). */
 #vm-panel .vm-row { transition: background-color 120ms, color 120ms; }
 /* #browser and doubled classes: these must win over the space ink (#browser.vm-themed #vm-panel .vm-row). */
 #browser.vm-on #vm-panel .vm-row.vm-tinted.vm-tinted:hover,
@@ -183,8 +183,7 @@
 #browser.vm-on #vm-panel .vm-fav.vm-tinted.vm-tinted:is(:hover, .active) { background: var(--vm-tab-bg); outline-color: transparent; }
 #vm-panel :is(.vm-row, .vm-fav).vm-ico-invert:is(:hover, .active) .vm-ico img { filter: invert(1); }
 #vm-panel :is(.vm-row, .vm-fav).vm-ico-tile:is(:hover, .active) .vm-ico { border-radius: 5px; background: #fff; box-shadow: 0 0 0 2px #fff; }
-#browser.vm-on #vm-panel .vm-folder > .vm-folder-head:not(.vm-stack-head):hover,
-#browser.vm-on #vm-panel .vm-folder.open > .vm-folder-head:not(.vm-stack-head) {
+#browser.vm-on #vm-panel .vm-folder:has(.vm-row.active) > .vm-folder-head:not(.vm-stack-head) {
   background-color: var(--vm-space-solid, var(--colorHighlightBg));
   color: var(--vm-space-solid-fg, var(--colorHighlightFg, #fff));
 }
