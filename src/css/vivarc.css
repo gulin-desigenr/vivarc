@@ -1035,3 +1035,14 @@
 }
 #browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-before { -webkit-app-region: drag; }
 #browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-before :is(button, input, .UrlBar-AddressField, .button-toolbar) { -webkit-app-region: no-drag; }
+/* Without a title bar the window moves by its sidebar, like Arc: the empty space of the top row and the empty
+   sidebar under the list (the bottom toolbar's flexible spacer, which stretches up to the list) are drag regions,
+   so dragging there moves the window and double-clicking zooms it (or minimises, per System Settings). Vivaldi
+   fills each flexible spacer with a disabled button that is no-drag, so the button is made draggable too. The
+   window's top edge keeps its native resize, and double-clicking it stretches the window up to the screen top. */
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left :is(.toolbar-tabbar-before, .toolbar-tabbar-after) :is(.toolbar-spacer-flexible, .toolbar-spacer-flexible *) {
+  -webkit-app-region: drag !important;
+  app-region: drag !important;
+}
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-after { -webkit-app-region: drag; }
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-after :is(button, .button-toolbar:not(.toolbar-spacer-flexible), .vm-space-bar, .vm-spaces) { -webkit-app-region: no-drag; }
