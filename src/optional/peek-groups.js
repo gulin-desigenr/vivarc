@@ -12,11 +12,11 @@
     // Never take a tab out of an unrelated existing stack.
     if (promotedData.group && promotedData.group !== sourceData.group) return false;
     if (sourceData.group && sourceData.group === promotedData.group) return true;
+    // Vivaldi 8.3 dropped the "target-is-tab" tweak (it rejects the whole call); its own "Stack tabs" action passes
+    // the tab id as the target with ["do-not-reparent", "create-new-group"].
     const move = sourceData.group
-      ? { tabIds: [promotedId], target: sourceData.ext_id || sourceId, windowId: source.windowId,
-          tweaks: ["target-is-tab", "into", "do-not-reparent"], workspaceId: sourceData.workspaceId || 0 }
-      : { tabIds: [sourceId, promotedId], target: sourceId, windowId: source.windowId,
-          tweaks: ["do-not-reparent", "create-new-group", "target-is-tab"], workspaceId: sourceData.workspaceId || 0 };
+      ? { tabIds: [promotedId], target: sourceId, tweaks: ["do-not-reparent", "into"] }
+      : { tabIds: [sourceId, promotedId], target: sourceId, tweaks: ["do-not-reparent", "create-new-group"] };
     try {
       const result = await vivaldi.tabsPrivate.move({ ...move, debug: "Vivarc.peekStack" });
       const [afterSource, afterPromoted] = await Promise.all([get(sourceId), get(promotedId)]);

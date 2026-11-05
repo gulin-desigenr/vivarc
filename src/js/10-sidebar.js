@@ -638,6 +638,44 @@
     try { return JSON.parse(tab?.vivExtData || "{}").group || ""; } catch (_) { return ""; }
   };
 
+  // Like Dia: a page opened from a link of another tab (Cmd+click, target=_blank) stacks with that tab in a native
+  // Vivaldi tab stack. Only the first one needs Vivarc: once the source is in a stack, Vivaldi's own "Open links
+  // within current tab stack" puts the next ones there. Left alone: tabs of other windows, a source bound to a
+  // pinned link or favorite (its pages stay in the list), pinned tabs, Peek's temporary tabs, and a source already
+  // in a stack. Vivaldi 8.3 creates a stack with tabsPrivate.move(..., ["do-not-reparent", "create-new-group"]),
+  // the call its own "Stack tabs" action makes.
+  const autoStack = async (tab) => {
+    if (!window.__vm.settings.get("stackOpenedTabs") || tab.windowId !== window.vivaldiWindowId || tab.openerTabId == null) return;
+    if (!vivaldi?.tabsPrivate?.move || BLANK.test(tab.pendingUrl || tab.url || "")) return;
+    const source = await chrome.tabs.get(tab.openerTabId).catch(() => null);
+    if (!source || source.windowId !== tab.windowId || source.pinned || tab.pinned) return;
+    if (spacesOf.of(source) !== spacesOf.of(tab) || tabStackId(source) || tabStackId(tab)) return;
+    if (pinLinks.pinOf(source) || [...state.bound.values()].some((t) => t.id === source.id)) return;
+    const peek = (t) => { try { return !!JSON.parse(t.vivExtData || "{}").arcPeekRuntime; } catch (_) { return false; } };
+    if (peek(source) || peek(tab)) return;
+    // Links opened in a quick burst: the first creates the stack, the others wait for it and then join it.
+    const pending = stacking.get(source.id);
+    if (pending) {
+      await pending;
+      const now = await chrome.tabs.get(source.id).catch(() => null);
+      const mine = await chrome.tabs.get(tab.id).catch(() => null);
+      if (!now || !mine || !tabStackId(now) || tabStackId(mine)) return;
+      await vivaldi.tabsPrivate.move({ tabIds: [tab.id], target: source.id, tweaks: ["do-not-reparent", "into"], debug: "Vivarc.autoStack" });
+      refresh(false);
+      return;
+    }
+    const job = vivaldi.tabsPrivate.move({ tabIds: [source.id, tab.id], target: source.id,
+      tweaks: ["do-not-reparent", "create-new-group"], debug: "Vivarc.autoStack" });
+    stacking.set(source.id, job);
+    try {
+      const { success } = (await job) || {};
+      if (success) refresh(false);
+    } finally {
+      stacking.delete(source.id);
+    }
+  };
+  const stacking = new Map();
+
   const tabStack = (id, tabs) => {
     const wrap = el("div", "vm-folder vm-tab-stack");
     const head = el("div", "vm-row vm-folder-head vm-stack-head");
@@ -1267,6 +1305,7 @@
       chrome.bookmarks[ev]?.addListener(() => refresh(true));
     }
     chrome.tabs.onCreated.addListener((tab) => {
+      autoStack(tab).catch((e) => console.warn("[vivarc] auto stack:", e));
       if (window.__vm.switchingSpace || window.__vm.archive?.busy) return; // a restored page brings its own space
       const active = state.active;
       chrome.windows.getCurrent().then((win) => {

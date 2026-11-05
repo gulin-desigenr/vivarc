@@ -15,6 +15,7 @@
       fromConfig: (c) => (c.suggestions === undefined ? undefined : c.suggestions === "ddg") },
     { key: "arcWindowControls", label: "Window controls in the sidebar", hint: "Keep the red, yellow and green buttons in the sidebar's top row, like Arc, instead of a title bar that appears at the top edge.", default: true },
     { key: "commandBarForAddress", label: "Edit the address in the command bar", hint: "Cmd+L opens the page's address in the command bar, centred, like Arc. The address field in the sidebar stays as it is.", default: true },
+    { key: "stackOpenedTabs", label: "Stack pages opened from a tab", hint: "Like Dia: a link you open in a new tab (Cmd+click) stacks with the page it came from, as a native Vivaldi tab stack. Pinned tabs and favorites keep their pages in the list.", default: true },
     { key: "archiveAfter", type: "choice", default: 12, label: "Archive tabs automatically",
       hint: "Like Arc: loose tabs you have not looked at for this long move to the archive (find them with \u201cView Archived Tabs\u201d). Pinned tabs, favorites, the open tab, tabs playing sound, stacks and split views stay.",
       options: [[0, "Never"], [12, "After 12 hours"], [24, "After 1 day"], [168, "After 7 days"], [720, "After 30 days"]] },
