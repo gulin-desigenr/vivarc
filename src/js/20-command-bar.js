@@ -172,6 +172,11 @@
       window.dispatchEvent(new CustomEvent("vm-folders", { detail: "expand" }));
       toast("Expanded all folders");
     } },
+    { label: "Export Vivarc Backup", words: "backup export save settings themes file", run: () => window.__vm.backup?.exportFile()
+      .catch((e) => { console.warn("[vivarc] export:", e); toast("Could not export the backup"); }) },
+    { label: "Back Up Vivarc Now", words: "backup save settings themes", run: () => window.__vm.backup?.saveToHelper()
+      .then(() => toast("Saved a Vivarc backup in ~/.vivarc/backups"), () => toast("Could not save the backup")) },
+    { label: "Restore Vivarc Backup…", words: "backup restore import settings themes", stay: true, run: async () => setMode(await backupPicker()) },
     { label: "Vivarc Settings", words: "preferences options configure features toggle glass", run: () => window.dispatchEvent(new CustomEvent("vm-open-settings")) },
     { label: "Edit Theme", words: "color appearance sidebar", run: () => window.dispatchEvent(new CustomEvent("vm-open-theme")) },
   ];
@@ -213,6 +218,21 @@
           run: () => setExtData(tab, { fixedTitle: text.trim().slice(0, 80) }).then(() => window.dispatchEvent(new CustomEvent("vm-refresh-sidebar"))) }] : []),
         ...(fixed ? [{ label: "Use the Page's Own Title", sub: tab.title || tab.url,
           run: () => setExtData(tab, { fixedTitle: undefined }).then(() => window.dispatchEvent(new CustomEvent("vm-refresh-sidebar"))) }] : []),
+      ] };
+  };
+
+  // Backups saved by the daily copy (newest first), and a file of your own.
+  const backupPicker = async () => {
+    const B = window.__vm.backup;
+    const saved = await B.listSaved().catch(() => []);
+    const when = (ms) => new Date(ms).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    return { name: "Restore Backup", placeholder: "Search backups…",
+      pick: (text) => [
+        { label: "Import from File…", sub: "A backup you exported", run: () => B.importFile() },
+        ...saved.filter((b) => matchesText(text, b.name)).slice(0, 30).map((b) => ({
+          label: b.name, sub: `${when(b.modified)} · ${Math.max(1, Math.round(b.size / 1024))} KB`,
+          run: async () => B.restore(await B.loadSaved(b.name)).catch((e) => { console.warn("[vivarc] restore:", e); toast("Could not restore that backup"); }),
+        })),
       ] };
   };
 

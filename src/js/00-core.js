@@ -22,6 +22,11 @@
       q.onsuccess = () => resolve(q.result ?? fallback);
       q.onerror = () => resolve(fallback);
     })).catch(() => fallback),
+    keys: () => dbReady.then((db) => new Promise((resolve) => {
+      const q = db.transaction("kv").objectStore("kv").getAllKeys();
+      q.onsuccess = () => resolve(q.result || []);
+      q.onerror = () => resolve([]);
+    })).catch(() => []),
     set: (key, value) => dbReady.then((db) => new Promise((resolve) => {
       const t = db.transaction("kv", "readwrite");
       t.objectStore("kv").put(value, key);

@@ -8,16 +8,22 @@ Vivaldi's UI has no nativeMessaging permission, but it may fetch any URL, so the
 127.0.0.1 kept running by a LaunchAgent. It sends no CORS headers (web pages cannot read it) and refuses requests
 that carry a web page's Origin or another Host name.
 
-It also owns the global Option+Command+N shortcut that opens a blank Little Vivarc from any app.
+It also owns the global Option+Command+N shortcut that opens a blank Little Vivarc from any app, and keeps the
+daily Vivarc backups: POST /backup?name=... writes ~/.vivarc/backups/<name>.json (the last 30 per profile are
+kept), GET /backups lists them and GET /backups/<name> reads one. Those three answer only Vivaldi's UI (its exact
+Origin or none, plus an X-Vivarc header), so no web page can read or write a backup.
 """
 import ctypes
 import ctypes.util
 import http.server
 import json
+import os
+import re
 import subprocess
 import sys
 import threading
 import time
+import urllib.parse
 
 UI_ORIGIN = "chrome-extension://mpognobbkildjkofajifpdfhcoklimli"
 
@@ -63,12 +69,105 @@ def pointer_display():
     }
 
 
+BACKUP_DIR = os.path.join(os.path.expanduser("~"), ".vivarc", "backups")
+BACKUP_NAME = re.compile(r"^[\w.-]{1,120}$")
+BACKUP_MAX_BYTES = 32 * 1024 * 1024
+BACKUP_KEEP = 30
+
+
+def backup_profile(name):
+    """Profile part of a backup name: "Work-2026-11-05" and "Work-2026-11-05-before-restore" -> "Work"."""
+    return re.sub(r"-\d{4}-\d{2}-\d{2}(-.*)?$", "", name)
+
+
+def list_backups(directory=None):
+    directory = directory or BACKUP_DIR
+    if not os.path.isdir(directory):
+        return []
+    items = []
+    for entry in os.scandir(directory):
+        if entry.is_file() and entry.name.endswith(".json"):
+            stat = entry.stat()
+            items.append({"name": entry.name[:-5], "size": stat.st_size, "modified": int(stat.st_mtime * 1000)})
+    return sorted(items, key=lambda item: (item["modified"], item["name"]), reverse=True)
+
+
+def save_backup(name, body, directory=None, keep=BACKUP_KEEP):
+    """Write a backup atomically, then keep only the newest `keep` files of the same profile."""
+    directory = directory or BACKUP_DIR
+    if not BACKUP_NAME.match(name) or name.startswith("."):
+        raise ValueError("bad name")
+    data = json.loads(body)
+    if not isinstance(data, dict) or data.get("format") != "vivarc-backup":
+        raise ValueError("not a Vivarc backup")
+    os.makedirs(directory, mode=0o700, exist_ok=True)
+    path = os.path.join(directory, name + ".json")
+    temp = path + ".tmp"
+    with open(temp, "wb") as handle:
+        handle.write(body)
+    os.chmod(temp, 0o600)
+    os.replace(temp, path)
+    profile = backup_profile(name)
+    same = [item for item in list_backups(directory) if backup_profile(item["name"]) == profile]
+    for old in same[keep:]:
+        os.remove(os.path.join(directory, old["name"] + ".json"))
+    return path
+
+
 LITTLE_PATH = "/little/new"  # Vivarc turns a tab opening this address into a blank Little Vivarc
 LITTLE_PAGE = b"<!doctype html><meta charset=utf-8><title>Little Vivarc</title><p>Opening Little Vivarc&hellip;</p>"
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
+    def from_ui(self):
+        """Only Vivaldi's own UI. Its fetches carry no Origin (it has host permission), while a web page's always do
+        on POST and on a cross-site fetch; the X-Vivarc header cannot come from a page without a CORS preflight,
+        which this server never grants; and the Host check stops DNS rebinding."""
+        host = (self.headers.get("Host") or "").split(":")[0]
+        origin = (self.headers.get("Origin") or "").rstrip("/")
+        return host in ("127.0.0.1", "localhost") and origin in ("", UI_ORIGIN) and self.headers.get("X-Vivarc") == "1"
+
+    def reply(self, status, body=b"", kind="application/json"):
+        self.send_response(status)
+        self.send_header("Content-Type", kind)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_POST(self):
+        path, _, query = self.path.partition("?")
+        if path != "/backup" or not self.from_ui():
+            self.send_error(404)
+            return
+        length = int(self.headers.get("Content-Length") or 0)
+        if length <= 0 or length > BACKUP_MAX_BYTES:
+            self.send_error(413)
+            return
+        name = urllib.parse.parse_qs(query).get("name", [""])[0]
+        try:
+            save_backup(name, self.rfile.read(length))
+        except (ValueError, OSError) as error:
+            self.reply(400, json.dumps({"error": str(error)}).encode("utf8"))
+            return
+        self.reply(200, b'{"ok": true}')
+
     def do_GET(self):
+        if self.path.split("?")[0] == "/backups" or self.path.startswith("/backups/"):
+            if not self.from_ui():
+                self.send_error(404)
+                return
+            if self.path.split("?")[0] == "/backups":
+                self.reply(200, json.dumps({"backups": list_backups()}).encode("utf8"))
+                return
+            name = urllib.parse.unquote(self.path[len("/backups/"):].split("?")[0])
+            path = os.path.join(BACKUP_DIR, name + ".json")
+            if not BACKUP_NAME.match(name) or name.startswith(".") or not os.path.isfile(path):
+                self.send_error(404)
+                return
+            with open(path, "rb") as handle:
+                self.reply(200, handle.read())
+            return
         if self.path.split("?")[0] == LITTLE_PATH:  # shown only if Vivarc is not running to catch it
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
