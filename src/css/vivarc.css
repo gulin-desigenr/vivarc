@@ -172,6 +172,24 @@
 #vm-panel .vm-row.active { background-color: color-mix(in srgb, var(--colorFg) 15%, transparent); color: var(--colorFg); font-weight: 500; }
 #vm-panel .vm-row.discarded { opacity: 0.6; }
 #vm-panel .vm-folder-head { font-weight: 500; }
+/* Open tabs inside a closed folder: a small count at the end of the folder's row (hidden while it is open). */
+#vm-panel .vm-folder-open-count {
+  flex: none;
+  margin-left: auto;
+  margin-right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+#vm-panel .vm-folder.open > .vm-folder-head > .vm-folder-open-count { display: none; }
 /* Like Vivaldi's tabs: a hovered or active tab is painted with its page's colour (10-sidebar.js sets
    --vm-tab-bg/--vm-tab-fg per origin, fg picked for contrast). Folders take the space's solid colour while the tab
    you are on is inside them (open or closed); otherwise their hover is the plain one (--vm-space-solid from 40-theme.js; Vivaldi's highlight colour without a space theme). */

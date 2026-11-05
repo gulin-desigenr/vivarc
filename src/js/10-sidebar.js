@@ -243,7 +243,10 @@
 
   const bindTabs = () => {
     if (!state.space) { state.bound = new Map(); return; }
-    const pins = [...(state.favs ? leaves(state.favs) : []), ...(state.pinned ? leaves(state.pinned) : [])]
+    // Only links the sidebar shows can own a tab: the favorites grid shows the top level of Favorites, so a link in
+    // a folder inside Favorites (never drawn) must not take a tab, or that tab would be shown nowhere.
+    const favTiles = state.favs ? state.favs.children.filter((c) => !c.children) : [];
+    const pins = [...favTiles, ...(state.pinned ? leaves(state.pinned) : [])]
       .map((n) => ({ id: n.id, url: n.url }));
     const allIds = state.folders.flatMap((f) => leaves(f)).map((n) => n.id);
     const { bound, writes } = pinLinks.plan(state.tabs, pins, allIds);
@@ -547,6 +550,13 @@
     const content = el("div", "vm-folder-content");
     node.children.forEach((c) => content.append(pinnedNode(c, depth + 1)));
     body.append(content);
+    // A closed folder with open tabs inside shows how many, so no open tab is ever out of sight.
+    const openInside = leaves(node).filter((n) => n.url && boundTab(n)).length;
+    if (openInside) {
+      const badge = el("span", "vm-folder-open-count", String(openInside));
+      badge.title = `${openInside} open ${openInside === 1 ? "tab" : "tabs"} inside`;
+      head.append(badge);
+    }
     const sync = () => {
       const open = openFolders.has(node.id);
       wrap.classList.toggle("open", open);
