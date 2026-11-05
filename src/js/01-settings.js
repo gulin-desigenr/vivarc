@@ -14,11 +14,15 @@
     { key: "searchSuggestions", label: "Search suggestions", hint: "Show DuckDuckGo suggestions in the command bar while you type.", default: true,
       fromConfig: (c) => (c.suggestions === undefined ? undefined : c.suggestions === "ddg") },
     { key: "arcWindowControls", label: "Window controls in the sidebar", hint: "Keep the red, yellow and green buttons in the sidebar's top row, like Arc, instead of a title bar that appears at the top edge.", default: true },
+    { key: "archiveAfter", type: "choice", default: 12, label: "Archive tabs automatically",
+      hint: "Like Arc: loose tabs you have not looked at for this long move to the archive (find them with \u201cView Archived Tabs\u201d). Pinned tabs, favorites, the open tab, tabs playing sound, stacks and split views stay.",
+      options: [[0, "Never"], [12, "After 12 hours"], [24, "After 1 day"], [168, "After 7 days"], [720, "After 30 days"]] },
     { key: "littleExternalLinks", label: "Little Vivarc for other apps", hint: "Open links clicked in other apps in a small, centred window instead of a new tab.", default: true },
   ];
 
   const resolve = (schema, config, saved) => Object.fromEntries(schema.map((s) => {
     const mine = saved?.[s.key];
+    if (s.type === "choice") return [s.key, s.options.some(([v]) => v === mine) ? mine : s.default];
     if (s.type === "range") {
       return [s.key, typeof mine === "number" && Number.isFinite(mine) ? Math.min(s.max, Math.max(s.min, Math.round(mine))) : s.default];
     }

@@ -52,6 +52,26 @@ class Archive(unittest.TestCase):
         self.assertEqual(run(f'archive.describe({{url: "https://www.a.com/x", spaceName: "Work", at: 0}}, {5 * m})'),
                          "a.com · Work · 5 min ago")
 
+    def test_automatic_archive_takes_only_stale_loose_pages(self):
+        h = 3600 * 1000
+        ids = run(f'''archive.due([
+          {{id: 1, url: "https://old.com", lastAccessed: 0}},
+          {{id: 2, url: "https://new.com", lastAccessed: {11 * h}}},
+          {{id: 3, url: "https://active.com", lastAccessed: 0, active: true}},
+          {{id: 4, url: "https://music.com", lastAccessed: 0, audible: true}},
+          {{id: 5, url: "https://pinned.com", lastAccessed: 0, pinned: true}},
+          {{id: 6, url: "https://kept.com", lastAccessed: 0}},
+          {{id: 7, url: "https://split.com", lastAccessed: 0, vivExtData: JSON.stringify({{tiling: {{id: "t"}}}})}},
+          {{id: 8, url: "https://stack.com", lastAccessed: 0, vivExtData: JSON.stringify({{group: "g"}})}},
+          {{id: 9, url: "vivaldi://settings", lastAccessed: 0}},
+          {{id: 10, url: "https://loading.com", lastAccessed: 0, status: "loading"}},
+        ], {{hours: 12, now: {13 * h}, keep: (t) => t.id === 6}}).map((t) => t.id)''')
+        self.assertEqual(ids, [1])
+        self.assertEqual(run('archive.due([{id: 1, url: "https://a.com", lastAccessed: 0}], {hours: 0, now: 1e12})'), [])
+        # a tab older than the feature gets a full period from when automatic archiving started
+        self.assertEqual(run(f'archive.due([{{id: 1, url: "https://a.com", lastAccessed: 0}}], {{hours: 12, now: {20 * h}, since: {10 * h}}}).length'), 0)
+        self.assertEqual(run(f'archive.due([{{id: 1, url: "https://a.com", lastAccessed: 0}}], {{hours: 12, now: {23 * h}, since: {10 * h}}}).length'), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

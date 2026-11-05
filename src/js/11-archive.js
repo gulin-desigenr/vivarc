@@ -109,6 +109,47 @@
     window.dispatchEvent(new CustomEvent("vm-archive-changed"));
   };
 
-  const api = { entry, add, remove, search, ago, describe, load, archiveTabs, restore, forget, busy: false };
+  // ---- automatic archive ----
+  // Which of a window's tabs are due: loose web pages not looked at for `hours`. Never the open tab, a pinned or
+  // favorite tab (keep), Chrome-pinned tabs, tabs playing sound, stacks or split views. lastAccessed survives a
+  // restart; `since` (when automatic archiving first ran in this profile) gives tabs older than the feature a full
+  // period of grace instead of archiving them all at once.
+  const due = (tabs, { hours, now = Date.now(), since = 0, keep = () => false }) => {
+    if (!hours) return [];
+    const limit = hours * 3600 * 1000;
+    return tabs.filter((t) => {
+      if (t.active || t.pinned || t.audible || !isPage(t) || t.status === "loading" || keep(t)) return false;
+      if (typeof t.lastAccessed !== "number" || now - Math.max(t.lastAccessed, since) < limit) return false;
+      let ext = {};
+      try { ext = JSON.parse(t.vivExtData || "{}"); } catch (_) {}
+      return !ext.tiling && !ext.group;
+    });
+  };
+
+  // Each window archives its own tabs (every window runs its own copy of the mod); Little Vivarc popups never.
+  const sweep = async () => {
+    const hours = window.__vm.settings?.get?.("archiveAfter");
+    if (!hours || window.vivaldiWindowId == null) return;
+    try {
+      const win = await chrome.windows.get(window.vivaldiWindowId);
+      if (win.type !== "normal") return;
+      const tabs = await chrome.tabs.query({ windowId: win.id });
+      const keep = window.__vm.isKeptTab || (() => true); // until the sidebar says which tabs are pinned, keep all
+      let since = await store.get("archiveSince", null);
+      if (since == null) { since = Date.now(); await store.set("archiveSince", since); }
+      const pages = due(tabs, { hours, since, keep });
+      if (!pages.length) return;
+      const count = await archiveTabs(pages, { quiet: true });
+      if (count) toast(count === 1 ? "Archived 1 tab you had not used for a while" : `Archived ${count} tabs you had not used for a while`);
+    } catch (error) {
+      console.warn("[vivarc] archive sweep:", error);
+    }
+  };
+  if (typeof chrome !== "undefined" && chrome.tabs) {
+    setTimeout(sweep, 60 * 1000);
+    setInterval(sweep, 5 * 60 * 1000);
+  }
+
+  const api = { entry, add, remove, search, ago, describe, due, sweep, load, archiveTabs, restore, forget, busy: false };
   window.__vm.archive = api;
 })();

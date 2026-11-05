@@ -41,8 +41,25 @@
     return line;
   };
 
+  const choiceRow = (item) => {
+    const line = el("label", "vm-set-row");
+    const text = el("div", "vm-set-text");
+    text.append(el("div", "vm-set-label", item.label), el("div", "vm-set-hint", item.hint));
+    const select = el("select", "vm-set-select");
+    for (const [value, label] of item.options) {
+      const option = el("option", null, label);
+      option.value = String(value);
+      select.append(option);
+    }
+    select.value = String(settings.get(item.key));
+    select.addEventListener("change", () => settings.set(item.key, Number(select.value)));
+    line.append(text, select);
+    return line;
+  };
+
   const row = (item) => {
     if (item.type === "range") return rangeRow(item);
+    if (item.type === "choice") return choiceRow(item);
     const line = el("label", "vm-set-row");
     const text = el("div", "vm-set-text");
     text.append(el("div", "vm-set-label", item.label), el("div", "vm-set-hint", item.hint));

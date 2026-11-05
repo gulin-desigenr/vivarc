@@ -844,6 +844,9 @@
   const spaceName = (id) => spacesOf.items(state.workspaces, state.defaultSpace ? spacesOf.label(state.defaultSpace) : "Home")
     .find((item) => item.id === id)?.name || "";
   window.__vm.spaceNameOf = spaceName;
+  // Tabs the automatic archive leaves alone: those bound to a pinned link or a favorite, in any space (state.bound
+  // covers the space on screen; the vivarcPin mark in vivExtData stays on the tab in the others).
+  window.__vm.isKeptTab = (tab) => [...state.bound.values()].some((t) => t.id === tab.id) || !!pinLinks.pinOf?.(tab);
   window.__vm.spaceExists = (id) => !id || !state.workspaces?.length || state.workspaces.some((w) => w.id === id);
 
   const spaceBar = () => {

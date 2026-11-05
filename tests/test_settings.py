@@ -15,7 +15,7 @@ def resolve(config=None, saved=None):
 @unittest.skipUnless(shutil.which("node"), "node is needed to test the sidebar's JavaScript")
 class Resolve(unittest.TestCase):
     def test_without_anything_saved_the_defaults_apply(self):
-        self.assertEqual(resolve(), {"sidebarWallpaper": True, "glass": False, "glassOpacity": 55, "spaceBar": True, "compactBottomBar": True, "searchSuggestions": True, "arcWindowControls": True, "littleExternalLinks": True})
+        self.assertEqual(resolve(), {"sidebarWallpaper": True, "glass": False, "glassOpacity": 55, "spaceBar": True, "compactBottomBar": True, "searchSuggestions": True, "arcWindowControls": True, "archiveAfter": 12, "littleExternalLinks": True})
 
     def test_the_install_config_sets_the_starting_point(self):
         values = resolve(config={"compactBottomBar": False, "suggestions": "off"})
@@ -74,6 +74,13 @@ class MarkerClasses(unittest.TestCase):
     def test_hiding_the_space_bar_is_a_class_while_it_is_off(self):
         self.assertTrue(self.classes({"spaceBar": False})["vm-no-space-bar"])
         self.assertFalse(self.classes({"spaceBar": True})["vm-no-space-bar"])
+
+    def test_archive_interval_is_one_of_its_choices(self):
+        self.assertEqual(resolve()["archiveAfter"], 12)
+        self.assertEqual(resolve(saved={"archiveAfter": 168})["archiveAfter"], 168)
+        self.assertEqual(resolve(saved={"archiveAfter": 0})["archiveAfter"], 0)
+        self.assertEqual(resolve(saved={"archiveAfter": 5})["archiveAfter"], 12)
+        self.assertEqual(resolve(saved={"archiveAfter": "24"})["archiveAfter"], 12)
 
 
 if __name__ == "__main__":
