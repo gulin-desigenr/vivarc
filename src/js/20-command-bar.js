@@ -149,7 +149,7 @@
       run: () => setMode(spacePicker()) },
     { label: "Pin Tab to Folder…", words: "pin folder bookmark save", tab: true, stay: true, when: () => (window.__vm.pinFolders?.() || []).length > 0,
       run: (tab) => setMode(folderPicker(tab)) },
-    { label: "Rename Tab…", words: "rename title name label", tab: true, stay: true, run: (tab) => setMode(renamePicker(tab)) },
+    { label: "Rename Tab…", words: "rename title name label", tab: true, stay: true, run: async (tab) => setMode(await renamePicker(tab)) },
     { label: "Back to Pinned Page", words: "pinned original reset home restore url", tab: true,
       when: (tab) => { const home = window.__vm.pins?.homeOf(tab); return !!home && !!window.__vm.pins.away(tab, home); },
       run: (tab) => chrome.tabs.update(tab.id, { url: window.__vm.pins.homeOf(tab) }) },
@@ -196,7 +196,16 @@
     pick: (text) => (window.__vm.pinFolders?.() || []).filter((f) => matchesText(text, f.title))
       .map((f) => ({ label: `${"\u2003".repeat(Math.max(0, f.depth - 1))}${f.title}`, sub: f.depth ? "Folder in Pinned" : "Top of Pinned",
         run: () => window.__vm.pinTabTo(tab, f.id).then(() => toast(`Pinned to ${f.title}`)) })) });
-  const renamePicker = (tab) => {
+  // A tab bound to a pinned link or a favorite shows the bookmark's name in the sidebar, so renaming it renames the
+  // bookmark (what the sidebar's own Rename does); any other tab gets a fixedTitle.
+  const renamePicker = async (tab) => {
+    const pin = window.__vm.pins?.pinOf(tab);
+    const bookmark = pin ? (await chrome.bookmarks.get(String(pin)).catch(() => []))[0] : null;
+    if (bookmark?.url) {
+      return { name: "Rename Tab", placeholder: bookmark.title || "New name…", initial: bookmark.title || "",
+        pick: (text) => text.trim() ? [{ label: `Rename to \u201c${text.trim()}\u201d`, sub: "Pinned tab",
+          run: () => chrome.bookmarks.update(bookmark.id, { title: text.trim().slice(0, 80) }) }] : [] };
+    }
     const fixed = (() => { try { return JSON.parse(tab.vivExtData || "{}").fixedTitle; } catch (_) { return ""; } })();
     return { name: "Rename Tab", placeholder: tab.title || "New name…", initial: fixed || tab.title || "",
       pick: (text) => [
@@ -574,8 +583,9 @@
   const openPicker = async (tabId, make) => {
     const tab = await chrome.tabs.get(tabId).catch(() => null);
     if (!tab) return;
+    const picker = await make(tab);
     open(null);
-    setMode(make(tab));
+    setMode(picker);
   };
   window.addEventListener("vm-rename-tab", (e) => openPicker(e.detail, renamePicker));
   window.addEventListener("vm-move-tab", (e) => openPicker(e.detail, moveToSpacePicker));
