@@ -476,13 +476,16 @@
 /* isolation makes the bar its own stacking context, painted under the page: lift it while the address bar or
    one of its popups (site permission requests) is open, or they are cut off at the sidebar's edge */
 #browser.vm-themed #tabs-tabbar-container:is(:focus-within, :has(.addressfield-popup-container)) { z-index: 1; }
-#browser.vm-themed #tabs-tabbar-container::after {
+/* The grain is a ::before, the bar's first box: Chromium lays draggable regions out in box order, later boxes
+   winning, so an overlay that is the bar's last box (::after) covered every drag region of the sidebar and the
+   window could not be moved in a themed space. First in order, it changes none of them. */
+#browser.vm-themed #tabs-tabbar-container::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  app-region: none; /* app-region is inherited: drawn last over the whole bar, it would undo the panel's no-drag */
+  app-region: none;
   background-image: var(--vm-noise);
   opacity: var(--vm-grain, 0.1);
   mix-blend-mode: overlay;
@@ -743,7 +746,7 @@
   backdrop-filter: none !important;
   color: var(--colorImageFg, var(--vm-fg, var(--colorFg)));
 }
-#browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #tabs-tabbar-container::after { display: none; }
+#browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #tabs-tabbar-container::before { display: none; }
 
 /* Separate the page from the wallpaper without changing its rounded corners. */
 #browser.vm-on.vm-sidebar-wallpaper:not(.fullscreen):not(.is-settingspage) #webpage-stack {
