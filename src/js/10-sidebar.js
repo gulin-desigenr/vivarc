@@ -549,6 +549,7 @@
     ["Copy All Links", () => copy(leaves(node).map((l) => l.url).join("\n"))],
     ["Open All in New Tabs", () => leaves(node).forEach((l) => chrome.tabs.create({ url: l.url, active: false }))],
     ["Duplicate", () => cloneTree(node, node.parentId, " copy")],
+    ["Convert to Stack", () => folderToStack(node)],
     [],
     ["Delete", () => discard(node), true],
   ]);
@@ -706,7 +707,32 @@
     collapsedStacks.delete(id);
     await unstack(tabs.map((t) => t.id));
     refresh(true);
-    window.dispatchEvent(new CustomEvent("vm-toast", { detail: `Saved as the pinned folder \u201c${title}\u201d` }));
+    window.dispatchEvent(new CustomEvent("vm-toast", { detail: {
+      message: `Saved as the pinned folder \u201c${title}\u201d`,
+      action: { label: "Undo", run: async () => folderToStack((await chrome.bookmarks.getSubTree(folder.id))[0]) },
+    } }));
+  };
+  // The way back, and for any pinned folder ("Convert to Stack"): every link becomes a tab (the open ones are
+  // reused, the others open in the background), the tabs form a stack named after the folder, and the folder goes
+  // to Vivaldi's bookmark trash, from where it can still be restored. No tab is closed.
+  const folderToStack = async (node) => {
+    if (!node?.children) return;
+    const links = leaves(node).filter((n) => n.url);
+    if (!links.length) return;
+    const tabs = [];
+    for (const link of links) {
+      const open = boundTab(link);
+      tabs.push(open || await chrome.tabs.create({ url: link.url, active: false }));
+    }
+    const ids = tabs.map((t) => t.id);
+    const { group } = (await vivaldi.tabsPrivate.move({ tabIds: ids, target: ids[0],
+      tweaks: ["do-not-reparent", "create-new-group"], debug: "Vivarc.folderToStack" })) || {};
+    if (group) await vivaldi.tabsPrivate.setGroupProperties({ groupExtId: group, groupTitle: node.title || undefined });
+    discard(node);
+    openFolders.delete(node.id);
+    saveOpen();
+    refresh(true);
+    window.dispatchEvent(new CustomEvent("vm-toast", { detail: `\u201c${node.title}\u201d is a stack again` }));
   };
   const tabStack = (id, tabs) => {
     const wrap = el("div", "vm-folder vm-tab-stack");
