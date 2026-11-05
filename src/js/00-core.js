@@ -52,7 +52,13 @@
     try { return JSON.parse(tab?.vivExtData || "{}").tiling; } catch (_) { return undefined; }
   };
 
-  window.__vm = { config, store, normalise, tilingOf, onShortcut: (fn) => subscribers.add(fn) };
+  // A tab renamed by the user (Vivaldi's own "Rename Tab", or Vivarc's) keeps its name as fixedTitle in vivExtData.
+  const titleOf = (tab) => {
+    try { const fixed = JSON.parse(tab?.vivExtData || "{}").fixedTitle; if (fixed) return fixed; } catch (_) {}
+    return tab?.title || tab?.url || "";
+  };
+
+  window.__vm = { config, store, normalise, tilingOf, titleOf, onShortcut: (fn) => subscribers.add(fn) };
 
   // Vivaldi re-renders #browser's class list, so the marker classes are re-applied whenever they go missing.
   const markListeners = new Set();

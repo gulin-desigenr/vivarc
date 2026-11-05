@@ -262,7 +262,25 @@
   window.__vm.pinTab = async (tab, kind) => {
     if (!state.space) return false;
     const parent = kind === "Favorites" ? await ensureFolder("Favorites") : (state.pinned || await ensureFolder("Pinned"));
-    await chrome.bookmarks.create({ parentId: parent.id, title: tab.title, url: tab.url });
+    await chrome.bookmarks.create({ parentId: parent.id, title: window.__vm.titleOf(tab), url: tab.url });
+    return true;
+  };
+  // The current space's pinned folders, for "Pin Tab to Folder" in the command bar: [{ id, title, depth }].
+  window.__vm.pinFolders = () => {
+    if (!state.space || !state.pinned) return [];
+    const out = [{ id: state.pinned.id, title: "Pinned", depth: 0 }];
+    const walk = (node, depth) => node.children?.forEach((c) => {
+      if (!c.children) return;
+      out.push({ id: c.id, title: c.title || "Untitled", depth });
+      walk(c, depth + 1);
+    });
+    walk(state.pinned, 1);
+    return out;
+  };
+  window.__vm.pinTabTo = async (tab, folderId) => {
+    await chrome.bookmarks.create({ parentId: folderId, title: window.__vm.titleOf(tab), url: tab.url });
+    openFolders.add(folderId);
+    saveOpen();
     return true;
   };
 
@@ -484,7 +502,7 @@
     row.append(iconEl(node.url, away ? undefined : tab?.favIconUrl));
     tintRow(row, away ? tab.url : node.url);
     if (away) row.append(el("span", "vm-away-mark", "/"));
-    const title = el("span", "vm-title", away ? (tab.title || tab.url) : (node.title || node.url));
+    const title = el("span", "vm-title", away ? window.__vm.titleOf(tab) : (node.title || node.url));
     row.append(title);
     if (away) row.append(actionButton("↩", "Back to pinned page", () => backToPin(tab, node)));
     if (!tab) row.append(actionButton("×", "Remove from Pinned", () => discard(node)));
@@ -631,7 +649,7 @@
     if (tab.active) row.classList.add("active");
     if (tab.discarded) row.classList.add("discarded");
     row.title = tab.url;
-    row.append(iconEl(tab.url, tab.favIconUrl), el("span", "vm-title", tab.title || tab.url));
+    row.append(iconEl(tab.url, tab.favIconUrl), el("span", "vm-title", window.__vm.titleOf(tab)));
     tintRow(row, tab.url);
     if (window.__vm.tilingOf(tab)) row.append(el("span", "vm-split-mark", "◫"));
     row.append(actionButton("×", "Close tab", () => chrome.tabs.remove(tab.id)));
@@ -651,11 +669,13 @@
     row.addEventListener("contextmenu", (e) => showMenu(e, [
       ...(state.space ? [
         ["Pin Tab", async () => chrome.bookmarks.create({
-          parentId: (state.pinned || await ensureFolder("Pinned")).id, title: tab.title, url: tab.url })],
+          parentId: (state.pinned || await ensureFolder("Pinned")).id, title: window.__vm.titleOf(tab), url: tab.url })],
         ["Add to Favorites", async () => chrome.bookmarks.create({
-          parentId: (await ensureFolder("Favorites")).id, title: tab.title, url: tab.url })],
+          parentId: (await ensureFolder("Favorites")).id, title: window.__vm.titleOf(tab), url: tab.url })],
         [],
       ] : []),
+      ["Rename Tab…", () => window.dispatchEvent(new CustomEvent("vm-rename-tab", { detail: tab.id }))],
+      ["Move to Space…", () => window.dispatchEvent(new CustomEvent("vm-move-tab", { detail: tab.id }))],
       ["Duplicate Tab", () => chrome.tabs.duplicate(tab.id)],
       ["Copy Link", () => copy(tab.url)],
       [],
@@ -789,6 +809,31 @@
       }
     }
   };
+
+  // Vivaldi 8.3 moves a tab between workspaces only with tabsPrivate.move (what its "Move to Workspace" menu does),
+  // and only into a workspace already open in the window: an empty one is opened first (Vivaldi adds a blank tab
+  // there, closed again). The moved tab becomes active, so you land in its new space, like Arc.
+  const moveTabToSpace = async (tabId, id) => {
+    const tab = await chrome.tabs.get(tabId);
+    if (spacesOf.of(tab) === id) return;
+    const windowId = tab.windowId;
+    let blank = null;
+    if (!spacesOf.tabsIn(await chrome.tabs.query({ windowId }), id).length) {
+      const activate = spacesOf.findSwitcher(chrome.extension.getBackgroundPage?.()?.webpackChunkgapp_browser_react);
+      if (!activate) throw new Error("no workspace switcher");
+      window.__vm.switchingSpace = true;
+      try { await activate(windowId, id); } finally { window.__vm.switchingSpace = false; }
+      const [active] = await chrome.tabs.query({ active: true, windowId });
+      if (active && active.id !== tab.id && spacesOf.of(active) === id && BLANK.test(active.pendingUrl || active.url || "")) blank = active;
+    }
+    await vivaldi.tabsPrivate.move({ tabIds: [tab.id], target: "last", tweaks: ["do-not-reparent"], workspaceId: id || "window" });
+    await chrome.tabs.update(tab.id, { active: true });
+    if (blank) await chrome.tabs.remove(blank.id).catch(() => {});
+  };
+  window.__vm.moveTabToSpace = moveTabToSpace;
+  window.__vm.spaceList = () => spacesOf.items(state.workspaces, state.defaultSpace ? spacesOf.label(state.defaultSpace) : "Home")
+    .map((item) => ({ ...item, active: item.id === state.active }));
+  window.__vm.switchToSpace = (id) => switchSpace({ id });
 
   const spacePill = (item) => {
     const pill = el("div", `vm-space-pill${item.id === state.active ? " active" : ""}`, item.emoji || item.name.trim().charAt(0).toUpperCase() || "?");
