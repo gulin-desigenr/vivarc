@@ -153,6 +153,7 @@
     { label: "Back to Pinned Page", words: "pinned original reset home restore url", tab: true,
       when: (tab) => { const home = window.__vm.pins?.homeOf(tab); return !!home && !!window.__vm.pins.away(tab, home); },
       run: (tab) => chrome.tabs.update(tab.id, { url: window.__vm.pins.homeOf(tab) }) },
+    { label: "Tidy Tabs", words: "tidy organize group sort stacks clean arrange", run: () => window.__vm.tidyTabs?.() },
     { label: "Archive Tab", words: "archive clear close save later", tab: true, run: (tab) => window.__vm.archive?.archiveTabs([tab]) },
     { label: "View Archived Tabs", words: "archive archived restore history closed", stay: true, run: () => setMode(ARCHIVE) },
     { label: "Reopen Closed Tab", words: "restore undo", run: () => chrome.sessions.restore() },

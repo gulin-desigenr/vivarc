@@ -676,6 +676,48 @@
     }
   };
   const stacking = new Map();
+
+  // ---- Tidy Tabs ----
+  const tidyTabs = async () => {
+    const tabs = await chrome.tabs.query({ windowId: window.vivaldiWindowId });
+    const here = spacesOf.tabsIn(tabs, state.active);
+    const taken = new Set([...state.bound.values()].map((t) => t.id));
+    const loose = here.filter((t) => !t.pinned && !taken.has(t.id) && !tabStackId(t) && !BLANK.test(t.url || ""));
+    const byGroup = new Map();
+    for (const t of here) { const g = tabStackId(t); if (g) { if (!byGroup.has(g)) byGroup.set(g, []); byGroup.get(g).push(t); } }
+    const tidy = window.__vm.tidy;
+    const stacks = [...byGroup.entries()].map(([group, members]) => {
+      const name = stackName(members);
+      return { group, name, first: members[0].id, hosts: [...new Set(members.map((t) => tidy.hostOf(t.url)).filter(Boolean))],
+        words: name ? tidy.words(name, "") : [] };
+    });
+    const { create, join } = tidy.plan(loose, stacks);
+    if (!create.length && !join.length) {
+      window.dispatchEvent(new CustomEvent("vm-toast", { detail: "Nothing to tidy: no tabs that go together" }));
+      return;
+    }
+    const moved = [];
+    for (const { ids, name } of create) {
+      const { group } = (await vivaldi.tabsPrivate.move({ tabIds: ids, target: ids[0],
+        tweaks: ["do-not-reparent", "create-new-group"], debug: "Vivarc.tidy" })) || {};
+      if (group) await vivaldi.tabsPrivate.setGroupProperties({ groupExtId: group, groupTitle: name });
+      moved.push(...ids);
+    }
+    for (const { group, ids } of join) {
+      const target = stacks.find((st) => st.group === group)?.first;
+      if (target == null) continue;
+      await vivaldi.tabsPrivate.move({ tabIds: ids, target, tweaks: ["do-not-reparent", "into"], debug: "Vivarc.tidy" });
+      moved.push(...ids);
+    }
+    refresh(false);
+    const made = create.length, joined = join.reduce((n, j) => n + j.ids.length, 0);
+    const parts = [made ? `${made} new ${made === 1 ? "stack" : "stacks"}` : "", joined ? `${joined} ${joined === 1 ? "tab" : "tabs"} into existing stacks` : ""].filter(Boolean);
+    window.dispatchEvent(new CustomEvent("vm-toast", { detail: {
+      message: `Tidied: ${parts.join(", ")}`,
+      action: { label: "Undo", run: () => unstack(moved) },
+    } }));
+  };
+  window.__vm.tidyTabs = tidyTabs;
   // Out of a stack, as Vivaldi's own "Remove from Tab Stack" does (the tab goes to the end of the list), and into one.
   const unstack = async (tabIds) => {
     await vivaldi.tabsPrivate.move({ tabIds, target: "last", tweaks: ["ungroup"], debug: "Vivarc.unstack" });
@@ -1162,7 +1204,11 @@
       if (others.length) chrome.tabs.remove(others.map((t) => t.id));
       if (pages.length) await window.__vm.archive.archiveTabs(pages);
     });
-    divider.append(clear);
+    // Tidy, like Arc's broom: the loose tabs sorted into named stacks (12-tidy.js), with Undo.
+    const tidyButton = el("span", "vm-clear vm-tidy", "Tidy");
+    tidyButton.title = "Group these tabs into stacks";
+    tidyButton.addEventListener("click", () => tidyTabs());
+    divider.append(tidyButton, clear);
     wireDrop(divider, { accept: isBookmark, onDrop: (_zone, data) => unpin(data) });
     body.append(divider);
     const fresh = el("div", "vm-row vm-newtab");

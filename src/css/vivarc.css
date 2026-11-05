@@ -307,6 +307,7 @@
   transition: opacity 120ms;
 }
 #vm-panel .vm-divider:hover .vm-clear { opacity: 0.7; }
+#vm-panel .vm-tidy { order: 1; margin-right: -4px; }
 #vm-panel .vm-clear:hover { opacity: 1; background-color: color-mix(in srgb, var(--colorFg) 14%, transparent); }
 #vm-panel .vm-newtab { opacity: 0.55; }
 #vm-panel .vm-plus { display: flex; justify-content: center; width: 18px; font-size: 18px; line-height: 1; }
