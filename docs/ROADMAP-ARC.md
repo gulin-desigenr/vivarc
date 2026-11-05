@@ -23,6 +23,10 @@ Pesquisa e prioridades registradas em 4 de novembro de 2026 para o fork pessoal.
 3. **Personalização de spaces:** gradientes, combinação com papel de parede e melhor acesso a nome, ícone e ordem dos spaces. Verificar funções nativas de [Workspaces do Vivaldi](https://help.vivaldi.com/desktop/tabs/workspaces/).
 4. **Tradução para português:** interface do Vivarc em pt-BR (command bar, menus, ajustes, avisos, Little Vivarc), seguindo o idioma do Vivaldi e mantendo o inglês como fallback. Hoje todos os textos estão em inglês dentro dos módulos; centralizar as strings antes de traduzir.
 
+## Ideias guardadas
+
+- **Pilha com a aba de origem como linha do grupo** (ramo `design/stack-tab-header`, commit `7e1b555`): a primeira aba da pilha é a própria linha, com "2 ›" no fim para dobrar, e as outras recuadas embaixo. Ficou guardada; a versão em uso (título que só dobra, origem dentro, Save as Pinned Folder) é a atual. Pode virar um ajuste para escolher o estilo.
+
 ## Usar o que já existe
 
 O Vivaldi oferece [Picture-in-Picture](https://help.vivaldi.com/desktop/media/pop-out-video/), [regras de workspace](https://help.vivaldi.com/desktop/tabs/workspaces/), [abas inativas](https://help.vivaldi.com/desktop/tabs/window-panel/) e [Quick Commands](https://help.vivaldi.com/desktop/shortcuts/quick-commands/). Confirmar disponibilidade e integração na versão instalada antes de planejar uma solução própria.
