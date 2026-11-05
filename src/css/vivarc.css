@@ -779,7 +779,7 @@
 }
 
 /* Command palette: neutral surfaces follow Vivaldi's light/dark theme, independently of each space tint. */
-#browser.vm-on #vm-cmd {
+#browser.vm-on :is(#vm-cmd, .dialog-javascript) {
   --cmd-surface: #fafbfc;
   --cmd-text: #20242b;
   --cmd-muted: #5f6672;
@@ -787,7 +787,7 @@
   --cmd-selected: #dfedfb;
   --cmd-shadow: 0 20px 60px rgba(20, 28, 38, .28), 0 2px 8px rgba(20, 28, 38, .12);
 }
-#browser.vm-on.theme-dark #vm-cmd {
+#browser.vm-on.theme-dark :is(#vm-cmd, .dialog-javascript) {
   --cmd-surface: #24262d;
   --cmd-text: #f1f2f4;
   --cmd-muted: #b3b9c3;
@@ -855,6 +855,91 @@
 #browser.vm-on #vm-cmd .vm-cmd-empty { padding: 18px 12px; color: var(--cmd-muted); font-size: clamp(13px, min(.677vw, 1.204vh), 18.2px); }
 #browser.vm-on #vm-cmd .vm-cmd-shortcut { display: flex; align-items: center; gap: 5px; }
 #browser.vm-on #vm-cmd kbd { padding: 1px 5px; border: 1px solid var(--cmd-line); border-radius: 4px; color: var(--cmd-muted); font: inherit; }
+
+/* Page dialogs (JavaScript alert, confirm and prompt): the command bar's card instead of Vivaldi's sheet. The site
+   is a quiet caption, the message reads first, and the buttons are rounded pills with the default one filled. */
+/* Centred in the page: Vivaldi pins the sheet to the top; top/bottom 0 with auto margins centre it vertically
+   without a transform, which the slide-in animation uses. */
+#browser.vm-on .dialog-javascript {
+  width: min(420px, calc(100vw - 32px)) !important;
+  height: fit-content;
+  inset: 0 !important;
+  margin: auto !important;
+}
+#browser.vm-on .dialog-javascript .modal-wrapper {
+  overflow: hidden;
+  padding: 18px 20px 16px;
+  border: 1px solid var(--cmd-line);
+  border-radius: 13px;
+  background: var(--cmd-surface);
+  color: var(--cmd-text);
+  box-shadow: var(--cmd-shadow);
+  font-size: 14px;
+}
+#browser.vm-on .dialog-javascript .dialog-header { padding: 0; margin: 0 0 6px; border: 0; background: none; }
+#browser.vm-on .dialog-javascript .dialog-title {
+  margin: 0;
+  color: var(--cmd-muted);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#browser.vm-on .dialog-javascript .dialog-content { padding: 0; margin: 0; background: none; }
+#browser.vm-on .dialog-javascript .dialog-content p { margin: 0; color: var(--cmd-text); font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+#browser.vm-on .dialog-javascript .dialog-content input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  height: 32px;
+  margin-top: 10px;
+  padding: 0 10px;
+  border: 1px solid var(--cmd-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cmd-text);
+  font: inherit;
+  outline: none;
+}
+#browser.vm-on .dialog-javascript .dialog-content input[type="text"]:focus { border-color: var(--colorHighlightBg, #5d7aee); }
+#browser.vm-on .dialog-javascript .dialog-footer {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+#browser.vm-on .dialog-javascript .dialog-footer input {
+  min-width: 76px;
+  height: 30px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid var(--cmd-line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cmd-text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-color 120ms, filter 120ms;
+}
+#browser.vm-on .dialog-javascript .dialog-footer input:hover { background: color-mix(in srgb, var(--cmd-text) 7%, transparent); }
+#browser.vm-on .dialog-javascript .dialog-footer input[type="submit"] {
+  border-color: transparent;
+  background: var(--colorHighlightBg, #5d7aee);
+  color: var(--colorHighlightFg, #fff);
+}
+#browser.vm-on .dialog-javascript .dialog-footer input[type="submit"]:hover { filter: brightness(1.08); }
+/* The default button is already filled, so focus draws no ring on it (Vivaldi focuses it on open); the other
+   button shows a ring only when reached with the keyboard. */
+#browser.vm-on .dialog-javascript .dialog-footer input:is(:focus, :focus-visible) { outline: none; }
+#browser.vm-on .dialog-javascript .dialog-footer input[type="button"]:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--colorHighlightBg, #5d7aee) 35%, transparent); }
+#browser.vm-on .dialog-javascript .dialog-footer label { margin-right: auto; color: var(--cmd-muted); font-size: 12px; }
 
 /* Little Vivarc: its own bar in the title bar (back, forward, reload, address, Open in Vivarc); Vivaldi's page title
    and its read-only address row are hidden. The native traffic lights keep the left 78px. */
