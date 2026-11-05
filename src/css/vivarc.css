@@ -176,14 +176,15 @@
    --vm-tab-bg/--vm-tab-fg per origin, fg picked for contrast). Folders take the space's solid colour when hovered
    or open (--vm-space-solid from 40-theme.js; Vivaldi's highlight colour without a space theme). */
 #vm-panel .vm-row { transition: background-color 120ms, color 120ms; }
-#vm-panel .vm-row.vm-tinted:hover,
-#vm-panel .vm-row.vm-tinted.active { background-color: var(--vm-tab-bg); color: var(--vm-tab-fg); opacity: 1; }
+/* #browser and doubled classes: these must win over the space ink (#browser.vm-themed #vm-panel .vm-row). */
+#browser.vm-on #vm-panel .vm-row.vm-tinted.vm-tinted:hover,
+#browser.vm-on #vm-panel .vm-row.vm-tinted.vm-tinted.active { background-color: var(--vm-tab-bg); color: var(--vm-tab-fg); opacity: 1; }
 /* Favorites too; doubled class to win over the themed, glass and wallpaper tile backgrounds. */
 #browser.vm-on #vm-panel .vm-fav.vm-tinted.vm-tinted:is(:hover, .active) { background: var(--vm-tab-bg); outline-color: transparent; }
 #vm-panel :is(.vm-row, .vm-fav).vm-ico-invert:is(:hover, .active) .vm-ico img { filter: invert(1); }
 #vm-panel :is(.vm-row, .vm-fav).vm-ico-tile:is(:hover, .active) .vm-ico { border-radius: 5px; background: #fff; box-shadow: 0 0 0 2px #fff; }
-#vm-panel .vm-folder > .vm-folder-head:not(.vm-stack-head):hover,
-#vm-panel .vm-folder.open > .vm-folder-head:not(.vm-stack-head) {
+#browser.vm-on #vm-panel .vm-folder > .vm-folder-head:not(.vm-stack-head):hover,
+#browser.vm-on #vm-panel .vm-folder.open > .vm-folder-head:not(.vm-stack-head) {
   background-color: var(--vm-space-solid, var(--colorHighlightBg));
   color: var(--vm-space-solid-fg, var(--colorHighlightFg, #fff));
 }
