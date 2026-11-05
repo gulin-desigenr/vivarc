@@ -473,8 +473,17 @@
       if (id !== seq) return;
       const prefix = matches.find((m) => hostOf(m.url).startsWith(needle));
       const searchRow = { type: "search", engine: DEFAULT, query: text, label: text };
-      if (looksLikeUrl(text)) out.push({ type: "url", url: toUrl(text), label: text, sub: "Open" });
-      if (prefix) out.push(prefix);
+      // An address that is already open in a tab: Switch to Tab first, then a row that opens it again in a new
+      // tab (Arc offers both). Otherwise the typed address comes first.
+      const openTab = prefix?.type === "tab" ? prefix : null;
+      const address = looksLikeUrl(text) ? text : openTab ? hostOf(openTab.url) : "";
+      const urlRow = address && { type: "url", url: toUrl(address), label: address,
+        sub: openTab && !editing ? "Open in New Tab" : "Open" };
+      if (openTab) out.push(openTab, ...(urlRow ? [urlRow] : []));
+      else {
+        if (urlRow) out.push(urlRow);
+        if (prefix) out.push(prefix);
+      }
       // An action named by what is typed ("archived", "split") comes before the web search, like Arc's commands.
       const actions = needle.length > 1 ? await matchingActions(needle) : [];
       const named = needle.length >= 4 && !looksLikeUrl(text)
@@ -527,6 +536,7 @@
     if (host && input.value === text) {
       input.value = host;
       input.setSelectionRange(text.length, host.length);
+      compute(); // the rows follow the completed address (its "Open in New Tab" row, for one)
     }
   };
 
