@@ -9,7 +9,7 @@
 }
 
 #browser.vm-hide-workspaces #tabs-tabbar-container .button-toolbar.workspace-popup { display: none; }
-#browser.vm-no-space-bar #vm-panel .vm-space-bar { display: none; }
+#browser.vm-no-space-bar .vm-space-bar { display: none; }
 #browser.vm-on #tabs-container > .vm-strip-hidden { display: none !important; }
 /* The custom sidebar renders native stacks; suppress Vivaldi’s second strip. */
 #browser.vm-on #tabs-subcontainer { display: none !important; }
@@ -30,6 +30,10 @@
   background: color-mix(in srgb, var(--vm-address-fg) 10%, transparent);
   color: var(--vm-address-fg);
 }
+/* Vivaldi 8.3 wraps the top toolbar's buttons in .tabbar-nested-buttons and stacks the toolbar in a column of fixed
+   height, so the address field overlapped the favorites. Flatten the wrapper and wrap the toolbar again in rows. */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before:has(> .tabbar-nested-buttons) { flex-direction: row; flex-wrap: wrap; align-items: center; height: auto; }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before > .tabbar-nested-buttons { display: contents; }
 #browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField:focus-within {
   background: color-mix(in srgb, var(--vm-address-fg) 16%, transparent);
 }
@@ -73,9 +77,9 @@
 #vm-panel .vm-favs {
   flex: none;
   display: grid;
-  /* Tiles shrink down to 72px before the grid drops a column */
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: 8px;
+  /* Compact tiles like Dia's: about five to a row in a default-width sidebar, down to 52px before a column drops */
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 6px;
   margin: 0;
   padding: 0 0 8px;
 }
@@ -83,8 +87,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 44px;
-  border-radius: 14px;
+  height: 38px;
+  border-radius: 10px;
   cursor: pointer;
   background-color: color-mix(in srgb, var(--colorFg) 10%, transparent);
   transition: background-color 120ms, transform 120ms;
@@ -92,31 +96,53 @@
 #vm-panel .vm-fav:hover { background-color: color-mix(in srgb, var(--colorFg) 17%, transparent); }
 #vm-panel .vm-fav:active { transform: scale(0.96); }
 #vm-panel .vm-fav.active { background-color: color-mix(in srgb, var(--colorFg) 24%, transparent); }
-#vm-panel .vm-fav .vm-ico { width: 24px; height: 24px; border-radius: 6px; }
+#vm-panel .vm-fav .vm-ico { width: 18px; height: 18px; border-radius: 4px; }
 
-#vm-panel .vm-space-bar {
-  flex: none;
+/* Space switcher: dots centred in the sidebar's bottom toolbar, like Dia. The name shows on hover (title). */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-after { position: relative; }
+#browser.vm-on .toolbar-tabbar-after > .vm-space-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 0; /* set by placeSpaceBar to the centre of the toolbar's button row */
+  height: 18px;
+  transform: translate(-50%, 50%);
+  z-index: 1;
   display: flex;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 0 2px;
+  align-items: center;
+  gap: 0;
+  app-region: no-drag;
 }
-#vm-panel .vm-space-pill {
+#browser.vm-on .vm-space-bar .vm-space-pill {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 28px;
-  border-radius: 9px;
-  font-size: 15px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 0;
+  color: transparent;
   cursor: pointer;
-  opacity: 0.7;
-  background-color: color-mix(in srgb, var(--colorFg) 9%, transparent);
-  transition: background-color 120ms, opacity 120ms;
+  opacity: 1;
+  background: none !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
-#vm-panel .vm-space-pill:hover { opacity: 1; background-color: color-mix(in srgb, var(--colorFg) 16%, transparent); }
-#vm-panel .vm-space-pill.active { opacity: 1; cursor: default; background-color: color-mix(in srgb, var(--colorFg) 26%, transparent); }
-#vm-panel .vm-space-plus { font-size: 17px; line-height: 1; opacity: 0.5; }
+#browser.vm-on .vm-space-bar .vm-space-pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--colorFg) 30%, transparent);
+  transition: background-color 120ms, transform 160ms;
+}
+#browser.vm-on .vm-space-bar .vm-space-pill:hover::before { background-color: color-mix(in srgb, var(--colorFg) 60%, transparent); transform: scale(1.2); }
+#browser.vm-on .vm-space-bar .vm-space-pill.active { cursor: default; }
+#browser.vm-on .vm-space-bar .vm-space-pill.active::before { background-color: color-mix(in srgb, var(--colorFg) 88%, transparent); transform: none; }
+/* "+" stays available but quiet, the size of a dot. */
+#browser.vm-on .vm-space-bar .vm-space-pill.vm-space-plus { margin-left: 2px; font-size: 13px; line-height: 1; color: var(--colorFg); opacity: 0.35; }
+#browser.vm-on .vm-space-bar .vm-space-pill.vm-space-plus::before { content: none; }
+#browser.vm-on .vm-space-bar .vm-space-pill.vm-space-plus:hover { opacity: 0.8; }
 #vm-panel .vm-space {
   padding: 8px 8px 6px;
   font-size: 12.5px;
@@ -390,16 +416,16 @@
 #vm-panel .vm-favs:empty { display: none; }
 #browser.vm-dragging #vm-panel .vm-favs:empty {
   display: grid;
-  min-height: 44px;
+  min-height: 38px;
   margin-bottom: 8px;
   border: 1px dashed color-mix(in srgb, var(--colorFg) 30%, transparent);
-  border-radius: 14px;
+  border-radius: 10px;
 }
 #vm-panel .vm-favs.drop-before, #vm-panel .vm-favs.drop-after {
   box-shadow: none;
   outline: 2px dashed var(--colorHighlightBg, #7b8cff);
   outline-offset: -2px;
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 /* Theme editor (40-theme.js) */
@@ -871,6 +897,18 @@
   > .button-toolbar:has(> [data-name="Forward"]) { order: 3; }
   > .button-toolbar:has(> [data-name="Reload"]) { order: 4; }
   > .UrlBar-AddressField { order: 5; }
+  > .toolbar-extensions { order: 6; flex: 1 0 100%; display: flex; flex-wrap: wrap; justify-content: flex-start; padding: 0 4px; }
+  > .toolbar-extensions:empty { display: none; }
+}
+/* The same rows on Vivaldi 8.3, where these buttons sit inside .tabbar-nested-buttons. */
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc, .fullscreen) #tabs-tabbar-container.left .toolbar-tabbar-before > .tabbar-nested-buttons > :first-child {
+  margin-left: var(--vm-traffic-lights, 76px);
+}
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-before > .tabbar-nested-buttons {
+  > .toolbar-spacer-flexible { order: 1; }
+  > .button-toolbar:has(> [data-name="Back"]) { order: 2; }
+  > .button-toolbar:has(> [data-name="Forward"]) { order: 3; }
+  > .button-toolbar:has(> [data-name="Reload"]) { order: 4; }
   > .toolbar-extensions { order: 6; flex: 1 0 100%; display: flex; flex-wrap: wrap; justify-content: flex-start; padding: 0 4px; }
   > .toolbar-extensions:empty { display: none; }
 }

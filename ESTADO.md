@@ -1,6 +1,6 @@
 # Estado do Vivarc
 
-Atualizado em 30/10/2026.
+Atualizado em 05/11/2026 (Vivaldi 8.3.4191.26).
 
 ## Projeto e instalação
 
@@ -30,6 +30,7 @@ Atualizado em 30/10/2026.
 - Semáforo no estilo do Arc (`src/js/09-window-controls.js`, ajuste "Window controls in the sidebar"): com abas na lateral e barra de endereço oculta, o Vivaldi põe os botões numa barra de título que o auto-hide só mostra no topo. O Vivarc esconde o `#header` e a cópia de `#titlebar` que o auto-hide mostra em `.auto-hide-wrapper.top` ao encostar no topo, e força `windowPrivate.setControlButtonsPosition(..., "mediumPadding")`; como parte das chamadas do Vivaldi não passa pelo wrapper, a posição é reafirmada em foco, resize, ponteiro no topo e a cada 2 s. Linha 1 da barra lateral: semáforo, menu de abas, voltar, avançar, recarregar; linha 2: endereço; linha 3: extensões (ordem por CSS). Com um tema de space, a moldura da janela (faixa sob a barra lateral e cantos) usa a mesma cor (`--vm-tint` no `#browser`).
 - Barra do Little Vivarc no lugar do título: voltar, avançar, recarregar, endereço editável (URL ou busca no buscador padrão do Vivaldi via `vivaldi.searchEngines`; `chrome.search` não existe na UI) e "Open in Vivarc". Comando "New Little Vivarc" abre em branco com o endereço em foco; "Open Page in Little Vivarc" leva a página atual. O Vivaldi reescreve as classes de `#browser`, então `vm-little-arc` é recolocada a cada `onMark`.
 - Atalho global ⌥⌘N (como o Little Arc), registrado pelo helper com Carbon `RegisterEventHotKey` (não pede permissão de Acessibilidade). O helper abre `http://127.0.0.1:47391/little/new` no Vivaldi e o Vivarc troca essa aba por um Little Vivarc em branco com o endereço em foco; com o Vivaldi fechado, o helper o abre e espera 5 s antes. Como é global, o atalho tem prioridade sobre o ⌥⌘N de outros apps (ex.: "Nova Pasta Inteligente" do Finder). `install_pointer_helper` repete o `bootstrap` porque o `bootout` termina de forma assíncrona.
+- Favoritos fixados compactos como no Dia (38 px de altura, mínimo de 52 px, ícone de 18 px). O seletor de spaces virou bolinhas centralizadas na barra inferior (`.toolbar-tabbar-after`), alinhadas ao botão de perfil; o nome do space aparece no hover e o "+" continua no fim. Como essa barra fica fora do `#vm-panel`, ela recebe as mesmas proteções (sem duplo clique virando aba, sem região de arrastar, sem re-render durante o clique) e `place()` a recoloca quando o Vivaldi redesenha a barra. A posição é medida da borda inferior (a barra cresce para cima depois de carregar) e, a partir do Vivaldi 8.3, os botões (de baixo e de cima) ficam dentro de `.tabbar-nested-buttons`; no topo o Vivarc achata esse wrapper (`display: contents`) e volta a barra para linhas, senão o endereço sobrepõe os favoritos.
 
 ## Verificação
 

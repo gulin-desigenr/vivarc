@@ -706,6 +706,32 @@
     refresh(false);
   };
 
+  // The space dots live in the bottom toolbar, centred between the profile and downloads buttons, like Dia.
+  // That toolbar is outside the panel, so it needs the panel's own guards: no double-click new tab, no drag
+  // region, and no re-render between mousedown and mouseup.
+  let spaceBarEl = null;
+  const placeSpaceBar = (bar = spaceBarEl) => {
+    if (bar !== spaceBarEl) {
+      spaceBarEl?.remove();
+      spaceBarEl = bar;
+      bar?.addEventListener("dblclick", (e) => e.stopPropagation());
+      bar?.addEventListener("pointerdown", () => { pressing = true; }, true);
+    }
+    const toolbar = document.querySelector("#tabs-tabbar-container .toolbar-tabbar-after");
+    if (!bar || !toolbar) return;
+    if (bar.parentElement !== toolbar) toolbar.append(bar); // Vivaldi re-renders this toolbar; place() puts the bar back
+    // The toolbar stretches up to fill the sidebar and keeps growing after load: centre the dots on its buttons'
+    // row (the profile button), measured from the bottom edge, which stays put while the toolbar grows.
+    // Vivaldi 8.3 wraps the bottom buttons in .tabbar-nested-buttons; earlier versions put them directly in the toolbar.
+    const button = [...toolbar.querySelectorAll(".tabbar-nested-buttons, .button-toolbar:not(.toolbar-spacer-flexible)")]
+      .filter((c) => c.offsetHeight && !bar.contains(c)).at(-1);
+    if (button) {
+      const box = button.getBoundingClientRect();
+      const bottom = toolbar.getBoundingClientRect().bottom - box.top - box.height / 2;
+      if (bar.style.bottom !== `${bottom}px`) bar.style.bottom = `${bottom}px`;
+    }
+  };
+
   const spaceBar = () => {
     const items = spacesOf.items(state.workspaces, state.defaultSpace ? spacesOf.label(state.defaultSpace) : "Home");
     if (!items.length) return null;
@@ -783,8 +809,8 @@
     ];
     entries.sort((a, b) => b.index - a.index).forEach((entry) => body.append(entry.node()));
 
-    const bar = spaceBar();
-    panel.replaceChildren(...(grid ? [grid] : []), body, ...(bar ? [bar] : []));
+    panel.replaceChildren(...(grid ? [grid] : []), body);
+    placeSpaceBar(spaceBar());
     body.scrollTop = scroll;
     fitHeight();
     if (renderedSpace !== null && renderedSpace !== state.active) animateSpaceChange();
@@ -966,6 +992,7 @@
     }
     anchor.classList.add("vm-strip-hidden");
     placeProfileBar();
+    placeSpaceBar();
     fitHeight();
     if (panel.parentElement !== container || panel.nextElementSibling !== anchor) {
       container.insertBefore(panel, anchor);
