@@ -251,6 +251,7 @@
   let selected = 0;
   let seq = 0;
   let autoCompleted = false;
+  let editing = false; // opened by Cmd+L on the current page: Enter navigates that page, nothing is closed
 
   const iconFor = (url, favicon) => {
     const wrap = el("span", "vm-cmd-ico");
@@ -274,9 +275,10 @@
   };
 
   const close = (removeBlank) => {
-    const blank = targetTab;
+    const blank = editing ? null : targetTab; // editing: the target is the page you are on, never closed
     bar?.remove();
     bar = input = list = chipHolder = targetTab = mode = null;
+    editing = false;
     rows = [];
     seq++;
     if (removeBlank && blank != null) chrome.tabs.remove(blank).catch(() => {});
@@ -392,6 +394,7 @@
     (await chrome.tabs.query({ currentWindow: true })).filter((t) => !isBlank(t) && t.id !== targetTab);
 
   const pageBehindBar = async () => {
+    if (editing && targetTab != null) return chrome.tabs.get(targetTab).catch(() => null);
     const [active] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (active && !isBlank(active) && active.id !== targetTab) return active;
     const last = activeHistory.filter((id) => id !== targetTab).pop();
@@ -554,10 +557,11 @@
     autoCompleted = e.key.length === 1 && !e.metaKey && !e.ctrlKey;
   };
 
-  const open = (tabId) => {
+  const open = (tabId, { edit = null } = {}) => {
     if (!window.__vm.cssLoaded) return;
-    if (bar) { targetTab = tabId; return; }
+    if (bar) { if (!editing) targetTab = tabId; return; }
     targetTab = tabId;
+    editing = edit != null;
     mode = null;
     bar = el("div");
     bar.id = "vm-cmd";
@@ -590,12 +594,17 @@
     input.addEventListener("keydown", onKey);
     input.addEventListener("input", async () => { await compute(); autocomplete(); });
     (document.querySelector("#browser") || document.body).append(bar);
-    const focus = () => input?.focus();
+    if (editing) {
+      input.value = edit;
+      input.setAttribute("aria-label", "Edit address");
+    }
+    // Vivaldi may focus its own address field right after (Cmd+L is also its shortcut): take the focus back.
+    const focus = () => { if (!input) return; input.focus(); if (editing && input.value === edit) input.select(); };
     focus();
     setTimeout(focus, 60);
     setTimeout(focus, 250);
     compute();
-    window.dispatchEvent(new CustomEvent("vm-command-bar-opened"));
+    if (!editing) window.dispatchEvent(new CustomEvent("vm-command-bar-opened"));
   };
 
   window.addEventListener("vm-open-command-bar", () => open(null));
@@ -610,6 +619,17 @@
   window.addEventListener("vm-rename-tab", (e) => openPicker(e.detail, renamePicker));
   window.addEventListener("vm-move-tab", (e) => openPicker(e.detail, moveToSpacePicker));
   window.__vm.onShortcut((key) => { if (key === window.__vm.normalise("meta+t")) open(null); });
+  // Cmd+L, like Arc: the page's address opens in the command bar, centred, to edit or replace; Enter loads it in
+  // this tab. The sidebar's address field stays where it is (Vivaldi's own Cmd+L focus is taken back).
+  window.__vm.onShortcut(async (key) => {
+    if (key !== window.__vm.normalise("meta+l") || !window.__vm.settings?.get?.("commandBarForAddress")) return;
+    if (document.querySelector("#browser.vm-little-arc")) return; // Little Vivarc has its own address bar
+    const [tab] = await chrome.tabs.query({ active: true, windowId: window.vivaldiWindowId });
+    if (!tab) return;
+    if (bar) close(false);
+    open(tab.id, { edit: isBlank(tab) ? "" : (tab.url || "") });
+    document.querySelector("#tabs-tabbar-container .UrlBar-UrlField")?.blur();
+  });
 
   const activeHistory = [];
   chrome.tabs.onActivated.addListener(({ tabId }) => {
