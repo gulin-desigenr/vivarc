@@ -659,6 +659,7 @@
       ["Duplicate Tab", () => chrome.tabs.duplicate(tab.id)],
       ["Copy Link", () => copy(tab.url)],
       [],
+      ["Archive Tab", () => window.__vm.archive.archiveTabs([tab])],
       ["Close Tab", () => chrome.tabs.remove(tab.id)],
       ["Close Other Tabs", () => {
         const ids = state.tabs.filter((t) => t.id !== tab.id && !t.pinned).map((t) => t.id);
@@ -839,6 +840,12 @@
     }
   };
 
+  // For the archive (11-archive.js): a space's name when a tab is archived, and whether it still exists on restore.
+  const spaceName = (id) => spacesOf.items(state.workspaces, state.defaultSpace ? spacesOf.label(state.defaultSpace) : "Home")
+    .find((item) => item.id === id)?.name || "";
+  window.__vm.spaceNameOf = spaceName;
+  window.__vm.spaceExists = (id) => !id || !state.workspaces?.length || state.workspaces.some((w) => w.id === id);
+
   const spaceBar = () => {
     const items = spacesOf.items(state.workspaces, state.defaultSpace ? spacesOf.label(state.defaultSpace) : "Home");
     if (!items.length) return null;
@@ -896,10 +903,15 @@
     const open = clearable.filter((t) => !stacks.has(tabStackId(t)));
     const divider = el("div", "vm-divider");
     const clear = el("span", "vm-clear", "Clear");
+    // Like Arc, Clear archives the space's loose tabs (searchable and restorable from the command bar).
+    clear.title = "Archive these tabs";
     clear.addEventListener("click", async () => {
       if (!clearable.length) return;
       if (clearable.length + blank.length === state.tabs.length) await chrome.tabs.create({});
-      chrome.tabs.remove(clearable.map((t) => t.id));
+      const pages = clearable.filter((t) => /^https?:|^file:/.test(t.url || ""));
+      const others = clearable.filter((t) => !pages.includes(t));
+      if (others.length) chrome.tabs.remove(others.map((t) => t.id));
+      if (pages.length) await window.__vm.archive.archiveTabs(pages);
     });
     divider.append(clear);
     wireDrop(divider, { accept: isBookmark, onDrop: (_zone, data) => unpin(data) });
@@ -1134,7 +1146,7 @@
       chrome.bookmarks[ev]?.addListener(() => refresh(true));
     }
     chrome.tabs.onCreated.addListener((tab) => {
-      if (window.__vm.switchingSpace) return;
+      if (window.__vm.switchingSpace || window.__vm.archive?.busy) return; // a restored page brings its own space
       const active = state.active;
       chrome.windows.getCurrent().then((win) => {
         const data = spacesOf.stamp(tab, active, win.id);

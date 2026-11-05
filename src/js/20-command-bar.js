@@ -143,6 +143,8 @@
     { label: "Mute / Unmute Tab", words: "sound audio silence", tab: true, run: (tab) =>
       chrome.tabs.update(tab.id, { muted: !tab.mutedInfo?.muted }) },
     { label: "Close Tab", words: "quit remove", tab: true, run: (tab) => chrome.tabs.remove(tab.id) },
+    { label: "Archive Tab", words: "archive clear close save later", tab: true, run: (tab) => window.__vm.archive?.archiveTabs([tab]) },
+    { label: "View Archived Tabs", words: "archive archived restore history closed", stay: true, run: () => setMode(ARCHIVE) },
     { label: "Reopen Closed Tab", words: "restore undo", run: () => chrome.sessions.restore() },
     { label: "New Window", words: "open window", run: () => chrome.windows.create({}) },
     { label: "New Little Vivarc", words: "little arc vivarc temporary popup window quick search", run: () => window.__vm.openLittleArc?.() },
@@ -165,6 +167,11 @@
   ];
   const ACTION_SVG =
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg>';
+
+  // The command bar's archive view: what is typed searches the archive (11-archive.js); Enter restores.
+  const ARCHIVE = { name: "Archived Tabs", archive: true };
+  const archivedRow = (entry) => ({ type: "archived", entry, url: entry.url, favicon: entry.favicon, label: entry.title,
+    sub: window.__vm.archive.describe(entry) });
 
   let bar = null;
   let input = null;
@@ -238,6 +245,12 @@
     } else if (row.type === "engine") {
       input.value = "";
       setMode(row.engine);
+    } else if (row.type === "archived") {
+      close(true);
+      window.__vm.archive.restore(row.entry).catch((e) => console.warn("[vivarc] restore:", e));
+    } else if (row.type === "action" && row.action.stay) {
+      input.value = "";
+      row.action.run(row.tab);
     } else if (row.type === "action") {
       close(true);
       Promise.resolve(row.action.run(row.tab)).catch((e) => console.warn("[vivarc] action:", e));
@@ -251,7 +264,7 @@
     const nodes = [];
     let lastGroup = null;
     rows.forEach((row, i) => {
-      const group = { tab: "Open tabs", action: "Actions", engine: "Search engines", search: "Search", suggest: "Suggestions", bookmark: "Bookmarks", history: "History", url: "Go to" }[row.type] || "Results";
+      const group = { tab: "Open tabs", action: "Actions", engine: "Search engines", search: "Search", suggest: "Suggestions", bookmark: "Bookmarks", history: "History", archived: "Archived tabs", url: "Go to" }[row.type] || "Results";
       if (group !== lastGroup) {
         nodes.push(el("div", "vm-cmd-section", group));
         lastGroup = group;
@@ -277,9 +290,9 @@
         ({ action: "Run action", engine: "Search with this engine", search: "Search the web", suggest: "Search the web", url: "Open address" }[row.type] || "");
       if (detail) content.append(el("span", "vm-cmd-sub", detail));
       item.append(icon, content);
-      if (row.type === "tab" || row.type === "action" || row.type === "engine") {
+      if (row.type === "tab" || row.type === "action" || row.type === "engine" || row.type === "archived") {
         const hint = el("span", "vm-cmd-hint");
-        hint.append(el("span", null, { tab: "Switch to Tab", action: "Run Action", engine: "Tab" }[row.type]));
+        hint.append(el("span", null, { tab: "Switch to Tab", action: "Run Action", engine: "Tab", archived: "Restore" }[row.type]));
         const arrow = el("span", "vm-cmd-arrow");
         arrow.innerHTML = ARROW_SVG;
         hint.append(arrow);
@@ -327,7 +340,17 @@
     const id = ++seq;
     const text = input.value.trim();
     const out = [];
-    if (mode) {
+    if (mode?.archive) {
+      const found = window.__vm.archive.search(await window.__vm.archive.load(), text, 40);
+      if (id !== seq) return;
+      out.push(...found.map(archivedRow));
+      if (!found.length) {
+        rows = [];
+        render();
+        list.append(el("div", "vm-cmd-empty", text ? "No archived tab matches" : "No archived tabs yet. Archive a tab from its menu, or Clear the sidebar."));
+        return;
+      }
+    } else if (mode) {
       out.push({ type: "search", engine: mode, query: text, label: text || "%s" });
     } else if (!text) {
       (await allTabs()).slice(0, 7).forEach((tab) =>
@@ -346,6 +369,10 @@
         .filter((t) => `${t.title} ${t.url}`.toLowerCase().includes(needle))
         .slice(0, 4)
         .forEach((tab) => add({ type: "tab", tab, url: tab.url, favicon: tab.favIconUrl, label: tab.title || tab.url }));
+      // Archived pages before bookmarks and history: restoring one brings it back to its space.
+      try {
+        window.__vm.archive.search(await window.__vm.archive.load(), text, 3).forEach((e) => add(archivedRow(e)));
+      } catch (_) {}
       try {
         (await chrome.bookmarks.search(text)).filter((b) => b.url).slice(0, 3)
           .forEach((b) => add({ type: "bookmark", url: b.url, label: b.title || b.url, sub: hostOf(b.url) }));
@@ -359,8 +386,12 @@
       const searchRow = { type: "search", engine: DEFAULT, query: text, label: text };
       if (looksLikeUrl(text)) out.push({ type: "url", url: toUrl(text), label: text, sub: "Open" });
       if (prefix) out.push(prefix);
-      out.push(searchRow);
-      if (needle.length > 1) out.push(...await matchingActions(needle));
+      // An action named by what is typed ("archived", "split") comes before the web search, like Arc's commands.
+      const actions = needle.length > 1 ? await matchingActions(needle) : [];
+      const named = needle.length >= 4 && !looksLikeUrl(text)
+        ? actions.filter((a) => a.label.toLowerCase().split(/[\s:/()]+/).some((w) => w.startsWith(needle)))
+        : [];
+      out.push(...named, searchRow, ...actions.filter((a) => !named.includes(a)));
       const keyword = !/\s/.test(text) && engines.find((en) => en.keyword.toLowerCase() === needle);
       if (keyword) out.unshift({ type: "engine", engine: keyword, label: `Search ${keyword.name}` });
       out.push(...matches.filter((m) => m !== prefix));
@@ -389,7 +420,7 @@
       chip.style.backgroundColor = CHIP_COLORS[engine.keyword] || "#5b5670";
       chipHolder.append(chip);
     }
-    input.placeholder = engine ? "Search…" : "Search or Enter URL…";
+    input.placeholder = engine?.archive ? "Search archived tabs…" : engine ? "Search…" : "Search or Enter URL…";
     input.value = "";
     compute();
   };
@@ -419,6 +450,12 @@
       return;
     }
     if (e.key === "Enter") { e.preventDefault(); run(rows[selected]); return; }
+    // Cmd+Backspace removes the selected page from the archive for good.
+    if (e.key === "Backspace" && e.metaKey && rows[selected]?.type === "archived") {
+      e.preventDefault();
+      window.__vm.archive.forget(rows[selected].entry.id).then(compute);
+      return;
+    }
     if (e.key === "Tab") {
       e.preventDefault();
       const keyword = input.value.trim().toLowerCase();

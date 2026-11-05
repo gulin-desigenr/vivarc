@@ -9,15 +9,14 @@ Pesquisa e prioridades registradas em 4 de novembro de 2026 para o fork pessoal.
 - Command palette com busca, ações, temas claro/escuro e tamanho responsivo; barra de endereço acima dos favoritos.
 - Peek opcional com movimento personalizado e agrupamento nativo ao promovê-lo; Split View por comandos.
 
-## Próximo: Little Arc
+## Feito depois da pesquisa
 
-Uma janela compacta e temporária para consultar links sem ocupar a janela principal. Diferente do Peek, deve funcionar como uma janela separada. A experiência desejada inclui fechar a janela, enviar a página para a janela principal e, posteriormente, escolher o space de destino. Abrir links recebidos de outros apps e oferecer um atalho global precisam de investigação específica no macOS; não presumir que possam ser implementados apenas com uma modificação da interface do Vivaldi.
-
-Começar com uma versão acionada explicitamente a partir do Vivarc, com isolamento por perfil, destino seguro e sem alterar o navegador padrão. Avaliar tratamento de links de autenticação, janelas já fechadas, múltiplos monitores e janelas. Fontes: [Arc: Little Arc](https://start.arc.net/master-multitasking) e [Chrome: API de janelas](https://developer.chrome.com/docs/extensions/reference/api/windows).
+- **Little Arc → Little Vivarc** (novembro de 2026): janela compacta na tela do ponteiro, links de outros apps, atalho global ⌥⌘N e "Open in Vivarc". Detalhes em `ESTADO.md`.
+- **Arquivamento de abas, etapa 1** (novembro de 2026): arquivo manual pesquisável pela command bar, restauração no space de origem e Clear arquivando.
 
 ## Backlog
 
-1. **Arquivamento de abas:** primeiro criar arquivo manual pesquisável com restauração por space; depois avaliar prazo automático configurável e exclusões para fixados, favoritos, áudio, formulários e outros estados sensíveis. Não confundir com hibernação: o [Memory Saver do Vivaldi](https://help.vivaldi.com/desktop/tabs/memory-saver/) mantém a aba aberta.
+1. **Arquivamento de abas, etapa 2:** avaliar prazo automático configurável e exclusões para fixados, favoritos, áudio, formulários e outros estados sensíveis. Não confundir com hibernação: o [Memory Saver do Vivaldi](https://help.vivaldi.com/desktop/tabs/memory-saver/) mantém a aba aberta.
 2. **Command palette:** escolher space/pasta ao mover ou fixar, procurar spaces pelo nome, renomear a aba atual e restaurar a URL original de fixados ou de um space. Verificar o que já existe no Vivaldi antes de duplicar. [Comandos do Arc](https://start.arc.net/command-bar-actions).
 3. **Live Folders:** protótipo de pasta para pull requests e issues do GitHub; depois estudar ClickUp, Notion e Drive com permissões e atualização explícitas. [Apresentação do Arc](https://www.youtube.com/watch?v=x1TV6rBi_jM).
 4. **Boosts:** gerenciador local de CSS por domínio, com prévia, desativação e exportação; editor visual completo fica para avaliação posterior. [Boosts no Arc](https://start.arc.net/paint-the-internet).

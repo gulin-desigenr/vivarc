@@ -157,6 +157,11 @@
       if (workspaceId) ext.workspaceId = workspaceId;
       else delete ext.workspaceId;
       await chrome.tabs.update(moved.id, { active: true, vivExtData: JSON.stringify(ext) });
+      // Vivaldi 8.3 ignores workspaceId in vivExtData; its own move puts the page in the origin's space.
+      try {
+        await vivaldi.tabsPrivate.move({ tabIds: [moved.id], target: "last", tweaks: ["do-not-reparent"], workspaceId: workspaceId || "window" });
+        await chrome.tabs.update(moved.id, { active: true });
+      } catch (_) {}
       await chrome.windows.update(record.originWindowId, { focused: true });
     } catch (error) {
       console.warn("[vivarc] Little Vivarc:", error);
