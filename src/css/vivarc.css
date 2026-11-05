@@ -172,6 +172,21 @@
 #vm-panel .vm-row.active { background-color: color-mix(in srgb, var(--colorFg) 15%, transparent); color: var(--colorFg); font-weight: 500; }
 #vm-panel .vm-row.discarded { opacity: 0.6; }
 #vm-panel .vm-folder-head { font-weight: 500; }
+/* Like Vivaldi's tabs: a hovered or active tab is painted with its page's colour (10-sidebar.js sets
+   --vm-tab-bg/--vm-tab-fg per origin, fg picked for contrast). Folders take the space's solid colour when hovered
+   or open (--vm-space-solid from 40-theme.js; Vivaldi's highlight colour without a space theme). */
+#vm-panel .vm-row { transition: background-color 120ms, color 120ms; }
+#vm-panel .vm-row.vm-tinted:hover,
+#vm-panel .vm-row.vm-tinted.active { background-color: var(--vm-tab-bg); color: var(--vm-tab-fg); opacity: 1; }
+/* Favorites too; doubled class to win over the themed, glass and wallpaper tile backgrounds. */
+#browser.vm-on #vm-panel .vm-fav.vm-tinted.vm-tinted:is(:hover, .active) { background: var(--vm-tab-bg); outline-color: transparent; }
+#vm-panel :is(.vm-row, .vm-fav).vm-ico-invert:is(:hover, .active) .vm-ico img { filter: invert(1); }
+#vm-panel :is(.vm-row, .vm-fav).vm-ico-tile:is(:hover, .active) .vm-ico { border-radius: 5px; background: #fff; box-shadow: 0 0 0 2px #fff; }
+#vm-panel .vm-folder > .vm-folder-head:not(.vm-stack-head):hover,
+#vm-panel .vm-folder.open > .vm-folder-head:not(.vm-stack-head) {
+  background-color: var(--vm-space-solid, var(--colorHighlightBg));
+  color: var(--vm-space-solid-fg, var(--colorHighlightFg, #fff));
+}
 #vm-panel .vm-glyph svg { stroke-width: 1.5; }
 #vm-panel .vm-stack-head { padding-left: 8px; }
 #vm-panel .vm-stack-count { opacity: 0.65; font-size: 11px; padding: 0 4px; }
@@ -226,7 +241,7 @@
   opacity: 0.75;
 }
 #vm-panel .vm-row:hover .vm-act { display: flex; }
-#vm-panel .vm-act:hover { opacity: 1; background-color: color-mix(in srgb, var(--colorFg) 18%, transparent); }
+#vm-panel .vm-act:hover { opacity: 1; background-color: color-mix(in srgb, currentColor 18%, transparent); }
 
 #vm-panel .vm-divider {
   display: flex;
@@ -445,6 +460,16 @@
   isolation: isolate;
 }
 #browser.vm-themed:not(.vm-glass) #tabs-tabbar-container { background-image: none !important; }
+/* Text on a space's tint uses the computed ink at full strength (--vm-fg, at least 7:1 where the tint allows) and
+   --vm-fg-muted for secondary text (4.5:1), not opacity, which falls below readable contrast on mid tones. */
+#browser.vm-on.vm-themed #vm-panel .vm-row { color: var(--vm-fg); }
+#browser.vm-on.vm-themed #vm-panel :is(.vm-space, .vm-newtab, .vm-divider) { color: var(--vm-fg-muted); opacity: 1; }
+#browser.vm-on.vm-themed #vm-panel .vm-row.discarded { color: var(--vm-fg-muted); opacity: 1; }
+#browser.vm-on.vm-themed #vm-panel .vm-row.discarded .vm-ico { opacity: 0.6; }
+#browser.vm-on.vm-themed #vm-panel .vm-divider::before { background-color: color-mix(in srgb, var(--vm-fg) 22%, transparent); }
+#browser.vm-on.vm-themed #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField .UrlFragment-Wrapper { --LowlightColor: var(--vm-fg-muted) !important; }
+#browser.vm-on.vm-themed #tabs-tabbar-container .UrlBar-AddressField input::placeholder { color: var(--vm-fg-muted); opacity: 1; }
+#browser.vm-on.vm-themed .toolbar-tabbar-after .vm-space-pill:not(.active, :hover)::before { background-color: var(--vm-fg-muted); opacity: 0.7; }
 /* The window frame around the sidebar and the page (the strip under the sidebar, the rounded corners) takes the
    space color too, like Arc, instead of Vivaldi's theme background. */
 #browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) { background-color: var(--vm-tint) !important; background-image: none !important; }

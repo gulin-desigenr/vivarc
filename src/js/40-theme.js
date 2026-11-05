@@ -23,11 +23,15 @@
     browser.classList.toggle("vm-themed", theme.on);
     const style = browser.style;
     if (!theme.on) {
-      for (const k of ["--vm-tint", "--vm-fg", "--vm-grain", "--vm-noise", "--vm-fav-color", "--vm-fav-opacity", "--vm-fav-hover-opacity", "--vm-fav-active-opacity"]) style.removeProperty(k);
+      for (const k of ["--vm-tint", "--vm-fg", "--vm-fg-muted", "--vm-space-solid", "--vm-space-solid-fg", "--vm-grain", "--vm-noise", "--vm-fav-color", "--vm-fav-opacity", "--vm-fav-hover-opacity", "--vm-fav-active-opacity"]) style.removeProperty(k);
       return;
     }
     style.setProperty("--vm-tint", `hsl(${theme.hue} ${theme.sat}% ${theme.light}%)`);
-    style.setProperty("--vm-fg", fgFor(theme.light));
+    const ink = window.__vm.colors?.inkFor(window.__vm.colors.hslToRgb(theme.hue, theme.sat, theme.light));
+    style.setProperty("--vm-fg", ink?.fg || fgFor(theme.light));
+    style.setProperty("--vm-fg-muted", ink?.muted || fgFor(theme.light));
+    const solid = window.__vm.colors?.spaceSolid(theme);
+    if (solid) { style.setProperty("--vm-space-solid", solid.bg); style.setProperty("--vm-space-solid-fg", solid.fg); }
     // Pale colored spaces get a lighter tile; near-white spaces need a dark tile for separation.
     const pale = theme.light > 58 && theme.light < 87;
     style.setProperty("--vm-fav-color", theme.light >= 87 ? "#1b1b1f" : "#fff");
