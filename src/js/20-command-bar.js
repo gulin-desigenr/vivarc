@@ -627,6 +627,15 @@
     setMode(picker);
   };
   window.addEventListener("vm-rename-tab", (e) => openPicker(e.detail, renamePicker));
+  // A tab stack's name (Vivaldi's own stack title, shared with its tab bar); empty brings back the first tab's title.
+  window.addEventListener("vm-rename-stack", ({ detail }) => {
+    open(null);
+    setMode({ name: "Rename Stack", placeholder: "Stack name…", initial: detail.name,
+      pick: (text) => [
+        ...(text.trim() ? [{ label: `Rename to \u201c${text.trim()}\u201d`, sub: "Tab stack", run: () => window.__vm.renameStackTo(detail.group, text.trim().slice(0, 50)) }] : []),
+        { label: "Use the First Tab's Title", sub: "Tab stack", run: () => window.__vm.renameStackTo(detail.group, "") },
+      ] });
+  });
   window.addEventListener("vm-move-tab", (e) => openPicker(e.detail, moveToSpacePicker));
   window.__vm.onShortcut((key) => { if (key === window.__vm.normalise("meta+t")) open(null); });
   // Cmd+L, like Arc: the page's address opens in the command bar, centred, to edit or replace; Enter loads it in

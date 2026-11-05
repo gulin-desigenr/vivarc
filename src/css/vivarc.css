@@ -206,38 +206,29 @@
   color: var(--vm-space-solid-fg, var(--colorHighlightFg, #fff));
 }
 #vm-panel .vm-glyph svg { stroke-width: 1.5; }
-/* Tab stacks, like Dia's groups: the first tab is the stack's row, with "3 ›" at its end to fold the rest; the
-   other tabs hang under it, indented along a thin guide line. */
-#vm-panel .vm-stack-toggle {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 1px;
-  height: 20px;
-  margin-left: auto;
-  padding: 0 4px 0 6px;
-  border-radius: 6px;
-  opacity: 0.6;
-  cursor: pointer;
-}
-#vm-panel .vm-stack-toggle:hover { opacity: 1; background-color: color-mix(in srgb, currentColor 14%, transparent); }
-#vm-panel .vm-stack-toggle svg { transition: transform 160ms; }
-#vm-panel .vm-tab-stack.open > .vm-stack-head .vm-stack-toggle svg { transform: rotate(90deg); }
-#vm-panel .vm-tab-stack.open > .vm-stack-head .vm-stack-count { display: none; }
-#vm-panel .vm-stack-count { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* Tab stacks: the stack's row is its title (it folds and unfolds, it is not a tab), with a stack glyph, the count
+   and an arrow; the first tab inside is marked as the origin, the others hang under it along a guide line. */
+#vm-panel .vm-stack-head { padding-left: 8px; }
+#vm-panel .vm-stack-glyph svg { width: 18px; height: 18px; }
+#vm-panel .vm-stack-count { flex: none; margin-left: auto; font-size: 11px; font-weight: 600; opacity: 0.55; font-variant-numeric: tabular-nums; }
+#vm-panel .vm-stack-chevron { flex: none; display: flex; margin: 0 4px 0 2px; opacity: 0.55; transition: transform 160ms; }
+#vm-panel .vm-tab-stack.open > .vm-stack-head .vm-stack-chevron { transform: rotate(90deg); }
 #vm-panel .vm-stack-content { position: relative; }
+#vm-panel .vm-stack-content > .vm-tab { padding-left: 30px !important; }
+#vm-panel .vm-stack-content > .vm-tab.vm-stack-origin { padding-left: 18px !important; }
+#vm-panel .vm-stack-content > .vm-tab.vm-stack-origin .vm-title { font-weight: 600; }
 #vm-panel .vm-stack-content::before {
   content: "";
   position: absolute;
-  left: 17px;
-  top: 2px;
-  bottom: 10px;
+  left: 26px;
+  top: 30px;
+  bottom: 12px;
   width: 1.5px;
   border-radius: 1px;
   background-color: color-mix(in srgb, currentColor 18%, transparent);
 }
-#vm-panel .vm-stack-content > .vm-tab { padding-left: 30px !important; }
-@media (prefers-reduced-motion: reduce) { #vm-panel .vm-stack-toggle svg { transition: none; } }
+#vm-panel .vm-stack-content > .vm-tab:not(.vm-stack-origin) { padding-left: 38px !important; }
+@media (prefers-reduced-motion: reduce) { #vm-panel .vm-stack-chevron { transition: none; } }
 /* Selected tabs (Cmd+click, Shift+click): an outlined, lightly filled row. */
 #vm-panel .vm-tab.vm-selected { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--colorHighlightBg, #5d7aee) 70%, transparent); background-color: color-mix(in srgb, var(--colorHighlightBg, #5d7aee) 14%, transparent); }
 

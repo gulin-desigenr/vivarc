@@ -685,43 +685,83 @@
     refresh(false);
   };
 
-  // A stack looks like Dia's groups, not a folder: its first tab is the stack's own row (a normal tab row, with a
-  // small arrow to fold the others and their count while folded), and the other tabs hang under it, indented
-  // along a thin guide line.
+  // A stack's row is its title, not a tab: clicking it folds and unfolds the stack and never leaves the tab you are
+  // on. The title is the stack's name (Vivaldi's own, set with "Rename Stack…") or else its first tab's. Inside, the
+  // first tab, where the reading started, comes first and is marked as the origin; the tabs opened from it hang
+  // under it along a guide line.
+  const STACK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><rect x="7.5" y="7.5" width="12" height="12" rx="2.5"/><path d="M4.5 15.5v-8a3 3 0 0 1 3-3h8"/></svg>';
   const CHEVRON = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 4 4 4-4 4"/></svg>';
+  const stackName = (tabs) => {
+    for (const t of tabs) { try { const n = JSON.parse(t.vivExtData || "{}").fixedGroupTitle; if (n) return n; } catch (_) {} }
+    return "";
+  };
+  // "Save as Pinned Folder": a folder in this space's Pinned with a link for every tab, in order; the stack ends
+  // and its tabs, now bound to those links, show inside the folder.
+  const stackToFolder = async (id, tabs, title) => {
+    const pinned = state.pinned || await ensureFolder("Pinned");
+    const folder = await chrome.bookmarks.create({ parentId: pinned.id, title });
+    for (const t of tabs) await chrome.bookmarks.create({ parentId: folder.id, title: window.__vm.titleOf(t), url: t.url });
+    openFolders.add(folder.id);
+    saveOpen();
+    collapsedStacks.delete(id);
+    await unstack(tabs.map((t) => t.id));
+    refresh(true);
+    window.dispatchEvent(new CustomEvent("vm-toast", { detail: `Saved as the pinned folder \u201c${title}\u201d` }));
+  };
   const tabStack = (id, tabs) => {
     const wrap = el("div", "vm-folder vm-tab-stack");
-    const [source, ...rest] = tabs.slice().sort((a, b) => a.index - b.index);
-    const head = tabRow(source, { stackTabs: tabs });
-    head.classList.add("vm-stack-head");
-    // At the end of the row, so the stack's tab lines up with the others: "3 ›", which folds and unfolds the rest.
-    const toggleButton = el("span", "vm-stack-toggle");
-    toggleButton.setAttribute("role", "button");
-    toggleButton.append(el("span", "vm-stack-count", String(rest.length)));
-    toggleButton.insertAdjacentHTML("beforeend", CHEVRON);
-    const close = head.querySelector(".vm-act");
-    close ? close.before(toggleButton) : head.append(toggleButton);
+    const ordered = tabs.slice().sort((a, b) => a.index - b.index);
+    const name = stackName(ordered);
+    const title = name || window.__vm.titleOf(ordered[0]) || "Tab stack";
+    const head = el("div", "vm-row vm-stack-head");
+    head.setAttribute("role", "button");
+    head.tabIndex = 0;
+    const glyph = el("span", "vm-glyph vm-stack-glyph");
+    glyph.innerHTML = STACK_ICON;
+    const chevron = el("span", "vm-stack-chevron");
+    chevron.innerHTML = CHEVRON;
+    head.append(glyph, el("span", "vm-title", title), el("span", "vm-stack-count", String(ordered.length)), chevron);
+    head.title = name ? `${name} \u2014 from ${window.__vm.titleOf(ordered[0])}` : title;
     const body = el("div", "vm-folder-body");
     const content = el("div", "vm-folder-content vm-stack-content");
-    rest.forEach((tab) => content.append(tabRow(tab)));
+    ordered.forEach((tab, i) => {
+      const row = tabRow(tab);
+      if (i === 0) { row.classList.add("vm-stack-origin"); row.title = `Where this stack started\n${tab.url}`; }
+      content.append(row);
+    });
     body.append(content);
     const sync = () => {
       const open = !collapsedStacks.has(id);
       wrap.classList.toggle("open", open);
       content.inert = !open;
-      toggleButton.setAttribute("aria-expanded", String(open));
-      toggleButton.title = open ? "Fold this stack" : `Show ${rest.length} more ${rest.length === 1 ? "tab" : "tabs"}`;
+      head.setAttribute("aria-expanded", String(open));
     };
-    toggleButton.addEventListener("click", (e) => {
-      e.stopPropagation();
-      collapsedStacks.has(id) ? collapsedStacks.delete(id) : collapsedStacks.add(id);
-      sync();
+    const toggle = () => { collapsedStacks.has(id) ? collapsedStacks.delete(id) : collapsedStacks.add(id); sync(); };
+    head.addEventListener("click", toggle);
+    head.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+    head.addEventListener("contextmenu", (e) => showMenu(e, [
+      ["Rename Stack\u2026", () => window.dispatchEvent(new CustomEvent("vm-rename-stack", { detail: { group: id, name: title } }))],
+      ...(state.space ? [["Save as Pinned Folder", () => stackToFolder(id, ordered, title)]] : []),
+      [],
+      ["Ungroup Stack", () => unstack(ordered.map((t) => t.id))],
+      ["Archive Stack", () => window.__vm.archive.archiveTabs(ordered)],
+      [],
+      ["Close Stack", () => chrome.tabs.remove(ordered.map((t) => t.id)), true],
+    ]));
+    // A tab dropped on the stack's row joins the stack.
+    wireDrop(head, {
+      accept: (d) => d.type === "tab" && tabStackId(d.tab) !== id,
+      onDrop: async (_zone, data) => joinStack(data.tab.id, ordered[0].id),
     });
-    // A folded stack whose open tab is one of the hidden ones shows it: no open tab is ever out of sight.
-    if (rest.some((t) => t.active)) collapsedStacks.delete(id);
+    // A folded stack holding the tab you are on stays open: no open tab is ever out of sight.
+    if (ordered.some((t) => t.active)) collapsedStacks.delete(id);
     sync();
     wrap.append(head, body);
     return wrap;
+  };
+  window.__vm.renameStackTo = async (group, name) => {
+    await vivaldi.tabsPrivate.setGroupProperties({ groupExtId: group, groupTitle: name || undefined });
+    refresh(false);
   };
 
   // ---- selecting several tabs: Cmd+click toggles one, Shift+click takes a range; then right-click acts on all ----
@@ -767,7 +807,7 @@
   };
   window.__vm.onShortcut((key) => { if (key === "esc") clearSelection(); });
 
-  const tabRow = (tab, { stackTabs = null } = {}) => {
+  const tabRow = (tab) => {
     const row = el("div", "vm-row vm-tab");
     row.dataset.tabId = String(tab.id);
     row.style.paddingLeft = "8px";
@@ -801,12 +841,6 @@
       },
     });
     row.addEventListener("contextmenu", (e) => showMenu(e, selected.size > 1 && selected.has(tab.id) ? selectionMenu() : [
-      ...(stackTabs ? [
-        ["Ungroup Stack", () => unstack(stackTabs.map((t) => t.id))],
-        ["Archive Stack", () => window.__vm.archive.archiveTabs(stackTabs)],
-        ["Close Stack", () => chrome.tabs.remove(stackTabs.map((t) => t.id))],
-        [],
-      ] : []),
       ...(state.space ? [
         ["Pin Tab", async () => chrome.bookmarks.create({
           parentId: (state.pinned || await ensureFolder("Pinned")).id, title: window.__vm.titleOf(tab), url: tab.url })],
