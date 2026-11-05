@@ -21,6 +21,7 @@ Pesquisa e prioridades registradas em 4 de novembro de 2026 para o fork pessoal.
 1. **Live Folders:** protótipo de pasta para pull requests e issues do GitHub; depois estudar ClickUp, Notion e Drive com permissões e atualização explícitas. [Apresentação do Arc](https://www.youtube.com/watch?v=x1TV6rBi_jM).
 2. **Boosts:** gerenciador local de CSS por domínio, com prévia, desativação e exportação; editor visual completo fica para avaliação posterior. [Boosts no Arc](https://start.arc.net/paint-the-internet).
 3. **Personalização de spaces:** gradientes, combinação com papel de parede e melhor acesso a nome, ícone e ordem dos spaces. Verificar funções nativas de [Workspaces do Vivaldi](https://help.vivaldi.com/desktop/tabs/workspaces/).
+4. **Tradução para português:** interface do Vivarc em pt-BR (command bar, menus, ajustes, avisos, Little Vivarc), seguindo o idioma do Vivaldi e mantendo o inglês como fallback. Hoje todos os textos estão em inglês dentro dos módulos; centralizar as strings antes de traduzir.
 
 ## Usar o que já existe
 
