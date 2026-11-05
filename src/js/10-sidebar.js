@@ -685,58 +685,105 @@
     refresh(false);
   };
 
+  // A stack looks like Dia's groups, not a folder: its first tab is the stack's own row (a normal tab row, with a
+  // small arrow to fold the others and their count while folded), and the other tabs hang under it, indented
+  // along a thin guide line.
+  const CHEVRON = '<svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m6 4 4 4-4 4"/></svg>';
   const tabStack = (id, tabs) => {
     const wrap = el("div", "vm-folder vm-tab-stack");
-    const head = el("div", "vm-row vm-folder-head vm-stack-head");
-    head.setAttribute("role", "button");
-    head.tabIndex = 0;
-    const glyph = el("span", "vm-glyph");
-    const source = tabs.slice().sort((a, b) => a.index - b.index)[0];
-    const label = el("span", "vm-title", source?.title || source?.url || "Tab stack");
-    const count = el("span", "vm-stack-count", String(tabs.length));
-    head.append(glyph, label, count);
-    if (tabs.some((tab) => tab.active)) head.classList.add("active");
+    const [source, ...rest] = tabs.slice().sort((a, b) => a.index - b.index);
+    const head = tabRow(source, { stackTabs: tabs });
+    head.classList.add("vm-stack-head");
+    // At the end of the row, so the stack's tab lines up with the others: "3 ›", which folds and unfolds the rest.
+    const toggleButton = el("span", "vm-stack-toggle");
+    toggleButton.setAttribute("role", "button");
+    toggleButton.append(el("span", "vm-stack-count", String(rest.length)));
+    toggleButton.insertAdjacentHTML("beforeend", CHEVRON);
+    const close = head.querySelector(".vm-act");
+    close ? close.before(toggleButton) : head.append(toggleButton);
     const body = el("div", "vm-folder-body");
     const content = el("div", "vm-folder-content vm-stack-content");
-    tabs.slice().sort((a, b) => a.index - b.index).forEach((tab) => content.append(tabRow(tab)));
+    rest.forEach((tab) => content.append(tabRow(tab)));
     body.append(content);
     const sync = () => {
       const open = !collapsedStacks.has(id);
       wrap.classList.toggle("open", open);
       content.inert = !open;
-      head.setAttribute("aria-expanded", String(open));
-      glyph.innerHTML = open ? ICON_OPEN : ICON_CLOSED;
+      toggleButton.setAttribute("aria-expanded", String(open));
+      toggleButton.title = open ? "Fold this stack" : `Show ${rest.length} more ${rest.length === 1 ? "tab" : "tabs"}`;
     };
-    const toggle = () => { collapsedStacks.has(id) ? collapsedStacks.delete(id) : collapsedStacks.add(id); sync(); };
-    head.addEventListener("click", toggle);
-    head.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
-    head.addEventListener("contextmenu", (e) => showMenu(e, [
-      ["Ungroup Stack", () => unstack(tabs.map((t) => t.id))],
-      ["Archive Stack", () => window.__vm.archive.archiveTabs(tabs)],
-      [],
-      ["Close Stack", () => chrome.tabs.remove(tabs.map((t) => t.id)), true],
-    ]));
-    // A tab dropped on the stack's row joins the stack.
-    wireDrop(head, {
-      accept: (d) => d.type === "tab" && tabStackId(d.tab) !== id,
-      onDrop: async (_zone, data) => joinStack(data.tab.id, tabs[0].id),
+    toggleButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      collapsedStacks.has(id) ? collapsedStacks.delete(id) : collapsedStacks.add(id);
+      sync();
     });
+    // A folded stack whose open tab is one of the hidden ones shows it: no open tab is ever out of sight.
+    if (rest.some((t) => t.active)) collapsedStacks.delete(id);
     sync();
     wrap.append(head, body);
     return wrap;
   };
 
-  const tabRow = (tab) => {
+  // ---- selecting several tabs: Cmd+click toggles one, Shift+click takes a range; then right-click acts on all ----
+  const selected = new Set();
+  let selectAnchor = null;
+  const visibleTabIds = () => [...(panel?.querySelectorAll(".vm-tab[data-tab-id]") ?? [])]
+    .filter((r) => r.offsetParent).map((r) => Number(r.dataset.tabId));
+  const paintSelection = () => panel?.querySelectorAll(".vm-tab[data-tab-id]")
+    .forEach((r) => r.classList.toggle("vm-selected", selected.has(Number(r.dataset.tabId))));
+  const clearSelection = () => { if (!selected.size) return; selected.clear(); selectAnchor = null; paintSelection(); };
+  const selectWith = (e, tab) => {
+    if (e.shiftKey && selectAnchor != null) {
+      const order = visibleTabIds();
+      const [a, b] = [order.indexOf(selectAnchor), order.indexOf(tab.id)].sort((x, y) => x - y);
+      if (a >= 0 && b >= 0) order.slice(a, b + 1).forEach((id) => selected.add(id));
+    } else {
+      // The tab you are on counts as the first one picked, so Cmd+click on another gives two.
+      if (!selected.size) { const active = state.tabs.find((t) => t.active && t.id !== tab.id); if (active && visibleTabIds().includes(active.id)) selected.add(active.id); }
+      selected.has(tab.id) ? selected.delete(tab.id) : selected.add(tab.id);
+      selectAnchor = tab.id;
+    }
+    paintSelection();
+  };
+  const selectedTabs = () => state.tabs.filter((t) => selected.has(t.id)).sort((a, b) => a.index - b.index);
+  const stackSelected = async () => {
+    const tabs = selectedTabs();
+    if (tabs.length < 2) return;
+    clearSelection();
+    await vivaldi.tabsPrivate.move({ tabIds: tabs.map((t) => t.id), target: tabs[0].id,
+      tweaks: ["do-not-reparent", "create-new-group"], debug: "Vivarc.stackSelected" });
+    refresh(false);
+  };
+  const selectionMenu = () => {
+    const tabs = selectedTabs();
+    const n = tabs.length;
+    return [
+      [`Stack ${n} Tabs`, stackSelected],
+      [`Archive ${n} Tabs`, () => { clearSelection(); window.__vm.archive.archiveTabs(tabs); }],
+      [],
+      ["Clear Selection", clearSelection],
+      [`Close ${n} Tabs`, () => { clearSelection(); chrome.tabs.remove(tabs.map((t) => t.id)); }, true],
+    ];
+  };
+  window.__vm.onShortcut((key) => { if (key === "esc") clearSelection(); });
+
+  const tabRow = (tab, { stackTabs = null } = {}) => {
     const row = el("div", "vm-row vm-tab");
+    row.dataset.tabId = String(tab.id);
     row.style.paddingLeft = "8px";
     if (tab.active) row.classList.add("active");
+    if (selected.has(tab.id)) row.classList.add("vm-selected");
     if (tab.discarded) row.classList.add("discarded");
     row.title = tab.url;
     row.append(iconEl(tab.url, tab.favIconUrl), el("span", "vm-title", window.__vm.titleOf(tab)));
     tintRow(row, tab.url);
     if (window.__vm.tilingOf(tab)) row.append(el("span", "vm-split-mark", "◫"));
     row.append(actionButton("×", "Close tab", () => chrome.tabs.remove(tab.id)));
-    row.addEventListener("click", () => chrome.tabs.update(tab.id, { active: true }));
+    row.addEventListener("click", (e) => {
+      if (e.metaKey || e.shiftKey) { e.preventDefault(); selectWith(e, tab); return; }
+      clearSelection();
+      chrome.tabs.update(tab.id, { active: true });
+    });
     row.addEventListener("auxclick", (e) => { if (e.button === 1) chrome.tabs.remove(tab.id); });
     wireDrag(row, { type: "tab", tab, url: tab.url });
     wireDrop(row, {
@@ -753,7 +800,13 @@
         await chrome.tabs.move(data.tab.id, { index });
       },
     });
-    row.addEventListener("contextmenu", (e) => showMenu(e, [
+    row.addEventListener("contextmenu", (e) => showMenu(e, selected.size > 1 && selected.has(tab.id) ? selectionMenu() : [
+      ...(stackTabs ? [
+        ["Ungroup Stack", () => unstack(stackTabs.map((t) => t.id))],
+        ["Archive Stack", () => window.__vm.archive.archiveTabs(stackTabs)],
+        ["Close Stack", () => chrome.tabs.remove(stackTabs.map((t) => t.id))],
+        [],
+      ] : []),
       ...(state.space ? [
         ["Pin Tab", async () => chrome.bookmarks.create({
           parentId: (state.pinned || await ensureFolder("Pinned")).id, title: window.__vm.titleOf(tab), url: tab.url })],
@@ -1238,6 +1291,7 @@
     });
     state.workspaces = await readWorkspaces();
     ({ active: state.active, tabs: state.tabs } = spacesOf.scope(state.allTabs, state.workspaces));
+    for (const id of selected) if (!state.tabs.some((t) => t.id === id)) selected.delete(id);
     if (window.__vm.activeSpace !== state.active) {
       window.__vm.activeSpace = state.active;
       window.dispatchEvent(new CustomEvent("vm-active-space-changed", { detail: state.active }));
