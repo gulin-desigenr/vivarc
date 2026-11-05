@@ -675,6 +675,15 @@
     }
   };
   const stacking = new Map();
+  // Out of a stack, as Vivaldi's own "Remove from Tab Stack" does (the tab goes to the end of the list), and into one.
+  const unstack = async (tabIds) => {
+    await vivaldi.tabsPrivate.move({ tabIds, target: "last", tweaks: ["ungroup"], debug: "Vivarc.unstack" });
+    refresh(false);
+  };
+  const joinStack = async (tabId, memberId) => {
+    await vivaldi.tabsPrivate.move({ tabIds: [tabId], target: memberId, tweaks: ["do-not-reparent", "into"], debug: "Vivarc.joinStack" });
+    refresh(false);
+  };
 
   const tabStack = (id, tabs) => {
     const wrap = el("div", "vm-folder vm-tab-stack");
@@ -701,6 +710,17 @@
     const toggle = () => { collapsedStacks.has(id) ? collapsedStacks.delete(id) : collapsedStacks.add(id); sync(); };
     head.addEventListener("click", toggle);
     head.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+    head.addEventListener("contextmenu", (e) => showMenu(e, [
+      ["Ungroup Stack", () => unstack(tabs.map((t) => t.id))],
+      ["Archive Stack", () => window.__vm.archive.archiveTabs(tabs)],
+      [],
+      ["Close Stack", () => chrome.tabs.remove(tabs.map((t) => t.id)), true],
+    ]));
+    // A tab dropped on the stack's row joins the stack.
+    wireDrop(head, {
+      accept: (d) => d.type === "tab" && tabStackId(d.tab) !== id,
+      onDrop: async (_zone, data) => joinStack(data.tab.id, tabs[0].id),
+    });
     sync();
     wrap.append(head, body);
     return wrap;
@@ -723,6 +743,10 @@
       onDrop: async (zone, data) => {
         if (data.type === "bm") return unpin(data);
         if (data.tab.id === tab.id) return;
+        // Onto a tab of another stack: join that stack. Out of a stack onto a loose tab: leave the stack first.
+        const from = tabStackId(data.tab), to = tabStackId(tab);
+        if (to && from !== to) { await joinStack(data.tab.id, tab.id); return; }
+        if (from && !to) { await unstack([data.tab.id]); data = { ...data, tab: await chrome.tabs.get(data.tab.id) }; tab = await chrome.tabs.get(tab.id); }
         // the list shows the highest tab index first, so "before" means a higher index
         const below = data.tab.index < tab.index;
         const index = zone === "before" ? (below ? tab.index : tab.index + 1) : (below ? tab.index - 1 : tab.index);
@@ -742,6 +766,7 @@
       ["Duplicate Tab", () => chrome.tabs.duplicate(tab.id)],
       ["Copy Link", () => copy(tab.url)],
       [],
+      ...(tabStackId(tab) ? [["Remove from Stack", () => unstack([tab.id])]] : []),
       ["Archive Tab", () => window.__vm.archive.archiveTabs([tab])],
       ["Close Tab", () => chrome.tabs.remove(tab.id)],
       ["Close Other Tabs", () => {
@@ -1031,7 +1056,11 @@
     fresh.style.paddingLeft = "8px";
     fresh.append(el("span", "vm-plus", "+"), el("span", "vm-title", "New Tab"));
     fresh.addEventListener("click", () => window.dispatchEvent(new CustomEvent("vm-open-command-bar")));
-    wireDrop(fresh, { accept: isBookmark, onDrop: (_zone, data) => unpin(data) });
+    // A stacked tab dropped on "New Tab" leaves its stack (a pinned link dropped there is unpinned, as before).
+    wireDrop(fresh, {
+      accept: (d) => isBookmark(d) || (d.type === "tab" && !!tabStackId(d.tab)),
+      onDrop: (_zone, data) => (data.type === "tab" ? unstack([data.tab.id]) : unpin(data)),
+    });
     body.append(fresh);
     const entries = [
       ...open.map((tab) => ({ index: tab.index, node: () => tabRow(tab) })),
