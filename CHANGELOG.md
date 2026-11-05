@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- Switching spaces has a short transition: the sidebar fades and slides in over 220 ms and the page fades in. The switch itself is not delayed, and Reduce Motion turns the transition off.
+
 ## 0.1.19 - 2026-11-05
 - Fix: the Cmd+T command bar always searched DuckDuckGo, whatever search engine you picked in Vivaldi's settings. Searches and suggestions now use your default engine (the private one in a private window), and change as soon as you pick another. An engine without a suggestions service gets no suggestions instead of DuckDuckGo's. Thanks @groenroos (#65).
 - Pinned folders slide open and shut instead of appearing at once. With Reduce Motion on, they still open instantly. Thanks @dknz7 (#59).
