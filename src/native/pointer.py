@@ -130,21 +130,23 @@ class Waiters:
         self.waiting = []  # [{"event": Event, "taken": bool}], newest last
 
     def wait(self, timeout=None):
-        entry = {"event": threading.Event(), "taken": False}
+        entry = {"event": threading.Event(), "taken": False, "cold": False}
         with self.lock:
             self.waiting.append(entry)
         entry["event"].wait(WAIT_SECONDS if timeout is None else timeout)
         with self.lock:
             if entry in self.waiting:
                 self.waiting.remove(entry)
-        return entry["taken"]
+        return {"open": entry["taken"], "cold": entry["cold"]} if entry["taken"] else {"open": False}
 
-    def give(self):
+    def give(self, cold=False):
+        """cold: Vivaldi was just launched (hidden) for this press, so its main window should not show."""
         with self.lock:
             if not self.waiting:
                 return False
             entry = self.waiting.pop()
             entry["taken"] = True
+            entry["cold"] = cold
             entry["event"].set()
             return True
 
@@ -225,7 +227,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if not client_app(self.client_address[1]).startswith(LITTLE_APP):
                 self.reply(200, b'{"open": false, "stop": true}')
                 return
-            self.reply(200, json.dumps({"open": WAITERS.wait()}).encode("utf8"))
+            self.reply(200, json.dumps(WAITERS.wait()).encode("utf8"))
             return
         if self.path.split("?")[0] == LITTLE_PATH:  # shown only if Vivarc is not running to catch it
             self.send_response(200)
@@ -282,18 +284,19 @@ def vivaldi_running():
 def open_little(port):
     """Tell a waiting Vivaldi window to open a blank Little Vivarc. Nothing is opened in Vivaldi itself, so it stays
     where it is (minimised, behind other apps, in its current space). Vivaldi not running is launched hidden and
-    gets a few seconds to start waiting. Only when no window waits (an older Vivarc) is LITTLE_PATH opened in
+    gets a few seconds to start waiting; that window is told the launch was cold, so it minimises itself before
+    showing the Little Vivarc (showing a window un-hides the whole app). Only when no window waits (an older Vivarc) is LITTLE_PATH opened in
     Vivaldi, which brings it forward."""
     def run():
         if WAITERS.give():
             return
-        tries = 6  # a window between two waits asks again at once
+        tries, cold = 6, False  # a window between two waits asks again at once
         if not vivaldi_running():
             subprocess.run(["open", "-g", "-j", "-b", "com.vivaldi.Vivaldi"], capture_output=True)
-            tries = 80
+            tries, cold = 80, True
         for _ in range(tries):
             time.sleep(0.25)
-            if WAITERS.give():
+            if WAITERS.give(cold):
                 return
         subprocess.run(["open", "-b", "com.vivaldi.Vivaldi", f"http://127.0.0.1:{port}{LITTLE_PATH}"], capture_output=True)
     threading.Thread(target=run, daemon=True).start()

@@ -96,7 +96,12 @@
         reply = response.ok ? await response.json() : null;
       } catch (_) {}
       if (reply?.stop) return;
-      if (reply?.open) window.__vm.openLittleArc().catch((error) => console.warn("[vivarc] Little Vivarc shortcut:", error));
+      if (reply?.open) {
+        // Vivaldi launched (hidden) by this press: showing the Little Vivarc un-hides the app, so the main window
+        // goes to the Dock first and only the Little Vivarc appears.
+        if (reply.cold) await chrome.windows.update(window.vivaldiWindowId, { state: "minimized" }).catch(() => {});
+        window.__vm.openLittleArc().catch((error) => console.warn("[vivarc] Little Vivarc shortcut:", error));
+      }
       else if (!reply) await sleep(10000);
     }
   };
