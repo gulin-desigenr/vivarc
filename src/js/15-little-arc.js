@@ -80,6 +80,28 @@
   // Vivaldi started by the shortcut: the tab can predate this code.
   chrome.tabs.query?.({ windowId: window.vivaldiWindowId })?.then?.((tabs) => tabs.forEach(catchShortcut)).catch?.(() => {});
 
+  // The helper hands the press to a window waiting on LITTLE_WAIT, so no tab opens: Vivaldi stays in its space and
+  // is not brought forward (a minimised window stays minimised). Only normal windows wait; the helper answers
+  // "stop" to a Vivaldi it does not serve (a development copy), and a helper that is not running is asked again later.
+  const LITTLE_WAIT = "http://127.0.0.1:47391/little/wait";
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const waitForShortcut = async () => {
+    if (typeof fetch !== "function") return;
+    const own = await chrome.windows.get(window.vivaldiWindowId).catch(() => null);
+    if (own?.type !== "normal") return;
+    for (;;) {
+      let reply = null;
+      try {
+        const response = await fetch(LITTLE_WAIT, { cache: "no-store", headers: { "X-Vivarc": "1" }, signal: AbortSignal.timeout?.(40000) });
+        reply = response.ok ? await response.json() : null;
+      } catch (_) {}
+      if (reply?.stop) return;
+      if (reply?.open) window.__vm.openLittleArc().catch((error) => console.warn("[vivarc] Little Vivarc shortcut:", error));
+      else if (!reply) await sleep(10000);
+    }
+  };
+  waitForShortcut().catch(() => {});
+
   // ---- Links from other apps ----
   // Chromium gives no "external" flag, so a tab counts as external when: it lands in this normal window with a web URL,
   // has no opener, was not created by this window's UI (chrome.tabs/windows.create are stamped below), and its first

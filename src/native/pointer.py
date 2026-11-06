@@ -8,7 +8,8 @@ Vivaldi's UI has no nativeMessaging permission, but it may fetch any URL, so the
 127.0.0.1 kept running by a LaunchAgent. It sends no CORS headers (web pages cannot read it) and refuses requests
 that carry a web page's Origin or another Host name.
 
-It also owns the global Option+Command+N shortcut that opens a blank Little Vivarc from any app, and keeps the
+It also owns the global Option+Command+N shortcut that opens a blank Little Vivarc from any app (Vivaldi's windows
+wait for it on GET /little/wait, so the press reaches Vivaldi without opening a tab or bringing it forward), and keeps the
 daily Vivarc backups: POST /backup?name=... writes ~/.vivarc/backups/<name>.json (the last 30 per profile are
 kept), GET /backups lists them and GET /backups/<name> reads one. Those three answer only Vivaldi's UI (its exact
 Origin or none, plus an X-Vivarc header), so no web page can read or write a backup.
@@ -114,7 +115,55 @@ def save_backup(name, body, directory=None, keep=BACKUP_KEEP):
     return path
 
 
-LITTLE_PATH = "/little/new"  # Vivarc turns a tab opening this address into a blank Little Vivarc
+LITTLE_PATH = "/little/new"  # Vivarc turns a tab opening this address into a blank Little Vivarc (fallback)
+LITTLE_WAIT = "/little/wait"  # Vivaldi's windows wait here for the shortcut
+WAIT_SECONDS = 25
+# The Vivaldi whose windows take the shortcut (another copy, such as a development one, may poll the same helper).
+LITTLE_APP = os.environ.get("VIVARC_LITTLE_APP", "/Applications/Vivaldi.app/")
+
+
+class Waiters:
+    """The Vivaldi windows waiting for the shortcut. A press goes to exactly one of them, the latest to ask."""
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.waiting = []  # [{"event": Event, "taken": bool}], newest last
+
+    def wait(self, timeout=None):
+        entry = {"event": threading.Event(), "taken": False}
+        with self.lock:
+            self.waiting.append(entry)
+        entry["event"].wait(WAIT_SECONDS if timeout is None else timeout)
+        with self.lock:
+            if entry in self.waiting:
+                self.waiting.remove(entry)
+        return entry["taken"]
+
+    def give(self):
+        with self.lock:
+            if not self.waiting:
+                return False
+            entry = self.waiting.pop()
+            entry["taken"] = True
+            entry["event"].set()
+            return True
+
+
+WAITERS = Waiters()
+
+
+def client_app(port):
+    """The path of the process on the other end of a local connection (lsof, then ps), or ""."""
+    try:
+        out = subprocess.run(["lsof", "-nP", f"-iTCP:{port}", "-sTCP:ESTABLISHED", "-Fp"], capture_output=True,
+                             text=True, timeout=3).stdout
+        for line in out.splitlines():
+            if line.startswith("p") and int(line[1:]) != os.getpid():
+                return subprocess.run(["ps", "-o", "comm=", "-p", line[1:]], capture_output=True, text=True,
+                                      timeout=3).stdout.strip()
+    except (OSError, ValueError, subprocess.SubprocessError):
+        pass
+    return ""
 LITTLE_PAGE = b"<!doctype html><meta charset=utf-8><title>Little Vivarc</title><p>Opening Little Vivarc&hellip;</p>"
 
 
@@ -167,6 +216,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 return
             with open(path, "rb") as handle:
                 self.reply(200, handle.read())
+            return
+        if self.path.split("?")[0] == LITTLE_WAIT:
+            # Only Vivaldi's UI, and only the Vivaldi the shortcut belongs to; others are told to stop asking.
+            if not self.from_ui():
+                self.send_error(404)
+                return
+            if not client_app(self.client_address[1]).startswith(LITTLE_APP):
+                self.reply(200, b'{"open": false, "stop": true}')
+                return
+            self.reply(200, json.dumps({"open": WAITERS.wait()}).encode("utf8"))
             return
         if self.path.split("?")[0] == LITTLE_PATH:  # shown only if Vivarc is not running to catch it
             self.send_response(200)
@@ -221,16 +280,21 @@ def vivaldi_running():
 
 
 def open_little(port):
-    """Hand LITTLE_PATH to Vivaldi. A cold start first launches it and gives Vivarc time to load, or the address
-    would arrive before anything can catch it."""
+    """Tell a waiting Vivaldi window to open a blank Little Vivarc. Nothing is opened in Vivaldi itself, so it stays
+    where it is (minimised, behind other apps, in its current space). Vivaldi not running is launched hidden and
+    gets a few seconds to start waiting. Only when no window waits (an older Vivarc) is LITTLE_PATH opened in
+    Vivaldi, which brings it forward."""
     def run():
+        if WAITERS.give():
+            return
+        tries = 6  # a window between two waits asks again at once
         if not vivaldi_running():
-            subprocess.run(["open", "-b", "com.vivaldi.Vivaldi"], capture_output=True)
-            for _ in range(60):
-                if vivaldi_running():
-                    break
-                time.sleep(0.25)
-            time.sleep(5)
+            subprocess.run(["open", "-g", "-j", "-b", "com.vivaldi.Vivaldi"], capture_output=True)
+            tries = 80
+        for _ in range(tries):
+            time.sleep(0.25)
+            if WAITERS.give():
+                return
         subprocess.run(["open", "-b", "com.vivaldi.Vivaldi", f"http://127.0.0.1:{port}{LITTLE_PATH}"], capture_output=True)
     threading.Thread(target=run, daemon=True).start()
 
@@ -257,7 +321,8 @@ def run_hotkey(port):
 def main(argv):
     port = int(argv[1]) if len(argv) > 1 else 47391
     if len(argv) > 0 and argv[0] == "serve":
-        server = http.server.HTTPServer(("127.0.0.1", port), Handler)
+        server = http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler)
+        server.daemon_threads = True
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         try:
