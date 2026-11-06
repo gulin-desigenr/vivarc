@@ -639,14 +639,17 @@
     try { return JSON.parse(tab?.vivExtData || "{}").group || ""; } catch (_) { return ""; }
   };
 
-  // Like Dia: a page opened from a link of another tab (Cmd+click, target=_blank) stacks with that tab in a native
-  // Vivaldi tab stack. Only the first one needs Vivarc: once the source is in a stack, Vivaldi's own "Open links
-  // within current tab stack" puts the next ones there. Left alone: tabs of other windows, a source bound to a
+  // Like Dia: a page opened with Cmd+click (or a middle click, or "Open Link in New Tab") stacks with the tab it came
+  // from in a native Vivaldi tab stack. Those open in the background; a link that opens a tab by itself
+  // (target=_blank, a site's own pop-up) opens it in front, so a tab created active is left loose. Only the first
+  // one needs Vivarc: once the source is in a stack, Vivaldi's own "Open links within current tab stack" puts the
+  // next ones there, and takes a tab opened in front out again (Vivaldi would stack those too). Left alone: tabs of other windows, a source bound to a
   // pinned link or favorite (its pages stay in the list), pinned tabs, Peek's temporary tabs, and a source already
   // in a stack. Vivaldi 8.3 creates a stack with tabsPrivate.move(..., ["do-not-reparent", "create-new-group"]),
   // the call its own "Stack tabs" action makes.
   const autoStack = async (tab) => {
     if (!window.__vm.settings.get("stackOpenedTabs") || tab.windowId !== window.vivaldiWindowId || tab.openerTabId == null) return;
+    if (tab.active) return keepLoose(tab);
     if (!vivaldi?.tabsPrivate?.move || BLANK.test(tab.pendingUrl || tab.url || "")) return;
     const source = await chrome.tabs.get(tab.openerTabId).catch(() => null);
     if (!source || source.windowId !== tab.windowId || source.pinned || tab.pinned) return;
@@ -676,6 +679,21 @@
     }
   };
   const stacking = new Map();
+  const keepLoose = async (tab) => {
+    const source = await chrome.tabs.get(tab.openerTabId).catch(() => null);
+    const group = tabStackId(source);
+    if (!group || !vivaldi?.tabsPrivate?.move) return;
+    for (let i = 0; i < 10; i++) { // Vivaldi stacks the new tab a moment after creating it
+      const now = await chrome.tabs.get(tab.id).catch(() => null);
+      if (!now) return;
+      if (tabStackId(now) === group) {
+        await vivaldi.tabsPrivate.move({ tabIds: [tab.id], target: "last", tweaks: ["ungroup"], debug: "Vivarc.keepLoose" });
+        refresh(false);
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  };
 
   // ---- Tidy Tabs ----
   const tidyTabs = async () => {
