@@ -1183,7 +1183,18 @@
 #browser.vm-on.theme-dark .vm-little-toolbar .vm-little-pill { --pill-bg: color-mix(in srgb, var(--colorFg) 12%, var(--colorBg)); }
 #browser.vm-on .vm-little-toolbar .vm-little-pill button { height: 26px; border-radius: 999px; }
 #browser.vm-on .vm-little-toolbar .vm-little-promote { padding: 0 10px; }
-#browser.vm-on .vm-little-toolbar .vm-little-promote svg { width: 10px; height: 10px; opacity: .6; }
+/* Like Little Arc: "Open in" quiet, the space's name in its colour, then the shortcut. */
+#browser.vm-on .vm-little-toolbar .vm-little-promote-label { color: color-mix(in srgb, currentColor 60%, transparent); }
+#browser.vm-on .vm-little-toolbar .vm-little-promote-space { color: var(--colorFg); font-weight: 600; }
+#browser.vm-on .vm-little-toolbar .vm-little-promote-space.tinted { color: hsl(var(--space-h) var(--space-s) 34%); }
+#browser.vm-on.theme-dark .vm-little-toolbar .vm-little-promote-space.tinted { color: hsl(var(--space-h) var(--space-s) 74%); }
+#browser.vm-on .vm-little-toolbar .vm-little-kbd {
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  color: color-mix(in srgb, currentColor 60%, transparent);
+  font: 500 11.5px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+}
 #browser.vm-on .vm-little-toolbar .vm-little-pick { display: none; min-width: 0; width: 26px; padding: 0 2px 0 0; color: color-mix(in srgb, currentColor 70%, transparent); }
 #browser.vm-on .vm-little-toolbar .vm-little-pill.has-spaces .vm-little-promote { padding-right: 8px; }
 #browser.vm-on .vm-little-toolbar .vm-little-pill.has-spaces .vm-little-pick { display: inline-flex; position: relative; }

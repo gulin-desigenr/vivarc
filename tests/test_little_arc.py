@@ -109,16 +109,6 @@ class LittleArc(unittest.TestCase):
         opts = creates(run("await window.__vm.openLittleArc();"))[0]
         self.assertEqual(opts['url'], 'about:blank')
 
-    def test_the_global_shortcut_tab_becomes_a_blank_little_window(self):
-        calls = run("""
-  now += 10000;
-  listeners.created({ id: 8, windowId: 7, active: true, pendingUrl: 'http://127.0.0.1:47391/little/new' });
-  listeners.committed({ tabId: 8, frameId: 0, transitionType: 'link', transitionQualifiers: [] });
-  for (let i = 0; i < 6; i++) await tick();
-""")
-        self.assertIn(['remove', 8], calls)
-        self.assertEqual([c['url'] for c in creates(calls)], ['about:blank'])
-
     def test_link_from_another_app_moves_into_little_window(self):
         calls = run("""
   now += 10000;

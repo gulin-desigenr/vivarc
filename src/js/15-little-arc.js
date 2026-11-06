@@ -64,22 +64,6 @@
   };
 
   // ---- Global shortcut (Option+Command+N, registered by the helper) ----
-  // The helper opens LITTLE_URL in Vivaldi; the window that receives that tab swaps it for a blank Little Vivarc.
-  const LITTLE_URL = "http://127.0.0.1:47391/little/new";
-  const handled = new Set();
-  const catchShortcut = (tab) => {
-    const url = tab?.pendingUrl || tab?.url || "";
-    if (!url.startsWith(LITTLE_URL) || tab.windowId !== window.vivaldiWindowId || handled.has(tab.id)) return false;
-    handled.add(tab.id);
-    chrome.tabs.remove(tab.id).catch(() => {});
-    window.__vm.openLittleArc().catch((error) => console.warn("[vivarc] Little Vivarc shortcut:", error));
-    return true;
-  };
-  chrome.tabs.onCreated?.addListener(catchShortcut);
-  chrome.tabs.onUpdated?.addListener((_id, change, tab) => { if (change.url || change.status) catchShortcut(tab); });
-  // Vivaldi started by the shortcut: the tab can predate this code.
-  chrome.tabs.query?.({ windowId: window.vivaldiWindowId })?.then?.((tabs) => tabs.forEach(catchShortcut)).catch?.(() => {});
-
   // The helper hands the press to a window waiting on LITTLE_WAIT, so no tab opens: Vivaldi stays in its space and
   // is not brought forward (a minimised window stays minimised). Only normal windows wait; the helper answers
   // "stop" to a Vivaldi it does not serve (a development copy), and a helper that is not running is asked again later.
@@ -96,12 +80,7 @@
         reply = response.ok ? await response.json() : null;
       } catch (_) {}
       if (reply?.stop) return;
-      if (reply?.open) {
-        // Vivaldi launched (hidden) by this press: showing the Little Vivarc un-hides the app, so the main window
-        // goes to the Dock first and only the Little Vivarc appears.
-        if (reply.cold) await chrome.windows.update(window.vivaldiWindowId, { state: "minimized" }).catch(() => {});
-        window.__vm.openLittleArc().catch((error) => console.warn("[vivarc] Little Vivarc shortcut:", error));
-      }
+      if (reply?.open) window.__vm.openLittleArc().catch((error) => console.warn("[vivarc] Little Vivarc shortcut:", error));
       else if (!reply) await sleep(10000);
     }
   };
@@ -126,7 +105,6 @@
     if (tab.windowId !== window.vivaldiWindowId || registry.has(window.vivaldiWindowId)) return;
     if (!externalEnabled() || Date.now() - startedAt < 5000 || Date.now() - lastUiCreate < 1500) return;
     if (tab.openerTabId != null || tab.active === false || !isWeb(tab.pendingUrl || tab.url)) return;
-    if ((tab.pendingUrl || tab.url).startsWith(LITTLE_URL)) return;
     candidates.set(tab.id, Date.now());
     setTimeout(() => candidates.delete(tab.id), 15000);
   });
@@ -223,7 +201,6 @@
     back: ["0 0 26 24", 26, 24, 1.33333, '<path d="M15 16L11 12L15 8"/>'],
     forward: ["0 0 26 24", 26, 24, 1.33333, '<path d="M11 16L15 12L11 8"/>'],
     reload: ["0 0 26 24", 26, 24, 1.25, '<path d="M18 12.0039C17.9991 13.1607 17.5971 14.2813 16.8627 15.1749C16.1282 16.0685 15.1065 16.6798 13.9719 16.9046C12.8372 17.1295 11.6597 16.9539 10.6399 16.408C9.62017 15.862 8.82126 14.9793 8.37932 13.9103C7.93738 12.8413 7.87974 11.6522 8.21623 10.5455C8.55272 9.4388 9.26252 8.483 10.2247 7.84095C11.1869 7.19889 12.3419 6.91031 13.493 7.02436C14.6441 7.13841 15.72 7.64805 16.5375 8.46643M18 7.00393V10.1289H14.875"/>'],
-    open: ["0 0 11.25 11.25", 11.25, 11.25, 1.25, '<path d="M10.625 4.375V0.625H6.875M10.625 0.625L5 6.25M9.375 6.875V10C9.375 10.1658 9.30915 10.3247 9.19194 10.4419C9.07473 10.5592 8.91576 10.625 8.75 10.625H1.25C1.08424 10.625 0.925269 10.5592 0.808058 10.4419C0.690848 10.3247 0.625 10.1658 0.625 10V2.5C0.625 2.33424 0.690848 2.17527 0.808058 2.05806C0.925269 1.94085 1.08424 1.875 1.25 1.875H4.375"/>'],
     down: ["0 0 10 10", 10, 10, 1.25, '<path d="M2.5 3.75L5 6.25L7.5 3.75"/>'],
     check: ["0 0 12 12", 12, 12, 1.4, '<path d="M2.5 6.25L5 8.75L9.5 3.5"/>'],
   };
@@ -279,11 +256,16 @@
   // ---- Spaces for "Open in <space>": the main window knows them (its sidebar), so it answers over the channel ----
   let spaces = [];
   let spaceMenu = null;
-  const answerSpaces = (littleId) => {
+  // Each space with its theme's hue (when it has a theme), so the pill can write its name in the space's colour.
+  const answerSpaces = async (littleId) => {
     const record = registry.get(littleId);
     if (!record || record.originWindowId !== window.vivaldiWindowId) return;
     const list = window.__vm.spaceList?.() || [];
-    channel?.postMessage({ action: "space-list", windowId: littleId, spaces: list.map(({ id, name, emoji, active }) => ({ id, name, emoji, active })) });
+    const spaces = await Promise.all(list.map(async ({ id, name, emoji, active }) => {
+      const theme = await window.__vm.store?.get?.(`theme:space:${id}`, null);
+      return { id, name, emoji, active, hue: theme?.on ? theme.hue : null, sat: theme?.on ? theme.sat : null };
+    }));
+    channel?.postMessage({ action: "space-list", windowId: littleId, spaces });
   };
   const askSpaces = () => channel?.postMessage({ action: "spaces", windowId: littleWindowId });
   const showSpaces = (list) => {
@@ -292,7 +274,14 @@
     const current = spaces.find((s) => s.active);
     const many = spaces.length > 1;
     toolbar.querySelector(".vm-little-pill")?.classList.toggle("has-spaces", many);
-    toolbar.querySelector(".vm-little-promote-label").textContent = many && current ? `Open in ${current.name}` : "Open in Vivarc";
+    const name = toolbar.querySelector(".vm-little-promote-space");
+    name.textContent = many && current ? current.name : "Vivarc";
+    const tinted = many && current?.hue != null;
+    name.classList.toggle("tinted", tinted);
+    if (tinted) {
+      name.style.setProperty("--space-h", String(current.hue));
+      name.style.setProperty("--space-s", `${Math.min(75, Math.max(40, current.sat))}%`);
+    }
     if (spaceMenu) renderSpaceMenu();
   };
   const closeSpaceMenu = () => { spaceMenu?.remove(); spaceMenu = null; };
@@ -372,8 +361,8 @@
     promoteButton.className = "vm-little-pill";
     const main = document.createElement("button");
     main.className = "vm-little-promote";
-    main.title = "Open in the main Vivarc window";
-    main.innerHTML = `<span class="vm-little-promote-label">Open in Vivarc</span>${icon("open")}`;
+    main.title = "Open in the main Vivarc window (Command+O)";
+    main.innerHTML = '<span class="vm-little-promote-label">Open in <span class="vm-little-promote-space">Vivarc</span></span><kbd class="vm-little-kbd">⌘O</kbd>';
     main.addEventListener("click", () => promote());
     const pick = document.createElement("button");
     pick.className = "vm-little-pick";
@@ -407,6 +396,12 @@
       toolbar.querySelector(".vm-little-promote").disabled = false;
       toast("Could not move the page. Check that its original window is open.");
     } else install().catch(() => {});
+  });
+  // Command+O opens the page in the main window's space, like Little Arc (05-bootstrap.js frees it from Vivaldi's
+  // "Open File"). Every window hears every shortcut, so only the focused Little Vivarc acts.
+  window.__vm.onShortcut?.((key) => {
+    if (key !== window.__vm.normalise("meta+o") || littleWindowId == null || !toolbar) return;
+    chrome.windows.get(littleWindowId).then((w) => { if (w?.focused) promote(); }).catch(() => {});
   });
   window.__vm.onMark((browser) => {
     if (littleWindowId != null) browser.classList.add("vm-little-arc");

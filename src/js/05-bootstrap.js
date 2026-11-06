@@ -8,6 +8,7 @@
   const set = (path, value) => vivaldi.prefs.set({ path, value });
   const FREED = "meta+t";
   const COPY_URL = "shift+meta+c";
+  const LITTLE_OPEN = "meta+o"; // Little Vivarc's "Open in <space>"
 
   // Bump when the steps change: profiles already set up then run the (idempotent) steps once more.
   const VERSION = 12;
@@ -117,6 +118,17 @@
         }
         await set("vivaldi.actions", actions);
         await window.__vm.store.set("spaceNumberShortcuts", true);
+      }
+    }
+    // Command+O is Little Vivarc's "Open in <space>" (like Little Arc); Vivaldi's "Open File" keeps its menu item.
+    if (!(await window.__vm.store.get("littleOpenShortcut", false))) {
+      const actions = await get("vivaldi.actions");
+      if (Array.isArray(actions) && actions[0]) {
+        for (const cmd of Object.values(actions[0])) {
+          if (Array.isArray(cmd?.shortcuts)) cmd.shortcuts = cmd.shortcuts.filter((s) => s !== LITTLE_OPEN);
+        }
+        await set("vivaldi.actions", actions);
+        await window.__vm.store.set("littleOpenShortcut", true);
       }
     }
     if ((await window.__vm.store.get("bootstrap", 0)) >= VERSION) return;

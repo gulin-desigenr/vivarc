@@ -115,7 +115,6 @@ def save_backup(name, body, directory=None, keep=BACKUP_KEEP):
     return path
 
 
-LITTLE_PATH = "/little/new"  # Vivarc turns a tab opening this address into a blank Little Vivarc (fallback)
 LITTLE_WAIT = "/little/wait"  # Vivaldi's windows wait here for the shortcut
 WAIT_SECONDS = 25
 # The Vivaldi whose windows take the shortcut (another copy, such as a development one, may poll the same helper).
@@ -130,23 +129,21 @@ class Waiters:
         self.waiting = []  # [{"event": Event, "taken": bool}], newest last
 
     def wait(self, timeout=None):
-        entry = {"event": threading.Event(), "taken": False, "cold": False}
+        entry = {"event": threading.Event(), "taken": False}
         with self.lock:
             self.waiting.append(entry)
         entry["event"].wait(WAIT_SECONDS if timeout is None else timeout)
         with self.lock:
             if entry in self.waiting:
                 self.waiting.remove(entry)
-        return {"open": entry["taken"], "cold": entry["cold"]} if entry["taken"] else {"open": False}
+        return {"open": entry["taken"]}
 
-    def give(self, cold=False):
-        """cold: Vivaldi was just launched (hidden) for this press, so its main window should not show."""
+    def give(self):
         with self.lock:
             if not self.waiting:
                 return False
             entry = self.waiting.pop()
             entry["taken"] = True
-            entry["cold"] = cold
             entry["event"].set()
             return True
 
@@ -166,7 +163,6 @@ def client_app(port):
     except (OSError, ValueError, subprocess.SubprocessError):
         pass
     return ""
-LITTLE_PAGE = b"<!doctype html><meta charset=utf-8><title>Little Vivarc</title><p>Opening Little Vivarc&hellip;</p>"
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -229,13 +225,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 return
             self.reply(200, json.dumps(WAITERS.wait()).encode("utf8"))
             return
-        if self.path.split("?")[0] == LITTLE_PATH:  # shown only if Vivarc is not running to catch it
-            self.send_response(200)
-            self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Content-Length", str(len(LITTLE_PAGE)))
-            self.end_headers()
-            self.wfile.write(LITTLE_PAGE)
-            return
         origin = self.headers.get("Origin")
         host = (self.headers.get("Host") or "").split(":")[0]
         # Host check: a rebound DNS name cannot reach the helper from a web page.
@@ -258,7 +247,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 
 # ---- Global shortcut: Option+Command+N opens a blank Little Vivarc from any app, like Little Arc ----
-# Carbon hot keys need no Accessibility permission. The press opens LITTLE_PATH in Vivaldi; Vivarc catches it.
+# Carbon hot keys need no Accessibility permission. The press goes to a Vivaldi window waiting on LITTLE_WAIT.
 KEY_N, CMD_KEY, OPTION_KEY = 45, 256, 2048
 
 
@@ -277,28 +266,14 @@ class EventHotKeyID(ctypes.Structure):
 HANDLER = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
 
 
-def vivaldi_running():
-    return subprocess.run(["pgrep", "-x", "Vivaldi"], capture_output=True).returncode == 0
-
-
-def open_little(port):
+def open_little(_port=None):
     """Tell a waiting Vivaldi window to open a blank Little Vivarc. Nothing is opened in Vivaldi itself, so it stays
-    where it is (minimised, behind other apps, in its current space). Vivaldi not running is launched hidden and
-    gets a few seconds to start waiting; that window is told the launch was cold, so it minimises itself before
-    showing the Little Vivarc (showing a window un-hides the whole app). Only when no window waits (an older Vivarc) is LITTLE_PATH opened in
-    Vivaldi, which brings it forward."""
+    where it is (minimised, behind other apps, in its current space). With Vivaldi closed nothing happens."""
     def run():
-        if WAITERS.give():
-            return
-        tries, cold = 6, False  # a window between two waits asks again at once
-        if not vivaldi_running():
-            subprocess.run(["open", "-g", "-j", "-b", "com.vivaldi.Vivaldi"], capture_output=True)
-            tries, cold = 80, True
-        for _ in range(tries):
-            time.sleep(0.25)
-            if WAITERS.give(cold):
+        for _ in range(6):  # a window between two waits asks again at once
+            if WAITERS.give():
                 return
-        subprocess.run(["open", "-b", "com.vivaldi.Vivaldi", f"http://127.0.0.1:{port}{LITTLE_PATH}"], capture_output=True)
+            time.sleep(0.25)
     threading.Thread(target=run, daemon=True).start()
 
 
