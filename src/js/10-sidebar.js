@@ -736,6 +736,7 @@
     } }));
   };
   window.__vm.tidyTabs = tidyTabs;
+  window.__vm.iconEl = iconEl; // the command bar shows the same icons as the sidebar
   // Out of a stack, as Vivaldi's own "Remove from Tab Stack" does (the tab goes to the end of the list), and into one.
   const unstack = async (tabIds) => {
     await vivaldi.tabsPrivate.move({ tabIds, target: "last", tweaks: ["ungroup"], debug: "Vivarc.unstack" });

@@ -57,8 +57,6 @@
   };
   const SEARCH_SVG =
     '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg>';
-  const ARROW_SVG =
-    '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 
   const hostOf = (url) => {
     try { return new URL(url).hostname.replace(/^www\./, ""); } catch (_) { return ""; }
@@ -256,7 +254,9 @@
 
   const iconFor = (url, favicon) => {
     const wrap = el("span", "vm-cmd-ico");
-    if (favicon) {
+    if (window.__vm.iconEl) {
+      wrap.append(window.__vm.iconEl(url, favicon)); // live icon, then the sidebar's cache, then Vivaldi's database
+    } else if (favicon) {
       const img = el("img");
       img.src = favicon;
       img.addEventListener("error", () => wrap.replaceChildren(letter(url)));
@@ -336,13 +336,9 @@
   const render = () => {
     if (!list) return;
     const nodes = [];
-    let lastGroup = null;
+    // One line per result and no section titles, like Arc: the title, the site in grey, and what Enter does on the
+    // selected row only.
     rows.forEach((row, i) => {
-      const group = { tab: "Open tabs", action: "Actions", engine: "Search engines", search: "Search", suggest: "Suggestions", bookmark: "Bookmarks", history: "History", archived: "Archived tabs", pick: mode?.name || "Spaces", url: "Go to" }[row.type] || "Results";
-      if (group !== lastGroup) {
-        nodes.push(el("div", "vm-cmd-section", group));
-        lastGroup = group;
-      }
       const item = el("div", `vm-cmd-row${i === selected ? " sel" : ""}`);
       item.id = `vm-cmd-option-${i}`;
       item.setAttribute("role", "option");
@@ -360,16 +356,14 @@
       icon.setAttribute("aria-hidden", "true");
       const content = el("span", "vm-cmd-content");
       content.append(el("span", "vm-cmd-title", row.label));
-      const detail = row.type === "tab" ? hostOf(row.url) : row.sub ||
-        ({ action: "Run action", engine: "Search with this engine", search: "Search the web", suggest: "Search the web", url: "Open address" }[row.type] || "");
-      if (detail) content.append(el("span", "vm-cmd-sub", detail));
+      const detail = row.type === "tab" ? hostOf(row.url) : row.type === "url" ? (row.sub === "Open" ? "" : row.sub) : row.sub || "";
+      if (detail && detail !== row.label) content.append(el("span", "vm-cmd-sub", detail));
       item.append(icon, content);
-      if (row.type === "tab" || row.type === "action" || row.type === "engine" || row.type === "archived" || row.type === "pick") {
+      const does = { tab: "Switch to Tab", action: "Run", engine: "Tab to Search", archived: "Restore", pick: "Choose",
+        search: "Search", suggest: "Search", url: "Open", bookmark: "Open", history: "Open" }[row.type];
+      if (does) {
         const hint = el("span", "vm-cmd-hint");
-        hint.append(el("span", null, { tab: "Switch to Tab", action: "Run Action", engine: "Tab", archived: "Restore", pick: "Choose" }[row.type]));
-        const arrow = el("span", "vm-cmd-arrow");
-        arrow.innerHTML = ARROW_SVG;
-        hint.append(arrow);
+        hint.append(el("span", null, does), el("kbd", null, row.type === "engine" ? "⇥" : "↵"));
         item.append(hint);
       }
       item.addEventListener("mousemove", () => {
@@ -438,7 +432,7 @@
     } else if (mode) {
       out.push({ type: "search", engine: mode, query: text, label: text || "%s" });
     } else if (!text) {
-      (await allTabs()).slice(0, 7).forEach((tab) =>
+      (await allTabs()).slice(0, 5).forEach((tab) =>
         out.push({ type: "tab", tab, url: tab.url, favicon: tab.favIconUrl, label: window.__vm.titleOf(tab) }));
     } else {
       const needle = text.toLowerCase();
@@ -452,7 +446,7 @@
       };
       (await allTabs())
         .filter((t) => `${t.title} ${t.url}`.toLowerCase().includes(needle))
-        .slice(0, 4)
+        .slice(0, 3)
         .forEach((tab) => add({ type: "tab", tab, url: tab.url, favicon: tab.favIconUrl, label: window.__vm.titleOf(tab) }));
       // Spaces by name ("go to" a space, like Arc): only the ones that start with what is typed.
       const spaceHits = needle.length < 3 ? [] : (window.__vm.spaceList?.() || [])
@@ -461,14 +455,14 @@
         .map((space) => ({ type: "pick", url: `vivarc-space:${space.id}`, label: `Switch to ${space.name}`, sub: "Space", run: () => window.__vm.switchToSpace(space.id) }));
       // Archived pages before bookmarks and history: restoring one brings it back to its space.
       try {
-        window.__vm.archive.search(await window.__vm.archive.load(), text, 3).forEach((e) => add(archivedRow(e)));
+        window.__vm.archive.search(await window.__vm.archive.load(), text, 2).forEach((e) => add(archivedRow(e)));
       } catch (_) {}
       try {
-        (await chrome.bookmarks.search(text)).filter((b) => b.url).slice(0, 3)
+        (await chrome.bookmarks.search(text)).filter((b) => b.url).slice(0, 2)
           .forEach((b) => add({ type: "bookmark", url: b.url, label: b.title || b.url, sub: hostOf(b.url) }));
       } catch (_) {}
       try {
-        (await chrome.history.search({ text, maxResults: 4 }))
+        (await chrome.history.search({ text, maxResults: 3 }))
           .forEach((h) => add({ type: "history", url: h.url, favicon: null, label: h.title || h.url, sub: hostOf(h.url) }));
       } catch (_) {}
       if (id !== seq) return;
@@ -500,13 +494,13 @@
           const data = await reply.json();
           const phrases = Array.isArray(data[1]) ? data[1] : data.map((d) => d.phrase);
           if (id !== seq) return;
-          phrases.filter((p) => p && p.toLowerCase() !== needle).slice(0, 4)
+          phrases.filter((p) => p && p.toLowerCase() !== needle).slice(0, 3)
             .forEach((p) => out.push({ type: "suggest", engine: DEFAULT, query: p, label: p }));
         } catch (_) {}
       }
     }
     if (id !== seq) return;
-    rows = out;
+    rows = mode ? out : out.slice(0, 10); // a short list; pickers and the archive show all they find
     selected = 0;
     render();
   };
@@ -589,17 +583,11 @@
     input.setAttribute("aria-controls", "vm-cmd-results");
     input.setAttribute("role", "combobox");
     input.setAttribute("aria-expanded", "true");
-    head.append(glyph, chipHolder, input, el("span", "vm-cmd-escape", "ESC"));
+    head.append(glyph, chipHolder, input);
     list = el("div", "vm-cmd-list");
     list.id = "vm-cmd-results";
     list.setAttribute("role", "listbox");
-    const footer = el("div", "vm-cmd-footer");
-    for (const [keys, label] of [["↑ ↓", "Navigate"], ["↵", "Open"], ["esc", "Close"]]) {
-      const hint = el("span", "vm-cmd-shortcut");
-      hint.append(el("kbd", null, keys), el("span", null, label));
-      footer.append(hint);
-    }
-    box.append(head, list, footer);
+    box.append(head, list);
     bar.append(box);
     bar.addEventListener("mousedown", (e) => { if (e.target === bar) close(true); });
     input.addEventListener("keydown", onKey);
