@@ -61,6 +61,13 @@
   const hostOf = (url) => {
     try { return new URL(url).hostname.replace(/^www\./, ""); } catch (_) { return ""; }
   };
+  // A site's base address: mail.google.com and google.com are one site.
+  const siteOf = (host) => {
+    const parts = String(host || "").split(".").filter(Boolean);
+    if (parts.length < 2) return host || "";
+    const n = parts.length > 2 && /^(com|co|org|net|gov|edu|ac)$/.test(parts[parts.length - 2]) && parts[parts.length - 1].length === 2 ? 3 : 2;
+    return parts.slice(-n).join(".");
+  };
   const looksLikeUrl = (text) =>
     /^(https?:\/\/|chrome:\/\/|vivaldi:\/\/)/i.test(text) || (/^[^\s]+\.[a-z]{2,}(\/\S*)?$/i.test(text) && !text.includes(" "));
   const toUrl = (text) => (/^[a-z][a-z0-9+.-]*:\/\//i.test(text) ? text : `https://${text}`);
@@ -278,24 +285,48 @@
   const close = (removeBlank) => {
     const blank = editing ? null : targetTab; // editing: the target is the page you are on, never closed
     bar?.remove();
-    bar = input = list = chipHolder = targetTab = mode = null;
+    bar = input = list = chipHolder = targetTab = mode = stackHere = null;
     editing = false;
     rows = [];
     seq++;
     if (removeBlank && blank != null) chrome.tabs.remove(blank).catch(() => {});
   };
 
-  const go = (url) => {
+  // The page behind the bar is in a tab stack: what opens from the bar joins that stack, unless the row says
+  // "Outside Stack". Vivaldi itself stacks a tab created from a stacked one, and leaves the blank tab of Cmd+T out,
+  // so the tab is put in place (or taken out) once it exists, and checked again a moment later.
+  let stackHere = null; // { group, name, memberId }
+  const groupOf = (tab) => { try { return JSON.parse(tab?.vivExtData || "{}").group || ""; } catch (_) { return ""; } };
+  const place = (id, outside, stack = stackHere) => {
+    if (id == null || !stack || !vivaldi?.tabsPrivate?.move) return;
+    const check = async () => {
+      const tab = await chrome.tabs.get(id).catch(() => null);
+      if (!tab) return;
+      const group = groupOf(tab);
+      if (outside && group) await vivaldi.tabsPrivate.move({ tabIds: [id], target: "last", tweaks: ["ungroup"], debug: "Vivarc.cmdOutside" });
+      else if (!outside && group !== stack.group) {
+        await vivaldi.tabsPrivate.move({ tabIds: [id], target: stack.memberId, tweaks: ["do-not-reparent", "into"], debug: "Vivarc.cmdIntoStack" });
+      } else return;
+      window.dispatchEvent(new CustomEvent("vm-refresh-sidebar"));
+    };
+    setTimeout(() => check().catch((e) => console.warn("[vivarc] stack:", e)), 250);
+    setTimeout(() => check().catch(() => {}), 900);
+  };
+
+  const go = (url, outside = false) => {
     const id = targetTab;
+    const stack = stackHere;
     close(false);
-    if (id != null) chrome.tabs.update(id, { url, active: true });
-    else chrome.tabs.create({ url });
+    if (id != null) chrome.tabs.update(id, { url, active: true }).then(() => place(id, outside, stack));
+    else chrome.tabs.create({ url }).then((tab) => place(tab.id, outside, stack));
   };
 
   // Plain searches use the engine chosen in Vivaldi; DuckDuckGo is only the fallback.
-  const defaultSearch = async (query) => {
+  const defaultSearch = async (query, outside = false) => {
     const id = targetTab;
+    const stack = stackHere;
     close(false);
+    place(id, outside, stack);
     try {
       await chrome.search.query(id != null ? { text: query, tabId: id } : { text: query, disposition: "NEW_TAB" });
     } catch (_) {
@@ -311,8 +342,8 @@
       chrome.tabs.update(row.tab.id, { active: true });
       close(true);
     } else if (row.type === "search" || row.type === "suggest") {
-      if (row.engine === DEFAULT) defaultSearch(row.query);
-      else go(engineUrl(row.engine, row.query));
+      if (row.engine === DEFAULT) defaultSearch(row.query, row.outside);
+      else go(engineUrl(row.engine, row.query), row.outside);
     } else if (row.type === "engine") {
       input.value = "";
       setMode(row.engine);
@@ -329,7 +360,7 @@
       close(true);
       Promise.resolve(row.action.run(row.tab)).catch((e) => console.warn("[vivarc] action:", e));
     } else {
-      go(row.url);
+      go(row.url, row.outside);
     }
   };
 
@@ -338,7 +369,11 @@
     const nodes = [];
     // One line per result and no section titles, like Arc: the title, the site in grey, and what Enter does on the
     // selected row only.
+    let lastGroup = null;
     rows.forEach((row, i) => {
+      if (row.group && row.group !== lastGroup) nodes.push(el("div", "vm-cmd-section", row.group));
+      else if (!row.group && lastGroup) nodes.push(el("div", "vm-cmd-divider"));
+      lastGroup = row.group || null;
       const item = el("div", `vm-cmd-row${i === selected ? " sel" : ""}`);
       item.id = `vm-cmd-option-${i}`;
       item.setAttribute("role", "option");
@@ -444,7 +479,12 @@
         seen.add(key);
         matches.push(row);
       };
-      (await allTabs())
+      const tabsNow = await allTabs();
+      // The page behind the bar is in a stack: what opens from here goes into it by default.
+      stackHere = null;
+      const behind = editing ? null : await pageBehindBar();
+      if (groupOf(behind)) stackHere = { group: groupOf(behind), memberId: behind.id };
+      tabsNow
         .filter((t) => `${t.title} ${t.url}`.toLowerCase().includes(needle))
         .slice(0, 3)
         .forEach((tab) => add({ type: "tab", tab, url: tab.url, favicon: tab.favIconUrl, label: window.__vm.titleOf(tab) }));
@@ -468,26 +508,28 @@
       if (id !== seq) return;
       const prefix = matches.find((m) => hostOf(m.url).startsWith(needle));
       const searchRow = { type: "search", engine: DEFAULT, query: text, label: text };
-      // An address that is already open in a tab: Switch to Tab first, then a row that opens it again in a new
-      // tab (Arc offers both). Otherwise the typed address comes first.
-      const openTab = prefix?.type === "tab" ? prefix : null;
-      const address = looksLikeUrl(text) ? text : openTab ? hostOf(openTab.url) : "";
+      // Opening comes first, even when the site is already open: the address in a new tab (inside the stack you are
+      // in, with a second row for outside it), then every open tab on that site under "Open Tabs".
+      const address = looksLikeUrl(text) ? text : prefix ? hostOf(prefix.url) : "";
+      const site = address ? siteOf(hostOf(toUrl(address))) : "";
+      const siteTabs = site ? tabsNow.filter((t) => siteOf(hostOf(t.url)) === site).slice(0, 6) : [];
       const urlRow = address && { type: "url", url: toUrl(address), label: address,
-        sub: openTab && !editing ? "Open in New Tab" : "Open" };
-      if (openTab) out.push(openTab, ...(urlRow ? [urlRow] : []));
-      else {
-        if (urlRow) out.push(urlRow);
-        if (prefix) out.push(prefix);
-      }
+        sub: editing ? "Open" : siteTabs.length || stackHere ? "Open in New Tab" : "Open" };
+      const first = urlRow || searchRow;
+      out.push(first);
+      if (stackHere) out.push({ ...first, outside: true, sub: first.type === "url" ? "Open in New Tab, Outside Stack" : "Search Outside Stack" });
+      out.push(...siteTabs.map((tab) => ({ type: "tab", tab, url: tab.url, favicon: tab.favIconUrl, label: window.__vm.titleOf(tab), group: "Open Tabs" })));
+      if (urlRow && prefix && prefix.type !== "tab") out.push(prefix);
       // An action named by what is typed ("archived", "split") comes before the web search, like Arc's commands.
       const actions = needle.length > 1 ? await matchingActions(needle) : [];
       const named = needle.length >= 4 && !looksLikeUrl(text)
         ? actions.filter((a) => a.label.toLowerCase().startsWith(needle) || a.label.toLowerCase().split(/[\s:/()]+/).some((w) => w.startsWith(needle)))
         : [];
-      out.push(...named, ...spaceHits, searchRow, ...actions.filter((a) => !named.includes(a)));
+      out.push(...named, ...spaceHits, ...(first === searchRow ? [] : [searchRow]), ...actions.filter((a) => !named.includes(a)));
       const keyword = !/\s/.test(text) && engines.find((en) => en.keyword.toLowerCase() === needle);
       if (keyword) out.unshift({ type: "engine", engine: keyword, label: `Search ${keyword.name}` });
-      out.push(...matches.filter((m) => m !== prefix));
+      const listed = new Set(siteTabs.map((t) => t.id));
+      out.push(...matches.filter((m) => m !== prefix && !(m.type === "tab" && listed.has(m.tab.id))));
       if (window.__vm.settings.get("searchSuggestions") && !looksLikeUrl(text) && text.length > 1) {
         try {
           const reply = await fetch(DEFAULT.suggest.replace("{searchTerms}", encodeURIComponent(text)));
@@ -565,7 +607,7 @@
   const open = (tabId, { edit = null } = {}) => {
     if (!window.__vm.cssLoaded) return;
     if (bar && !bar.isConnected) close(false); // its element was taken out of the page without closing the bar
-    if (bar) { if (!editing) targetTab = tabId; return; }
+    if (bar) { if (!editing && tabId != null) targetTab = tabId; return; }
     targetTab = tabId;
     editing = edit != null;
     mode = null;
