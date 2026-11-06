@@ -1110,20 +1110,21 @@
 #browser.vm-on .dialog-javascript .dialog-footer label { margin-right: auto; color: var(--cmd-muted); font-size: 12px; }
 
 /* Little Vivarc: its own bar in the title bar (back, forward, reload, address, Open in Vivarc); Vivaldi's page title
-   and its read-only address row are hidden. The native traffic lights keep the left 78px. */
-#browser.vm-on.vm-little-arc #header { height: 38px; min-height: 38px; }
+   and its read-only address row are hidden. The native traffic lights keep the left 78px. The title bar is Vivaldi's
+   (32px on macOS 26); the bar is 28px from the top so its controls line up with the traffic lights (centred 14px
+   down) and leave a gap above the page. */
 #browser.vm-on.vm-little-arc #header #pagetitle { visibility: hidden; }
 #browser.vm-on.vm-little-arc .mainbar { display: none; }
 #browser.vm-on .vm-little-toolbar {
   position: absolute;
   top: 0;
   left: 78px;
-  right: 8px;
+  right: 10px;
   z-index: 100000;
   display: flex;
   align-items: center;
-  gap: 4px;
-  height: 38px;
+  gap: 2px;
+  height: 28px;
   color: var(--colorFg);
   font: 12.5px/1 -apple-system, BlinkMacSystemFont, sans-serif;
   app-region: no-drag;
@@ -1134,7 +1135,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 26px;
+  height: 24px;
   min-width: 26px;
   padding: 0 6px;
   border: 0;
@@ -1150,8 +1151,8 @@
 #browser.vm-on .vm-little-toolbar .vm-little-address {
   flex: 1 1 auto;
   min-width: 0;
-  height: 26px;
-  margin: 0 4px;
+  height: 24px;
+  margin: 0 6px;
   padding: 0 10px;
   border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
   border-radius: 8px;
