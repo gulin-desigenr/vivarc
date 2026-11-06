@@ -1109,17 +1109,18 @@
 #browser.vm-on .dialog-javascript .dialog-footer input[type="button"]:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--colorHighlightBg, #5d7aee) 35%, transparent); }
 #browser.vm-on .dialog-javascript .dialog-footer label { margin-right: auto; color: var(--cmd-muted); font-size: 12px; }
 
-/* Little Vivarc: its own bar in the title bar (back, forward, reload, address, Open in Vivarc); Vivaldi's page title
-   and its read-only address row are hidden. The native traffic lights keep the left 78px. The title bar is Vivaldi's
-   (32px on macOS 26); the bar is 28px from the top so its controls line up with the traffic lights (centred 14px
-   down) and leave a gap above the page. */
+/* Little Vivarc: its own bar in the title bar (back, forward, reload, address, "Open in <space>"); Vivaldi's page
+   title and its read-only address row are hidden. From the Figma design (GULIN.CO APPs, node 32:2): a 44px bar, the
+   traffic lights in its middle (15-little-arc.js asks Vivaldi for that placement; they end at 73px), thin icons, a
+   pill address field and a raised white pill to open the page in a space. */
+.mac#browser.vm-on.vm-little-arc:is(.popup, .tabs-off) :is(#header, #titlebar) { height: 44px; min-height: 44px; line-height: 44px; }
 #browser.vm-on.vm-little-arc #header #pagetitle { visibility: hidden; }
 #browser.vm-on.vm-little-arc .mainbar { display: none; }
 #browser.vm-on .vm-little-toolbar {
   position: absolute;
-  top: 0;
-  left: 78px;
-  right: 10px;
+  top: 7px;
+  left: 85px;
+  right: 12px;
   z-index: 100000;
   display: flex;
   align-items: center;
@@ -1137,7 +1138,7 @@
   gap: 6px;
   height: 24px;
   min-width: 26px;
-  padding: 0 6px;
+  padding: 0;
   border: 0;
   border-radius: 7px;
   background: transparent;
@@ -1146,31 +1147,95 @@
   white-space: nowrap;
   cursor: default;
 }
-#browser.vm-on .vm-little-toolbar button:hover { background: color-mix(in srgb, currentColor 10%, transparent); }
+#browser.vm-on .vm-little-toolbar .vm-little-button:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
 #browser.vm-on .vm-little-toolbar button:disabled { opacity: .5; }
 #browser.vm-on .vm-little-toolbar .vm-little-address {
   flex: 1 1 auto;
   min-width: 0;
-  height: 24px;
+  height: 26px;
   margin: 0 6px;
   padding: 0 10px;
-  border: 1px solid color-mix(in srgb, currentColor 12%, transparent);
-  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 6%, transparent);
+  border-radius: 999px;
   outline: none;
-  background: color-mix(in srgb, currentColor 6%, transparent);
+  background: color-mix(in srgb, currentColor 2%, transparent);
   color: inherit;
   font: inherit;
   text-overflow: ellipsis;
 }
 #browser.vm-on .vm-little-toolbar .vm-little-address:focus {
-  border-color: color-mix(in srgb, var(--colorHighlightBg, #6b63a0) 70%, transparent);
+  border-color: color-mix(in srgb, var(--colorHighlightBg, #6b63a0) 60%, transparent);
   background: var(--colorBg);
 }
-#browser.vm-on .vm-little-toolbar .vm-little-promote {
-  padding: 0 10px;
+/* "Open in <space>" pill; with spaces, a chevron after a hairline opens the list. */
+#browser.vm-on .vm-little-toolbar .vm-little-pill {
+  --pill-bg: #fff;
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 28px;
   border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
-  background: color-mix(in srgb, currentColor 6%, transparent);
+  border-radius: 999px;
+  background: var(--pill-bg);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .12));
+  box-sizing: border-box;
 }
+#browser.vm-on.theme-dark .vm-little-toolbar .vm-little-pill { --pill-bg: color-mix(in srgb, var(--colorFg) 12%, var(--colorBg)); }
+#browser.vm-on .vm-little-toolbar .vm-little-pill button { height: 26px; border-radius: 999px; }
+#browser.vm-on .vm-little-toolbar .vm-little-promote { padding: 0 10px; }
+#browser.vm-on .vm-little-toolbar .vm-little-promote svg { width: 10px; height: 10px; opacity: .6; }
+#browser.vm-on .vm-little-toolbar .vm-little-pick { display: none; min-width: 0; width: 26px; padding: 0 2px 0 0; color: color-mix(in srgb, currentColor 70%, transparent); }
+#browser.vm-on .vm-little-toolbar .vm-little-pill.has-spaces .vm-little-promote { padding-right: 8px; }
+#browser.vm-on .vm-little-toolbar .vm-little-pill.has-spaces .vm-little-pick { display: inline-flex; position: relative; }
+#browser.vm-on .vm-little-toolbar .vm-little-pill.has-spaces .vm-little-pick::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 1px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+#browser.vm-on .vm-little-toolbar .vm-little-pill button:hover:not(:disabled) { background: color-mix(in srgb, currentColor 6%, transparent); }
+/* The list of spaces, under the pill. */
+#browser.vm-on .vm-little-toolbar .vm-little-menu {
+  position: absolute;
+  top: 34px;
+  right: 0;
+  min-width: 200px;
+  padding: 4px;
+  border: 1px solid color-mix(in srgb, currentColor 10%, transparent);
+  border-radius: 12px;
+  background: var(--colorBg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .18), 0 2px 6px rgba(0, 0, 0, .08);
+  animation: vm-ts-in 120ms cubic-bezier(.2, .8, .2, 1);
+}
+#browser.vm-on.theme-light .vm-little-toolbar .vm-little-menu { background: #fff; }
+#browser.vm-on .vm-little-toolbar .vm-little-menu-head { padding: 6px 8px 4px; color: color-mix(in srgb, currentColor 55%, transparent); font-size: 11px; font-weight: 600; }
+#browser.vm-on .vm-little-toolbar .vm-little-menu-item {
+  display: flex;
+  width: 100%;
+  height: 30px;
+  gap: 8px;
+  justify-content: flex-start;
+  padding: 0 8px;
+  border-radius: 8px;
+}
+#browser.vm-on .vm-little-toolbar .vm-little-menu-item:hover { background: color-mix(in srgb, currentColor 7%, transparent); }
+#browser.vm-on .vm-little-toolbar .vm-little-menu-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  font-size: 11px;
+  font-weight: 600;
+}
+#browser.vm-on .vm-little-toolbar .vm-little-menu-name { flex: 1; overflow: hidden; text-align: left; text-overflow: ellipsis; }
+#browser.vm-on .vm-little-toolbar .vm-little-menu-check { display: inline-flex; flex: none; width: 12px; color: color-mix(in srgb, currentColor 70%, transparent); }
 
 /* Arc-style window controls (09-window-controls.js): no title bar revealed at the top edge, and room for the
    native traffic lights at the start of the sidebar's first row. Row 1: traffic lights, tab menu, back, forward,

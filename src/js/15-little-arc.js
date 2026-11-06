@@ -137,7 +137,7 @@
 
   // ---- Back to the main window ----
   // Transfer from the still-open origin context: moving the popup's last tab destroys its UI context.
-  const promoteFromOrigin = async (littleId) => {
+  const promoteFromOrigin = async (littleId, spaceId = null) => {
     const record = registry.get(littleId);
     if (!record || record.originWindowId !== window.vivaldiWindowId) return;
     try {
@@ -162,6 +162,10 @@
         await vivaldi.tabsPrivate.move({ tabIds: [moved.id], target: "last", tweaks: ["do-not-reparent"], workspaceId: workspaceId || "window" });
         await chrome.tabs.update(moved.id, { active: true });
       } catch (_) {}
+      // Another space chosen in the pill's menu: the sidebar's move, which lands you in that space.
+      if (spaceId != null && spaceId !== workspaceId && window.__vm.moveTabToSpace) {
+        await window.__vm.moveTabToSpace(moved.id, spaceId).catch((error) => console.warn("[vivarc] Little Vivarc space:", error));
+      }
       await chrome.windows.update(record.originWindowId, { focused: true });
     } catch (error) {
       console.warn("[vivarc] Little Vivarc:", error);
@@ -170,12 +174,13 @@
     }
   };
 
-  const promote = () => {
+  const promote = (spaceId = null) => {
     if (!metadata || !toolbar || promotionPending) return;
     if (!channel) { toast("Little Vivarc transfer is unavailable."); return; }
+    closeSpaceMenu();
     promotionPending = true;
     toolbar.querySelector(".vm-little-promote").disabled = true;
-    channel.postMessage({ action: "promote", windowId: littleWindowId });
+    channel.postMessage({ action: "promote", windowId: littleWindowId, spaceId });
     // The source window might have been closed; leave the temporary page intact.
     setTimeout(() => {
       if (!promotionPending || !toolbar?.isConnected) return;
@@ -186,13 +191,19 @@
   };
 
   // ---- The Little Vivarc bar: back, forward, reload, an editable address and "Open in Vivarc", in the title bar ----
+  // The icons of the Figma design (thin strokes): the buttons draw them in a 26×24 box, the pill in small boxes.
   const ICONS = {
-    back: '<path d="M15 18l-6-6 6-6"/>',
-    forward: '<path d="M9 18l6-6-6-6"/>',
-    reload: '<path d="M20 12a8 8 0 1 1-2.34-5.66M20 4v5h-5"/>',
-    open: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+    back: ["0 0 26 24", 26, 24, 1.33333, '<path d="M15 16L11 12L15 8"/>'],
+    forward: ["0 0 26 24", 26, 24, 1.33333, '<path d="M11 16L15 12L11 8"/>'],
+    reload: ["0 0 26 24", 26, 24, 1.25, '<path d="M18 12.0039C17.9991 13.1607 17.5971 14.2813 16.8627 15.1749C16.1282 16.0685 15.1065 16.6798 13.9719 16.9046C12.8372 17.1295 11.6597 16.9539 10.6399 16.408C9.62017 15.862 8.82126 14.9793 8.37932 13.9103C7.93738 12.8413 7.87974 11.6522 8.21623 10.5455C8.55272 9.4388 9.26252 8.483 10.2247 7.84095C11.1869 7.19889 12.3419 6.91031 13.493 7.02436C14.6441 7.13841 15.72 7.64805 16.5375 8.46643M18 7.00393V10.1289H14.875"/>'],
+    open: ["0 0 11.25 11.25", 11.25, 11.25, 1.25, '<path d="M10.625 4.375V0.625H6.875M10.625 0.625L5 6.25M9.375 6.875V10C9.375 10.1658 9.30915 10.3247 9.19194 10.4419C9.07473 10.5592 8.91576 10.625 8.75 10.625H1.25C1.08424 10.625 0.925269 10.5592 0.808058 10.4419C0.690848 10.3247 0.625 10.1658 0.625 10V2.5C0.625 2.33424 0.690848 2.17527 0.808058 2.05806C0.925269 1.94085 1.08424 1.875 1.25 1.875H4.375"/>'],
+    down: ["0 0 10 10", 10, 10, 1.25, '<path d="M2.5 3.75L5 6.25L7.5 3.75"/>'],
+    check: ["0 0 12 12", 12, 12, 1.4, '<path d="M2.5 6.25L5 8.75L9.5 3.5"/>'],
   };
-  const icon = (name) => `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
+  const icon = (name) => {
+    const [box, w, h, stroke, path] = ICONS[name];
+    return `<svg viewBox="${box}" width="${w}" height="${h}" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+  };
   const looksLikeUrl = (text) => /^[a-z][a-z0-9+.-]*:\/\//i.test(text) || /^(localhost|[^\s/]+\.[a-z]{2,})(:\d+)?(\/\S*)?$/i.test(text);
   const shownUrl = (url) => (/^about:blank$/.test(url || "") ? "" : (url || "").replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, ""));
   let address = null;
@@ -238,6 +249,73 @@
     return b;
   };
 
+  // ---- Spaces for "Open in <space>": the main window knows them (its sidebar), so it answers over the channel ----
+  let spaces = [];
+  let spaceMenu = null;
+  const answerSpaces = (littleId) => {
+    const record = registry.get(littleId);
+    if (!record || record.originWindowId !== window.vivaldiWindowId) return;
+    const list = window.__vm.spaceList?.() || [];
+    channel?.postMessage({ action: "space-list", windowId: littleId, spaces: list.map(({ id, name, emoji, active }) => ({ id, name, emoji, active })) });
+  };
+  const askSpaces = () => channel?.postMessage({ action: "spaces", windowId: littleWindowId });
+  const showSpaces = (list) => {
+    spaces = Array.isArray(list) ? list : [];
+    if (!toolbar) return;
+    const current = spaces.find((s) => s.active);
+    const many = spaces.length > 1;
+    toolbar.querySelector(".vm-little-pill")?.classList.toggle("has-spaces", many);
+    toolbar.querySelector(".vm-little-promote-label").textContent = many && current ? `Open in ${current.name}` : "Open in Vivarc";
+    if (spaceMenu) renderSpaceMenu();
+  };
+  const closeSpaceMenu = () => { spaceMenu?.remove(); spaceMenu = null; };
+  const renderSpaceMenu = () => {
+    spaceMenu.replaceChildren();
+    const head = document.createElement("div");
+    head.className = "vm-little-menu-head";
+    head.textContent = "Open in";
+    spaceMenu.append(head);
+    for (const space of spaces) {
+      const item = document.createElement("button");
+      item.className = "vm-little-menu-item";
+      item.classList.toggle("current", !!space.active);
+      const mark = document.createElement("span");
+      mark.className = "vm-little-menu-mark";
+      mark.textContent = space.emoji || (space.name || "?").trim().charAt(0).toUpperCase();
+      const name = document.createElement("span");
+      name.className = "vm-little-menu-name";
+      name.textContent = space.name;
+      const check = document.createElement("span");
+      check.className = "vm-little-menu-check";
+      if (space.active) check.innerHTML = icon("check");
+      item.append(mark, name, check);
+      item.addEventListener("click", () => promote(space.id));
+      spaceMenu.append(item);
+    }
+  };
+  const toggleSpaceMenu = () => {
+    if (spaceMenu) return closeSpaceMenu();
+    if (!toolbar || promotionPending) return;
+    spaceMenu = document.createElement("div");
+    spaceMenu.className = "vm-little-menu";
+    renderSpaceMenu();
+    toolbar.append(spaceMenu);
+    askSpaces();
+  };
+  document.addEventListener?.("mousedown", (e) => { if (spaceMenu && !e.target.closest?.(".vm-little-menu, .vm-little-pick")) closeSpaceMenu(); }, true);
+  document.addEventListener?.("keydown", (e) => { if (e.key === "Escape") closeSpaceMenu(); }, true);
+  window.addEventListener?.("blur", closeSpaceMenu);
+
+  // The bar is 44px tall: Vivaldi's "medium" placement puts the traffic lights in its middle (popups get "light",
+  // at the top of a 32px bar). Vivaldi sets the placement again on some window changes, so it is put back.
+  const keepTrafficLights = () => {
+    const place = () => { try { vivaldi.windowPrivate?.setControlButtonsPosition?.(window.vivaldiWindowId ?? littleWindowId, "mediumPadding"); } catch (_) {} };
+    place();
+    setTimeout(place, 300);
+    chrome.windows.onFocusChanged?.addListener(() => setTimeout(place, 150));
+    chrome.windows.onBoundsChanged?.addListener((w) => { if (w.id === littleWindowId) setTimeout(place, 150); });
+  };
+
   const install = async () => {
     const current = await chrome.windows.getCurrent();
     const found = registry.get(current?.id);
@@ -261,11 +339,21 @@
       if (e.key === "Escape") { address.blur(); activeTab().then(showTab); }
     });
     address.addEventListener("blur", () => activeTab().then(showTab));
-    const promoteButton = document.createElement("button");
-    promoteButton.className = "vm-little-promote";
-    promoteButton.title = "Open in the main Vivarc window";
-    promoteButton.innerHTML = `<span>Open in Vivarc</span>${icon("open")}`;
-    promoteButton.addEventListener("click", promote);
+    // "Open in <space>": the main part opens the page in the space the main window is in; the chevron lists the
+    // spaces to choose another one. Without spaces it is a plain "Open in Vivarc".
+    const promoteButton = document.createElement("div");
+    promoteButton.className = "vm-little-pill";
+    const main = document.createElement("button");
+    main.className = "vm-little-promote";
+    main.title = "Open in the main Vivarc window";
+    main.innerHTML = `<span class="vm-little-promote-label">Open in Vivarc</span>${icon("open")}`;
+    main.addEventListener("click", () => promote());
+    const pick = document.createElement("button");
+    pick.className = "vm-little-pick";
+    pick.title = "Choose the space";
+    pick.innerHTML = icon("down");
+    pick.addEventListener("click", (e) => { e.stopPropagation(); toggleSpaceMenu(); });
+    promoteButton.append(main, pick);
     toolbar.append(
       button("back", "Back", async () => chrome.tabs.goBack((await activeTab()).id)),
       button("forward", "Forward", async () => chrome.tabs.goForward((await activeTab()).id)),
@@ -274,6 +362,8 @@
       promoteButton,
     );
     browser.append(toolbar);
+    askSpaces();
+    keepTrafficLights();
     const tab = await activeTab();
     showTab(tab);
     // A blank Little Vivarc (opened by its shortcut) is for a quick search: start in the address field.
@@ -282,7 +372,9 @@
   chrome.tabs.onUpdated?.addListener((_id, _change, tab) => { if (tab.active) showTab(tab); });
   chrome.tabs.onActivated?.addListener(({ windowId }) => { if (windowId === littleWindowId) activeTab().then(showTab); });
   channel && (channel.onmessage = ({ data }) => {
-    if (data?.action === "promote") promoteFromOrigin(data.windowId);
+    if (data?.action === "promote") promoteFromOrigin(data.windowId, data.spaceId ?? null);
+    else if (data?.action === "spaces") answerSpaces(data.windowId);
+    else if (data?.action === "space-list") { if (data.windowId === littleWindowId) showSpaces(data.spaces); }
     else if (data?.action === "failed" && data.windowId === littleWindowId && toolbar) {
       promotionPending = false;
       toolbar.querySelector(".vm-little-promote").disabled = false;
