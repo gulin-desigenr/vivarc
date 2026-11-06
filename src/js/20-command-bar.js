@@ -564,6 +564,7 @@
 
   const open = (tabId, { edit = null } = {}) => {
     if (!window.__vm.cssLoaded) return;
+    if (bar && !bar.isConnected) close(false); // its element was taken out of the page without closing the bar
     if (bar) { if (!editing) targetTab = tabId; return; }
     targetTab = tabId;
     editing = edit != null;
