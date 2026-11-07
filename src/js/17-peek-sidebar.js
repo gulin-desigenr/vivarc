@@ -20,11 +20,18 @@
     style.id = "vm-peek-sidebar";
     style.textContent = "#browser.auto-hide > .auto-hide-wrapper.has-tabbar { transform: none !important; pointer-events: auto; touch-action: auto; }";
     document.head.append(style);
+    window.dispatchEvent(new CustomEvent("vm-sidebar-peek"));
   };
   // Letting go while the pointer is on the sidebar keeps it open until the pointer leaves, as with hovering, so you
   // can let go of the keys and click a tab (a click with Control held is a right-click on macOS).
   const wrapper = () => document.querySelector("#browser.auto-hide > .auto-hide-wrapper.has-tabbar");
-  const drop = () => { clearTimeout(timer); style?.remove(); style = null; };
+  const drop = () => {
+    clearTimeout(timer);
+    if (!style) return;
+    style.remove();
+    style = null;
+    window.dispatchEvent(new CustomEvent("vm-sidebar-peek"));
+  };
   const hide = () => {
     clearTimeout(timer);
     const box = wrapper();

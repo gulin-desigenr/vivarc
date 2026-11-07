@@ -19,7 +19,16 @@
     const box = bar?.getBoundingClientRect();
     return !!box && box.width > 0 && box.left <= 1;
   };
-  const wanted = (mode) => (enabled() && !isLittle() && sidebarShown() ? MODE : mode);
+  // A hidden sidebar (auto-hide) slides in over the page inside Vivaldi's wrapper. Like Arc, the traffic lights go
+  // with it: shown while it is in, hidden while it is away (Vivaldi would otherwise leave them over the page).
+  const hiddenBar = () => document.querySelector("#browser.auto-hide:not(.fullscreen) > .auto-hide-wrapper.has-tabbar");
+  const choice = (mode) => {
+    if (!enabled() || isLittle()) return mode;
+    const away = hiddenBar();
+    if (away) return away.getBoundingClientRect().left >= 0 ? MODE : "hidden";
+    return sidebarShown() ? MODE : mode;
+  };
+  const wanted = (mode) => choice(mode);
 
   let asked = null;
   let last = null;
@@ -36,10 +45,10 @@
   // reaching or leaving the top edge, resizes, and a slow heartbeat for anything missed.
   const sync = () => {
     if (window.vivaldiWindowId == null) return;
-    const ours = enabled() && !isLittle() && sidebarShown();
+    const decided = enabled() && !isLittle() && (hiddenBar() || sidebarShown()) ? choice(asked) : null;
     // Only ever hand back what Vivaldi asked for; with nothing asked yet, leave its own choice alone.
-    if (!ours && asked == null) return;
-    const mode = ours ? MODE : asked;
+    if (decided == null && asked == null) return;
+    const mode = decided ?? asked;
     if (mode !== MODE && mode === last) return;
     last = mode;
     try { original.call(windowPrivate, window.vivaldiWindowId, mode); } catch (_) {}
@@ -51,6 +60,9 @@
     const near = e.clientY < 12;
     if (near !== nearTop) { nearTop = near; soon(); }
   }, { passive: true });
+  // The hidden sidebar sliding in or out (hover, Ctrl+S) ends with a transform transition.
+  document.addEventListener("transitionend", (e) => { if (e.target?.classList?.contains("auto-hide-wrapper")) soon(); }, true);
+  window.addEventListener("vm-sidebar-peek", soon);
   const resized = new ResizeObserver(() => { last = null; sync(); });
   const observe = (browser) => {
     browser.classList.toggle("vm-arc-controls", enabled());
