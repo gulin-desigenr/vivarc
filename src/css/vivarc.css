@@ -555,6 +555,15 @@
 #browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) { isolation: isolate; }
 #browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) #tabs-tabbar-container { background-color: transparent !important; background-image: none !important; }
 #browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) #tabs-tabbar-container::before { display: none; }
+/* A hidden sidebar (auto-hide) slides in over the page inside Vivaldi's own wrapper, away from the window surface:
+   there it carries the tint, gradient and grain itself, as before. */
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) .auto-hide-wrapper #tabs-tabbar-container {
+  background-color: var(--vm-tint) !important;
+  background-image: var(--vm-tint-image, none) !important;
+  background-attachment: fixed !important;
+}
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) .auto-hide-wrapper #tabs-tabbar-container::before { display: block; }
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) .auto-hide-wrapper.has-tabbar { background-color: var(--vm-tint) !important; }
 #browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc)::before {
   content: "";
   position: absolute;
