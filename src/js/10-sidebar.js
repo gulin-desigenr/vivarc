@@ -243,10 +243,25 @@
     recordHome(tab.id, node.id);
   };
 
-  const focusOrOpen = (node) => {
+  // A favorite has one tab for every space, like Arc's: when its tab is in another space, it comes to this one
+  // instead of a second tab opening (a tab in a split view is left where it is, and Vivarc switches to it).
+  const isFavorite = (node) => !!state.favs && node.parentId === state.favs.id;
+  const favoriteTabElsewhere = (node) => isFavorite(node)
+    ? state.allTabs.find((t) => pinLinks.pinOf(t) === node.id && spacesOf.of(t) !== state.active) ?? null
+    : null;
+  const focusOrOpen = async (node) => {
     const tab = boundTab(node);
-    if (tab) chrome.tabs.update(tab.id, { active: true });
-    else openPin(node);
+    if (tab) { chrome.tabs.update(tab.id, { active: true }); return; }
+    const elsewhere = favoriteTabElsewhere(node);
+    if (elsewhere) {
+      try {
+        if (window.__vm.tilingOf(elsewhere)) await chrome.tabs.update(elsewhere.id, { active: true });
+        else await moveTabToSpace(elsewhere.id, state.active);
+        refresh(false);
+        return;
+      } catch (e) { console.warn("[vivarc] favorite tab:", e); }
+    }
+    openPin(node);
   };
 
   const backToPin = (tab, node) => chrome.tabs.update(tab.id, { url: node.url });
@@ -622,7 +637,7 @@
     const away = isAway(tab, node);
     if (tab?.active) tile.classList.add("active");
     if (away) tile.classList.add("away");
-    tile.append(iconEl(node.url, away ? undefined : tab?.favIconUrl));
+    tile.append(iconEl(node.url, away ? undefined : (tab || favoriteTabElsewhere(node))?.favIconUrl));
     tintRow(tile, away ? tab.url : node.url);
     tile.addEventListener("click", () => focusOrOpen(node));
     tile.addEventListener("contextmenu", bookmarkMenu(node, true));
