@@ -1106,6 +1106,8 @@
     }
   };
 
+  // The default space is "no workspace": tabsPrivate.move takes workspaceId null for it (0 or "window" leave the
+  // tab where it is, and activating it then switched to its old space).
   // Vivaldi 8.3 moves a tab between workspaces only with tabsPrivate.move (what its "Move to Workspace" menu does),
   // and only into a workspace already open in the window: an empty one is opened first (Vivaldi adds a blank tab
   // there, closed again). The moved tab becomes active, so you land in its new space, like Arc.
@@ -1122,7 +1124,7 @@
       const [active] = await chrome.tabs.query({ active: true, windowId });
       if (active && active.id !== tab.id && spacesOf.of(active) === id && BLANK.test(active.pendingUrl || active.url || "")) blank = active;
     }
-    await vivaldi.tabsPrivate.move({ tabIds: [tab.id], target: "last", tweaks: ["do-not-reparent"], workspaceId: id || "window" });
+    await vivaldi.tabsPrivate.move({ tabIds: [tab.id], target: "last", tweaks: ["do-not-reparent"], workspaceId: id || null });
     await chrome.tabs.update(tab.id, { active: true });
     if (blank) await chrome.tabs.remove(blank.id).catch(() => {});
   };

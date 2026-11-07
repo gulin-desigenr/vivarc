@@ -164,7 +164,7 @@
       await chrome.tabs.update(moved.id, { active: true, vivExtData: JSON.stringify(ext) });
       // Vivaldi 8.3 ignores workspaceId in vivExtData; its own move puts the page in the origin's space.
       try {
-        await vivaldi.tabsPrivate.move({ tabIds: [moved.id], target: "last", tweaks: ["do-not-reparent"], workspaceId: workspaceId || "window" });
+        await vivaldi.tabsPrivate.move({ tabIds: [moved.id], target: "last", tweaks: ["do-not-reparent"], workspaceId: workspaceId || null });
         await chrome.tabs.update(moved.id, { active: true });
       } catch (_) {}
       // Another space chosen in the pill's menu: the sidebar's move, which lands you in that space.

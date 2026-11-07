@@ -84,7 +84,7 @@
         await chrome.tabs.create({ windowId, url: e.url, active: true });
       } else if (ws.tabsIn(tabs, target).length) {
         const tab = await chrome.tabs.create({ windowId, url: e.url, active: false });
-        await vivaldi.tabsPrivate.move({ tabIds: [tab.id], target: "last", tweaks: ["do-not-reparent"], workspaceId: target || "window" });
+        await vivaldi.tabsPrivate.move({ tabIds: [tab.id], target: "last", tweaks: ["do-not-reparent"], workspaceId: target || null });
         await chrome.tabs.update(tab.id, { active: true });
       } else {
         const activate = ws.findSwitcher(chrome.extension.getBackgroundPage?.()?.webpackChunkgapp_browser_react);
