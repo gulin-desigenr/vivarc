@@ -15,6 +15,10 @@ class Element {
   append(...items) { this.children.push(...items); }
   addEventListener(name, fn) { this.listeners[name] = fn; }
   remove() {}
+  replaceChildren(...items) { this.children = items; }
+  focus() {}
+  blur() {}
+  select() {}
   contains() { return false; }
 }
 const props = {};
@@ -36,13 +40,19 @@ const open = async () => { events["vm-open-theme"](); await tick(); return brows
   await switchTo(0);
   assert.equal(props["--vm-tint"], "hsl(250 28% 20%)");
   let pop = await open();
-  pop.children[3].children[3].listeners.click(); // red preset
+  pop.children[5].children[3].listeners.click(); // red preset
   assert.equal(saved.get("theme:space:0").hue, 355);
   await switchTo(42);
   assert.equal(props["--vm-tint"], "hsl(250 28% 20%)");
   pop = await open();
-  pop.children[3].children[6].listeners.click(); // green preset
+  pop.children[5].children[6].listeners.click(); // green preset
   assert.equal(saved.get("theme:space:42").hue, 143);
+  pop.children[4].children[1].listeners.click(); // + adds a second color: a gradient
+  assert.equal(saved.get("theme:space:42").more.length, 1);
+  assert.match(props["--vm-tint-image"], /^linear-gradient\(160deg, hsl\(143 65% 65%\), hsl\(183 65% 65%\)\)$/);
+  pop.children[4].children.at(-1).listeners.click(); // Remove color
+  assert.equal(saved.get("theme:space:42").more.length, 0);
+  assert.equal(props["--vm-tint-image"], undefined);
   await switchTo(0);
   assert.equal(props["--vm-tint"], "hsl(355 65% 62%)");
   pop = await open();

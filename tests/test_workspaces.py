@@ -190,6 +190,30 @@ class CreateSpace(unittest.TestCase):
 
 
 @unittest.skipUnless(shutil.which("node"), "node is needed to test the sidebar's JavaScript")
+class EditSpace(unittest.TestCase):
+    def test_dragging_a_space_moves_it_among_the_workspaces(self):
+        self.assertEqual(js("workspaces.reorder([1, 2, 3], 3, 0)"), [3, 1, 2])
+        self.assertEqual(js("workspaces.reorder([1, 2, 3], 1, 2)"), [2, 3, 1])
+        self.assertEqual(js("workspaces.reorder([1, 2, 3], 1, 99)"), [2, 3, 1])
+        self.assertEqual(js("workspaces.reorder([1, 2, 3], 7, 0)"), [1, 2, 3])
+
+    def test_an_emoji_field_keeps_one_character_as_seen(self):
+        self.assertEqual(js("workspaces.firstGrapheme(' 🧪x ')"), "🧪")
+        self.assertEqual(js("workspaces.firstGrapheme('👨‍👩‍👧 family')"), "👨‍👩‍👧")
+        self.assertEqual(js("workspaces.firstGrapheme('🇧🇷')"), "🇧🇷")
+        self.assertEqual(js("workspaces.firstGrapheme('  ')"), "")
+
+    def test_the_manager_is_found_with_its_edit_actions(self):
+        out = js("""(() => {
+          const manager = { removeWorkspace() {}, setName() {}, setEmoji() {}, setOrder() {}, addWorkspace() {} };
+          const chunks = { push([, , run]) { const load = () => ({ Z: manager }); load.m = { 1: () => "removeWorkspace(" }; run(load); } };
+          const found = workspaces.findManager(chunks);
+          return ["setName", "setEmoji", "setOrder", "addWorkspace"].every((k) => typeof found?.[k] === "function");
+        })()""")
+        self.assertTrue(out)
+
+
+@unittest.skipUnless(shutil.which("node"), "node is needed to test the sidebar's JavaScript")
 class DeleteSpace(unittest.TestCase):
     FAKE = """
       const calls = [];

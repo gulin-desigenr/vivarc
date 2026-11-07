@@ -92,20 +92,23 @@
   // ones, whichever reads better. `muted` (labels, New Tab, sleeping tabs) is the ink pulled towards the tint as
   // far as it can go while keeping 4.5:1, instead of a fixed opacity that fails on mid tones.
   const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+  // A gradient tint passes several colors: the ink must hold on every one of them, so each check takes the worst.
   const inkFor = (bg) => {
-    const rgb = Array.isArray(bg) ? bg : parse(bg);
-    if (!rgb) return null;
+    const rgbs = (Array.isArray(bg) && Array.isArray(bg[0]) ? bg : [bg]).map((c) => (Array.isArray(c) ? c : parse(c)));
+    if (!rgbs.length || rgbs.some((c) => !c)) return null;
+    const rgb = rgbs[0];
+    const worst = (c) => Math.min(...rgbs.map((b) => contrast(b, c)));
     const [h, s] = rgbToHsl(rgb);
-    const dark = [hslToRgb(h, Math.min(s, 45), 11), [13, 13, 16]].find((c) => contrast(rgb, c) >= 7) || [0, 0, 0];
+    const dark = [hslToRgb(h, Math.min(s, 45), 11), [13, 13, 16]].find((c) => worst(c) >= 7) || [0, 0, 0];
     const light = [255, 255, 255];
-    const ink = contrast(rgb, dark) >= contrast(rgb, light) ? dark : light;
+    const ink = worst(dark) >= worst(light) ? dark : light;
     let lo = 0, hi = 0.7; // how far towards the tint `muted` goes
-    if (contrast(rgb, ink) <= 4.5) hi = 0;
+    if (worst(ink) <= 4.5) hi = 0;
     for (let i = 0; i < 12 && hi > 0; i++) {
       const t = (lo + hi) / 2;
-      contrast(rgb, mix(ink, rgb, t)) >= 4.5 ? (lo = t) : (hi = t);
+      worst(mix(ink, rgb, t)) >= 4.5 ? (lo = t) : (hi = t);
     }
-    return { fg: hex(ink), muted: hex(mix(ink, rgb, lo)), ratio: contrast(rgb, ink) };
+    return { fg: hex(ink), muted: hex(mix(ink, rgb, lo)), ratio: worst(ink) };
   };
 
   window.__vm.colors = { inkFor, mix, parse, hex, hslToRgb, rgbToHsl, luminance, contrast, textFor, dominant, spaceSolid };

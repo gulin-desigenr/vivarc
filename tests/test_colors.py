@@ -45,5 +45,16 @@ class Colors(unittest.TestCase):
             self.assertLessEqual(muted, fg)
 
 
+    def test_ink_on_a_gradient_reads_on_every_color(self):
+        # a pale pink into a dark blue: neither the dark ink of the pink nor white alone would do on both ends
+        stops = [[240, 200, 215], [237, 137, 94], [125, 182, 217]]
+        ink = self.colors("colors.inkFor(stops)", stops=stops)
+        for stop in stops:
+            self.assertGreaterEqual(self.colors("colors.contrast(a, colors.parse(b))", a=stop, b=ink["fg"]), 4.5)
+            self.assertGreaterEqual(self.colors("colors.contrast(a, colors.parse(b))", a=stop, b=ink["muted"]), 4.5)
+        # one color in a list is the same as that color alone
+        self.assertEqual(self.colors("colors.inkFor([c])", c=stops[0]), self.colors("colors.inkFor(c)", c=stops[0]))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -261,9 +261,9 @@
     const record = registry.get(littleId);
     if (!record || record.originWindowId !== window.vivaldiWindowId) return;
     const list = window.__vm.spaceList?.() || [];
-    const spaces = await Promise.all(list.map(async ({ id, name, emoji, active }) => {
+    const spaces = await Promise.all(list.map(async ({ id, name, emoji, icon, active }) => {
       const theme = await window.__vm.store?.get?.(`theme:space:${id}`, null);
-      return { id, name, emoji, active, hue: theme?.on ? theme.hue : null, sat: theme?.on ? theme.sat : null };
+      return { id, name, emoji, icon, active, hue: theme?.on ? theme.hue : null, sat: theme?.on ? theme.sat : null };
     }));
     channel?.postMessage({ action: "space-list", windowId: littleId, spaces });
   };
@@ -297,7 +297,12 @@
       item.classList.toggle("current", !!space.active);
       const mark = document.createElement("span");
       mark.className = "vm-little-menu-mark";
-      mark.textContent = space.emoji || (space.name || "?").trim().charAt(0).toUpperCase();
+      if (!space.emoji && space.icon && window.__vm.workspaces?.iconMask) {
+        const glyph = document.createElement("span");
+        glyph.className = "vm-mark-icon vm-little-menu-icon";
+        glyph.style.setProperty("--vm-icon", window.__vm.workspaces.iconMask(space.icon));
+        mark.append(glyph);
+      } else mark.textContent = space.emoji || (space.name || "?").trim().charAt(0).toUpperCase();
       const name = document.createElement("span");
       name.className = "vm-little-menu-name";
       name.textContent = space.name;

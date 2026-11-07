@@ -203,7 +203,8 @@
     node.children ? node.children.flatMap(leaves) : [node];
 
   const hasPinnedChild = (n) => n.children?.some((c) => c.children && c.title === "Pinned");
-  const findSpaces = (nodes) => nodes.flatMap((n) => hasPinnedChild(n) ? [n] : n.children ? findSpaces(n.children) : []);
+  // A space folder in the trash is not a space (a deleted space, or one renamed away and back, would find it again).
+  const findSpaces = (nodes) => nodes.flatMap((n) => n.trash === true ? [] : hasPinnedChild(n) ? [n] : n.children ? findSpaces(n.children) : []);
 
   // The tab that belongs to a pin or favorite stays bound to it wherever it navigates (see 08-pins.js).
   const boundTab = (node) => state.bound.get(node.id);
@@ -327,8 +328,11 @@
   };
 
   // ---- context menu ----
+  // A click on the page goes to the page, never to this document: a clear shield under the menu catches it, so a
+  // click anywhere closes the menu.
   let menu = null;
-  const closeMenu = () => { menu?.remove(); menu = null; };
+  let shield = null;
+  const closeMenu = () => { menu?.remove(); menu = null; shield?.remove(); shield = null; };
   const showMenu = (event, items) => {
     event.preventDefault();
     event.stopPropagation();
@@ -340,7 +344,10 @@
       item.addEventListener("click", () => { closeMenu(); action(); });
       menu.append(item);
     }
-    (document.querySelector("#browser") || document.body).append(menu);
+    shield = el("div", "vm-menu-shield");
+    shield.addEventListener("mousedown", (e) => { e.preventDefault(); closeMenu(); });
+    shield.addEventListener("contextmenu", (e) => { e.preventDefault(); closeMenu(); });
+    (document.querySelector("#browser") || document.body).append(shield, menu);
     const { width, height } = menu.getBoundingClientRect();
     menu.style.left = `${Math.min(event.clientX, window.innerWidth - width - 8)}px`;
     menu.style.top = `${Math.min(event.clientY, window.innerHeight - height - 8)}px`;
@@ -1105,15 +1112,220 @@
     if (blank) await chrome.tabs.remove(blank.id).catch(() => {});
   };
   window.__vm.moveTabToSpace = moveTabToSpace;
-  window.__vm.spaceList = () => spacesOf.items(state.workspaces, state.defaultSpace ? spacesOf.label(state.defaultSpace) : "Home")
-    .map((item) => ({ ...item, active: item.id === state.active }));
+  // The default space is not a Vivaldi workspace and has no emoji there: Vivarc keeps its own.
+  const spaceItems = () => spacesOf.items(state.workspaces, state.defaultSpace ? spacesOf.label(state.defaultSpace) : "Home")
+    .map((item) => (item.id === 0 ? { ...item, emoji: state.defaultEmoji || "", icon: state.defaultEmoji || state.defaultIcon == null ? "" : spaceIcons()[state.defaultIcon] || "" } : item));
+  const chunks = () => chrome.extension.getBackgroundPage?.()?.webpackChunkgapp_browser_react;
+  const spaceIcons = () => spacesOf.findIcons(chunks());
+  window.__vm.spaceIcons = spaceIcons;
+  // A space's mark: its emoji, else its icon (drawn by a mask in the text color), else nothing.
+  const spaceMark = (item, cls) => {
+    if (item.emoji) return el("span", `${cls} vm-mark-emoji`, item.emoji);
+    if (!item.icon) return null;
+    const mark = el("span", `${cls} vm-mark-icon`);
+    mark.style.setProperty("--vm-icon", spacesOf.iconMask(item.icon));
+    return mark;
+  };
+  window.__vm.spaceMark = spaceMark;
+  window.__vm.spaceList = () => spaceItems().map((item) => ({ ...item, active: item.id === state.active }));
   window.__vm.switchToSpace = (id) => switchSpace({ id });
 
+  // ---- editing spaces: name, emoji, order, new space ----
+  const manager = () => spacesOf.findManager(chrome.extension.getBackgroundPage?.()?.webpackChunkgapp_browser_react);
+  const waitForWorkspaces = async (done) => {
+    for (let i = 0; i < 20; i++) {
+      if (done(await readWorkspaces())) return true;
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return false;
+  };
+  // A space's pinned links live in the bookmark folder with its name, so a rename renames the folder too ("Arc - "
+  // kept), folder first. While both change, applySpace must not see the workspace without a folder and make one.
+  let renaming = false;
+  const spaceFolder = (id) => {
+    const { default: base, byId } = spacesOf.assign(state.folders || [], state.workspaces || []);
+    return id ? byId[id] ?? null : base;
+  };
+  window.__vm.renameSpace = async (id, name) => {
+    name = String(name || "").trim();
+    const item = spaceItems().find((i) => i.id === id);
+    if (!name || !item || name === item.name) return false;
+    const folder = spaceFolder(id);
+    const m = id ? manager() : null;
+    if (id && !m) return false;
+    if (!id && !folder) return false;
+    renaming = true;
+    try {
+      if (folder) await chrome.bookmarks.update(folder.id, { title: folder.title.startsWith("Arc - ") ? `Arc - ${name}` : name });
+      if (id) {
+        m.setName(id, name);
+        await waitForWorkspaces((list) => list.some((w) => w.id === id && w.name === name));
+      }
+    } finally { renaming = false; }
+    refresh(true);
+    return true;
+  };
+  // An emoji and an icon replace each other ("" clears both). Vivaldi's setIcon clears the emoji, and
+  // setIcon(id, undefined) clears both, so an emoji is set after clearing the icon.
+  window.__vm.setSpaceEmoji = async (id, emoji) => {
+    emoji = spacesOf.firstGrapheme(emoji);
+    if (!id) {
+      state.defaultEmoji = emoji;
+      state.defaultIcon = null;
+      await store.set("defaultSpaceEmoji", emoji);
+      await store.set("defaultSpaceIcon", null);
+    } else {
+      const m = manager();
+      if (!m) return false;
+      m.setIcon(id, undefined);
+      if (emoji) m.setEmoji(id, emoji);
+      await waitForWorkspaces((list) => list.some((w) => w.id === id && (w.emoji || "") === emoji && (emoji || !w.icon)));
+    }
+    refresh(false);
+    return true;
+  };
+  window.__vm.setSpaceIcon = async (id, index) => {
+    if (!spaceIcons()[index]) return false;
+    if (!id) {
+      state.defaultEmoji = "";
+      state.defaultIcon = index;
+      await store.set("defaultSpaceEmoji", "");
+      await store.set("defaultSpaceIcon", index);
+    } else {
+      const m = manager();
+      if (!m) return false;
+      m.setIcon(id, index);
+      await waitForWorkspaces((list) => list.some((w) => w.id === id && w.iconId === index));
+    }
+    refresh(false);
+    return true;
+  };
+  const reorderSpaces = async (ids) => {
+    const m = manager();
+    if (!m) return;
+    m.setOrder(ids);
+    await waitForWorkspaces((list) => list.map((w) => w.id).join() === ids.join());
+    refresh(false);
+  };
+  // Vivaldi's own "new workspace": created and opened in this window, empty (Vivaldi gives it a blank tab).
+  window.__vm.createSpace = async (name, emoji = "") => {
+    name = String(name || "").trim();
+    const m = manager();
+    if (!name || !m) return null;
+    const id = await m.addWorkspace(name, undefined, spacesOf.firstGrapheme(emoji), undefined, false);
+    await waitForWorkspaces((list) => list.some((w) => w.id === id));
+    refresh(true);
+    return id;
+  };
+  // A name field floating above the space dots, for "+".
+  const promptSpaceName = () => {
+    if (!manager()) { window.dispatchEvent(new CustomEvent("vm-toast", { detail: spacesOf.CREATE_HINT })); return; }
+    document.querySelector(".vm-space-name-float")?.remove();
+    const bar = spaceBarEl?.getBoundingClientRect();
+    const field = el("input", "vm-rename-float vm-space-name-float");
+    field.placeholder = "New space name";
+    const width = 200;
+    const left = bar ? Math.max(8, bar.left + bar.width / 2 - width / 2) : 8;
+    field.style.left = `${left}px`;
+    field.style.width = `${width}px`;
+    field.style.top = `${(bar?.top ?? window.innerHeight - 40) - 40}px`;
+    (document.querySelector("#browser") || document.body).append(field);
+    field.focus();
+    let done = false;
+    const finish = async (commit) => {
+      if (done) return;
+      done = true;
+      const name = field.value.trim();
+      field.remove();
+      if (commit && name) await window.__vm.createSpace(name);
+    };
+    field.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter") finish(true);
+      if (e.key === "Escape") finish(false);
+    });
+    field.addEventListener("blur", () => finish(false));
+  };
+  window.__vm.promptNewSpace = promptSpaceName;
+
+  // The editor works on the space on screen: switch first, and open it once the switch has reached the theme.
+  const editSpace = async (item) => {
+    if (item.id !== state.active) {
+      await switchSpace(item);
+      for (let i = 0; i < 30 && window.__vm.activeSpace !== item.id; i++) await new Promise((r) => setTimeout(r, 100));
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    window.dispatchEvent(new CustomEvent("vm-open-theme"));
+  };
+
+  // Dragging a dot sideways reorders the spaces (the default space stays first). A drag of a few pixels is still a
+  // click; after a real drag the click that follows is swallowed.
+  let swallowClick = false;
+  // The dragged dot follows the pointer and the others slide aside (FLIP, on the `translate` property, which the
+  // bar's `transform: none` does not touch). Positions are read from the layout (offsetLeft), never from the
+  // moving boxes, so the order does not jitter while they slide.
+  const SLIDE = { duration: 180, easing: "cubic-bezier(.2, .7, .2, 1)" };
+  const dragDots = (pill, item) => {
+    if (!item.id) return;
+    pill.addEventListener("pointerdown", (down) => {
+      if (down.button !== 0) return;
+      const bar = pill.parentElement;
+      let moved = false;
+      const center = (n) => n.offsetLeft + n.offsetWidth / 2;
+      const pointer = (e) => e.clientX - bar.getBoundingClientRect().left;
+      const grab = pointer(down) - center(pill);
+      const follow = (e) => { pill.style.translate = `${pointer(e) - grab - center(pill)}px 0`; };
+      // Moving the dot in the bar drops pointer capture, so the drag is followed on the document.
+      const move = (e) => {
+        if (!moved && Math.abs(e.clientX - down.clientX) < 4) return;
+        if (!moved) { moved = true; bar.classList.add("vm-reordering"); pill.classList.add("vm-dragging"); }
+        const x = pointer(e) - grab;
+        const others = [...bar.querySelectorAll(".vm-space-pill[data-space-id]")].filter((n) => n !== pill && n.dataset.spaceId !== "0");
+        const before = others.find((n) => x < center(n));
+        const where = before ? (pill.nextElementSibling === before ? null : before) : (others.at(-1)?.nextElementSibling === pill ? null : "end");
+        if (where && others.length) {
+          const was = new Map(others.map((n) => [n, n.offsetLeft]));
+          if (where === "end") others.at(-1).after(pill); else bar.insertBefore(pill, where);
+          for (const [n, left] of was) {
+            const dx = left - n.offsetLeft;
+            if (dx) n.animate([{ translate: `${dx}px 0` }, { translate: "0 0" }], SLIDE);
+          }
+        }
+        follow(e);
+      };
+      const up = () => {
+        document.removeEventListener("pointermove", move, true);
+        document.removeEventListener("pointerup", up, true);
+        document.removeEventListener("pointercancel", up, true);
+        bar.classList.remove("vm-reordering");
+        pill.classList.remove("vm-dragging");
+        if (!moved) return;
+        const from = pill.style.translate || "0 0";
+        pill.style.translate = "";
+        pill.animate([{ translate: from }, { translate: "0 0" }], SLIDE);
+        swallowClick = true;
+        setTimeout(() => { swallowClick = false; }, 0);
+        const ids = [...bar.querySelectorAll(".vm-space-pill[data-space-id]")].map((n) => Number(n.dataset.spaceId)).filter(Boolean);
+        if (ids.join() !== state.workspaces.map((w) => w.id).join()) setTimeout(() => reorderSpaces(ids), SLIDE.duration);
+      };
+      document.addEventListener("pointermove", move, true);
+      document.addEventListener("pointerup", up, true);
+      document.addEventListener("pointercancel", up, true);
+    });
+  };
+
   const spacePill = (item) => {
-    const pill = el("div", `vm-space-pill${item.id === state.active ? " active" : ""}`, item.emoji || item.name.trim().charAt(0).toUpperCase() || "?");
+    const mark = spaceMark(item, "vm-space-mark");
+    const pill = el("div", `vm-space-pill${item.id === state.active ? " active" : ""}${mark ? " vm-has-mark" : ""}`);
+    if (mark) pill.append(mark);
+    pill.dataset.spaceId = String(item.id);
     pill.title = item.name;
-    pill.addEventListener("click", () => switchSpace(item));
-    if (item.id) pill.addEventListener("contextmenu", (e) => showMenu(e, [["Delete Space…", () => confirmDeleteSpace(item, e), true]]));
+    pill.addEventListener("click", () => { if (!swallowClick) switchSpace(item); });
+    pill.addEventListener("contextmenu", (e) => showMenu(e, [
+      ["Edit Space…", () => editSpace(item)],
+      ...(item.id ? [[], ["Delete Space…", () => confirmDeleteSpace(item, e), true]] : []),
+    ]));
+    dragDots(pill, item);
     return pill;
   };
 
@@ -1169,12 +1381,12 @@
   window.__vm.spaceExists = (id) => !id || !state.workspaces?.length || state.workspaces.some((w) => w.id === id);
 
   const spaceBar = () => {
-    const items = spacesOf.items(state.workspaces, state.defaultSpace ? spacesOf.label(state.defaultSpace) : "Home");
+    const items = spaceItems();
     if (!items.length) return null;
     const bar = el("div", "vm-space-bar");
     const plus = el("div", "vm-space-pill vm-space-plus", "+");
     plus.title = "New space";
-    plus.addEventListener("click", () => window.dispatchEvent(new CustomEvent("vm-toast", { detail: spacesOf.CREATE_HINT })));
+    plus.addEventListener("click", promptSpaceName);
     bar.append(...items.map(spacePill), plus);
     return bar;
   };
@@ -1203,8 +1415,12 @@
     }
     if (state.space) {
       const label = el("div", "vm-space");
-      label.append(el("span", "vm-space-name", spacesOf.label(state.space)));
-      label.append(actionButton("🎨", "Edit theme", () => window.dispatchEvent(new CustomEvent("vm-open-theme"))));
+      const name = el("span", "vm-space-name");
+      const mark = spaceMark(spaceItems().find((i) => i.id === state.active) || {}, "vm-space-label-mark");
+      if (mark) name.append(mark);
+      name.append(spacesOf.label(state.space));
+      label.append(name);
+      label.append(actionButton("🎨", "Edit space", () => window.dispatchEvent(new CustomEvent("vm-open-theme"))));
       wireDrop(label, {
         onDrop: async (_zone, data) => insertPinned(data, (state.pinned || await ensureFolder("Pinned")).id, 0),
       });
@@ -1399,7 +1615,7 @@
     };
     let picked = pick();
     const workspace = state.workspaces.find((w) => w.id === state.active);
-    if (!picked.space && workspace && picked.base && !madeFolderFor.has(workspace.id)) {
+    if (!picked.space && workspace && picked.base && !renaming && !madeFolderFor.has(workspace.id)) {
       madeFolderFor.add(workspace.id);
       const folder = await chrome.bookmarks.create({ parentId: picked.base.parentId, title: workspace.name });
       await chrome.bookmarks.create({ parentId: folder.id, title: "Pinned" });
@@ -1481,7 +1697,7 @@
       panel.addEventListener("pointerdown", () => { pressing = true; }, true);
       panel.addEventListener("contextmenu", (e) => showMenu(e, [
         ["New Folder", async () => { await newFolder(null); }],
-        ["Edit Theme…", () => window.dispatchEvent(new CustomEvent("vm-open-theme"))],
+        ["Edit Space…", () => window.dispatchEvent(new CustomEvent("vm-open-theme"))],
         ["Vivarc Settings…", () => window.dispatchEvent(new CustomEvent("vm-open-settings"))],
         ["New Tab", () => window.dispatchEvent(new CustomEvent("vm-open-command-bar"))],
         ["Reopen Closed Tab", () => chrome.sessions.restore()],
@@ -1588,6 +1804,8 @@
     if (!(await window.__vm.ready)) return;
     (await store.get("open", [])).forEach((id) => openFolders.add(id));
     icons = await store.get("icons", {});
+    state.defaultEmoji = await store.get("defaultSpaceEmoji", "");
+    state.defaultIcon = await store.get("defaultSpaceIcon", null);
     const savedColors = await store.get("tabColors", {});
     tabColors = { page: savedColors.page || {}, icon: savedColors.icon || {} };
     const theme = await themeAccent();

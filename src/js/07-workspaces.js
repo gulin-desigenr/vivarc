@@ -25,7 +25,8 @@
   // Without any workspace there is only one space, so no bar.
   const items = (list, defaultName) => {
     if (!list?.length) return [];
-    return [{ id: 0, name: defaultName, emoji: "" }, ...list.map((w) => ({ id: w.id, name: w.name, emoji: w.emoji || "" }))];
+    return [{ id: 0, name: defaultName, emoji: "", icon: "" },
+      ...list.map((w) => ({ id: w.id, name: w.name, emoji: w.emoji || "", icon: w.emoji ? "" : w.icon || "" }))];
   };
 
   const itemForShortcut = (list, defaultName, combo) => {
@@ -77,18 +78,20 @@
     return JSON.stringify({ ...data, workspaceId: activeSpace });
   };
 
-  // A mod can neither create a workspace (Vivaldi reads its list once) nor press a shortcut for the user: events a
-  // mod dispatches never reach Vivaldi's shortcut handler. So the install binds "Create New Workspace" to this chord,
-  // and the + tile and the command bar tell the user to press it.
+  // Writing the workspace list in the prefs does nothing (Vivaldi reads it once); spaces are created through
+  // Vivaldi's workspace manager (findManager). The install still binds "Create New Workspace" to this chord, and
+  // the hint names it when the manager cannot be found.
   const CREATE_KEY = "ctrl+meta+n";
   const KEY_NAMES = { ctrl: "Ctrl", meta: "Cmd", alt: "Option", shift: "Shift" };
   const CREATE_HINT = `Press ${CREATE_KEY.split("+").map((k) => KEY_NAMES[k] || k.toUpperCase()).join("+")} to create a space`;
 
-  // Vivaldi has no extension API to delete a workspace, only its own store. Its webpack chunk array lives on the
-  // background page (chrome.extension.getBackgroundPage), not on the window the mod runs in, and its push hands out the module
-  // list; the module that defines removeWorkspace is found by its source and loaded
-  // only if it already ran. Returns (windowId, id) => Promise, or null when Vivaldi no longer looks like this.
-  const findRemover = (chunks) => {
+  // Vivaldi has no extension API to change workspaces, only its own store. Its webpack chunk array lives on the
+  // background page (chrome.extension.getBackgroundPage), not on the window the mod runs in, and its push hands out
+  // the module list; the module of the workspace manager is found by its source and loaded only if it already ran.
+  // The manager (Vivaldi 8.3) has addWorkspace(name, icon, emoji, tabs, stayHere), setName(id, name),
+  // setEmoji(id, emoji), setOrder(ids) and removeWorkspace(windowId, id). Returns it, or null when Vivaldi no
+  // longer looks like this.
+  const findManager = (chunks) => {
     try {
       let load;
       chunks.push([[Symbol("vivarc")], {}, (require) => { load = require; }]);
@@ -98,11 +101,54 @@
         try { exported = load(id); } catch (_) { continue; }
         for (const key of Object.keys(exported || {})) {
           const manager = exported[key];
-          if (typeof manager?.removeWorkspace === "function") return (windowId, workspaceId) => manager.removeWorkspace(windowId, workspaceId);
+          if (typeof manager?.removeWorkspace === "function") return manager;
         }
       }
     } catch (_) {}
     return null;
+  };
+  const findRemover = (chunks) => {
+    const manager = findManager(chunks);
+    return manager ? (windowId, workspaceId) => manager.removeWorkspace(windowId, workspaceId) : null;
+  };
+
+  // Vivaldi's own workspace icons (its workspace menu offers them): 16 px line drawings in currentColor, set with
+  // setIcon(id, index), which also clears the emoji. The workspace store's module exports the list.
+  let icons = null;
+  const findIcons = (chunks) => {
+    if (icons) return icons;
+    try {
+      let load;
+      chunks.push([[Symbol("vivarc-icons")], {}, (require) => { load = require; }]);
+      for (const [id, factory] of Object.entries(load?.m || {})) {
+        const source = String(factory);
+        if (source.length > 200000 || !source.includes("activeWorkspaces")) continue; // the workspace store's module
+        let exported;
+        try { exported = load(id); } catch (_) { continue; }
+        const list = Object.values(exported || {}).find((v) => Array.isArray(v) && v.length >= 8 && v.every((x) => typeof x === "string" && x.trim().startsWith("<svg")));
+        if (list) return (icons = list);
+      }
+    } catch (_) {}
+    return [];
+  };
+  // An icon drawn through a CSS mask in the text color, so its markup is never put in the page.
+  const iconMask = (svg) => `url("data:image/svg+xml;utf8,${encodeURIComponent(String(svg || ""))}")`;
+
+  // The order of the spaces after dragging `id` to `to` (an index among the workspaces, the default space not
+  // counted: it is not a workspace and stays first).
+  const reorder = (ids, id, to) => {
+    const rest = ids.filter((x) => x !== id);
+    if (rest.length === ids.length) return ids;
+    rest.splice(Math.max(0, Math.min(rest.length, to)), 0, id);
+    return rest;
+  };
+
+  // An emoji typed or pasted: its first character as the user sees it (a flag or a family is one), or "".
+  const firstGrapheme = (text) => {
+    const value = String(text || "").trim();
+    if (!value) return "";
+    try { return [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(value)][0]?.segment || ""; }
+    catch (_) { return [...value][0] || ""; }
   };
 
   // Use the same workspace activation action as Vivaldi's own workspace menu.
@@ -126,5 +172,5 @@
   const removalLabel = (name, tabCount) =>
     `Delete \u201c${name}\u201d${tabCount ? ` and close its ${tabCount} ${tabCount === 1 ? "tab" : "tabs"}` : ""}`;
 
-  window.__vm.workspaces = { of, tabsIn, activeId, scope, items, itemForShortcut, recentTab, stayIn, label, assign, stamp, findRemover, findSwitcher, removalLabel, CREATE_HINT };
+  window.__vm.workspaces = { of, tabsIn, activeId, scope, items, itemForShortcut, recentTab, stayIn, label, assign, stamp, findManager, findRemover, findSwitcher, findIcons, iconMask, removalLabel, reorder, firstGrapheme, CREATE_HINT };
 })();

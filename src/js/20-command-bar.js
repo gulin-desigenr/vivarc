@@ -151,7 +151,7 @@
     { label: "View Downloads", words: "downloads files", run: openDownloads },
     { label: "View Bookmarks", words: "bookmarks saved", run: () => openPage("vivaldi://bookmarks") },
     { label: "Open Settings", words: "settings preferences options", run: () => openPage("vivaldi://settings") },
-    { label: "Create New Space (Ctrl+Cmd+N)", words: "space workspace new create add", run: () => toast(window.__vm.workspaces.CREATE_HINT) },
+    { label: "Create New Space", words: "space workspace new create add", run: () => (window.__vm.promptNewSpace ? window.__vm.promptNewSpace() : toast(window.__vm.workspaces.CREATE_HINT)) },
     { label: "Manage Extensions", words: "extensions addons", run: () => openPage("vivaldi://extensions") },
     { label: "Pin This Tab", words: "pin bookmark", tab: true, run: async (tab) => {
       if (await window.__vm.pinTab?.(tab, "Pinned")) toast("Pinned Tab");
@@ -206,7 +206,7 @@
       .then(() => toast("Saved a Vivarc backup in ~/.vivarc/backups"), () => toast("Could not save the backup")) },
     { label: "Restore Vivarc Backup…", words: "backup restore import settings themes", stay: true, run: async () => setMode(await backupPicker()) },
     { label: "Vivarc Settings", words: "preferences options configure features toggle glass", run: () => window.dispatchEvent(new CustomEvent("vm-open-settings")) },
-    { label: "Edit Theme", words: "color appearance sidebar", run: () => window.dispatchEvent(new CustomEvent("vm-open-theme")) },
+    { label: "Edit Space", words: "theme color gradient appearance sidebar rename name emoji icon", run: () => window.dispatchEvent(new CustomEvent("vm-open-theme")) },
   ];
   const ACTION_SVG =
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg>';
@@ -304,14 +304,36 @@
     return span;
   };
 
+  // The bar leaves with a short fade (CSS .vm-closing); it stops taking clicks at once and is removed when the fade
+  // ends, so a bar opened meanwhile is never blocked by it.
+  const leave = (node) => {
+    if (!node) return;
+    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (still || !node.isConnected) { node.remove(); return; }
+    node.classList.add("vm-closing");
+    node.addEventListener("animationend", () => node.remove(), { once: true });
+    setTimeout(() => node.remove(), 250);
+  };
   const close = (removeBlank) => {
     const blank = editing ? null : targetTab; // editing: the target is the page you are on, never closed
-    bar?.remove();
+    leave(bar);
     bar = input = list = chipHolder = targetTab = mode = stackHere = null;
     editing = false;
     rows = [];
     seq++;
-    if (removeBlank && blank != null) chrome.tabs.remove(blank).catch(() => {});
+    if (removeBlank && blank != null) removeBlankTab(blank);
+  };
+  // The blank tab the bar was opened for is closed, unless it is all its space has: closing it would leave the space
+  // empty, and Vivaldi would hand the window to another space's tab (a new space, opened from the space dots).
+  const removeBlankTab = async (id) => {
+    try {
+      const tab = await chrome.tabs.get(id);
+      if (!isBlank(tab)) return;
+      const space = window.__vm.workspaces?.of(tab) ?? 0;
+      const others = (await chrome.tabs.query({ windowId: tab.windowId }))
+        .filter((t) => t.id !== id && (window.__vm.workspaces?.of(t) ?? 0) === space);
+      if (others.length) await chrome.tabs.remove(id);
+    } catch (_) {}
   };
 
   // The page behind the bar is in a tab stack: what opens from the bar joins that stack, unless the row says
@@ -654,7 +676,17 @@
     list.setAttribute("role", "listbox");
     box.append(head, list);
     bar.append(box);
-    bar.addEventListener("mousedown", (e) => { if (e.target === bar) close(true); });
+    // A click outside the box closes the bar and still reaches what it was on in the sidebar (a space dot, a tab),
+    // instead of taking two clicks.
+    bar.addEventListener("mousedown", (e) => {
+      if (e.target !== bar) return;
+      close(true);
+      document.addEventListener("mouseup", (up) => {
+        const under = document.elementFromPoint(up.clientX, up.clientY);
+        const target = under?.closest?.("#vm-panel .vm-row, #vm-panel .vm-fav, .vm-space-bar .vm-space-pill");
+        if (target && target === document.elementFromPoint(e.clientX, e.clientY)?.closest?.("#vm-panel .vm-row, #vm-panel .vm-fav, .vm-space-bar .vm-space-pill")) target.click();
+      }, { once: true, capture: true });
+    });
     input.addEventListener("keydown", onKey);
     input.addEventListener("input", async () => { await compute(); autocomplete(); });
     (document.querySelector("#browser") || document.body).append(bar);

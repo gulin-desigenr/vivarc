@@ -16,13 +16,18 @@ Pesquisa e prioridades registradas em 4 de novembro de 2026 para o fork pessoal.
 - **Command palette** (novembro de 2026): mover a aba para outro space, trocar de space pelo nome, fixar em uma pasta, renomear a aba e voltar à página original do fixado.
 - **Backup das personalizações** (novembro de 2026): exportar/importar arquivo e cópia diária automática em `~/.vivarc/backups`, com temas associados aos spaces pelo nome.
 - **Tidy Tabs, versão local** (novembro de 2026): agrupar abas soltas em pilhas com nome por site, origem e palavras do título, com Undo. Uma versão com IA (Claude por chave de API, ou LM Studio local) fica como próximo passo, se a local não bastar.
+- **Personalização de spaces** (novembro de 2026): editor do space com nome, emoji e tema em degradê de até 3 cores; reordenar arrastando; criar space pelo "+". Combinação com papel de parede ficou de fora.
 
 ## Backlog
 
-1. **Live Folders:** protótipo de pasta para pull requests e issues do GitHub; depois estudar ClickUp, Notion e Drive com permissões e atualização explícitas. [Apresentação do Arc](https://www.youtube.com/watch?v=x1TV6rBi_jM).
-2. **Boosts:** gerenciador local de CSS por domínio, com prévia, desativação e exportação; editor visual completo fica para avaliação posterior. [Boosts no Arc](https://start.arc.net/paint-the-internet).
-3. **Personalização de spaces:** gradientes, combinação com papel de parede e melhor acesso a nome, ícone e ordem dos spaces. Verificar funções nativas de [Workspaces do Vivaldi](https://help.vivaldi.com/desktop/tabs/workspaces/).
-4. **Tradução para português:** interface do Vivarc em pt-BR (command bar, menus, ajustes, avisos, Little Vivarc), seguindo o idioma do Vivaldi e mantendo o inglês como fallback. Hoje todos os textos estão em inglês dentro dos módulos; centralizar as strings antes de traduzir.
+1. **Tradução para português:** interface do Vivarc em pt-BR (command bar, menus, ajustes, avisos, Little Vivarc), seguindo o idioma do Vivaldi e mantendo o inglês como fallback. Hoje todos os textos estão em inglês dentro dos módulos; centralizar as strings antes de traduzir.
+
+## Ignorados
+
+Decisão do usuário em 2026-11-07: não serão implementados.
+
+- **Live Folders:** pasta que se atualiza com pull requests e issues do GitHub (e depois ClickUp, Notion, Drive). [Apresentação do Arc](https://www.youtube.com/watch?v=x1TV6rBi_jM).
+- **Boosts:** CSS local por domínio, com prévia, desativação e exportação. [Boosts no Arc](https://start.arc.net/paint-the-internet).
 
 ## Ideias guardadas
 

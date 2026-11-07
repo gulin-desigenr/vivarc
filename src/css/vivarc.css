@@ -6,7 +6,11 @@
   --vm-native-fg: var(--colorFg, #f2f2f5);
   --vm-address-fg: var(--vm-fg, var(--colorImageFg, var(--colorFg, #f2f2f5)));
   --vm-sel: color-mix(in srgb, var(--colorHighlightBg, #6b63a0) 40%, var(--vm-surface));
+  /* The interface font: DM Sans, embedded in the bundle as "Vivarc DM Sans" (vivarc.py, src/fonts). */
+  --vm-font: "Vivarc DM Sans", system-ui, -apple-system, sans-serif;
 }
+/* The whole window uses it, Vivaldi's own controls included; pages keep their fonts. */
+#browser.vm-on, #browser.vm-on :is(button, input, textarea, select, kbd) { font-family: var(--vm-font); font-optical-sizing: auto; }
 
 #browser.vm-hide-workspaces #tabs-tabbar-container .button-toolbar.workspace-popup { display: none; }
 #browser.vm-no-space-bar .vm-space-bar { display: none; }
@@ -72,6 +76,7 @@
 /* With the sidebar auto-hidden (Cmd+S), Vivaldi makes the revealed bar a window drag region, which
    swallows every click. Vivarc's own UI opts out, including the menus and popovers that float over it. */
 #vm-panel, .vm-menu, .vm-theme-pop, #vm-cmd, .vm-rename-float { app-region: no-drag; }
+.vm-menu-shield { position: fixed; inset: 0; z-index: 100000; background: transparent; app-region: no-drag; }
 #vm-panel .vm-scroll {
   flex: 1 1 auto;
   min-height: 0;
@@ -148,10 +153,28 @@
 #browser.vm-on .vm-space-bar .vm-space-pill.vm-space-plus { margin-left: 2px; font-size: 13px; line-height: 1; color: var(--colorFg); opacity: 0.35; }
 #browser.vm-on .vm-space-bar .vm-space-pill.vm-space-plus::before { content: none; }
 #browser.vm-on .vm-space-bar .vm-space-pill.vm-space-plus:hover { opacity: 0.8; }
+/* A space with an emoji shows it in place of its dot; dragging a dot sideways reorders the spaces. */
+#browser.vm-on .vm-space-bar .vm-space-pill.vm-has-mark { color: var(--vm-fg, var(--colorFg)); opacity: 0.5; transition: opacity 120ms; }
+#browser.vm-on .vm-space-bar .vm-space-pill.vm-has-mark::before { content: none; }
+#browser.vm-on .vm-space-bar .vm-space-pill.vm-has-mark:hover { opacity: 0.85; }
+#browser.vm-on .vm-space-bar .vm-space-pill.vm-has-mark.active { opacity: 1; }
+#browser.vm-on .vm-space-bar .vm-space-mark.vm-mark-emoji { font-size: 11px; line-height: 1; }
+#browser.vm-on .vm-space-bar .vm-space-mark.vm-mark-icon { width: 12px; height: 12px; }
+/* An icon is Vivaldi's SVG used as a mask over the text color. */
+.vm-mark-icon { display: inline-block; flex: none; background-color: currentColor; -webkit-mask: var(--vm-icon) center / contain no-repeat; mask: var(--vm-icon) center / contain no-repeat; }
+#vm-panel .vm-space-name { display: inline-flex; align-items: center; gap: 5px; }
+#vm-panel .vm-space-label-mark.vm-mark-icon { width: 12px; height: 12px; }
+.vm-little-menu-icon { width: 12px; height: 12px; }
+#vm-panel .vm-space-label-mark.vm-mark-emoji { font-size: 12px; line-height: 1; }
+/* While reordering, the dot being moved is drawn larger and the others make room. */
+#browser.vm-on .vm-space-bar.vm-reordering, #browser.vm-on .vm-space-bar.vm-reordering .vm-space-pill { cursor: grabbing; }
+#browser.vm-on .vm-space-bar .vm-space-pill.vm-dragging { position: relative; z-index: 1; }
+#browser.vm-on .vm-space-bar .vm-space-pill.vm-dragging::before { background-color: var(--vm-fg, var(--colorFg)); transform: scale(1.6); }
+#browser.vm-on .vm-space-bar .vm-space-pill.vm-dragging.vm-has-mark { opacity: 1; transform: scale(1.35) !important; }
 #vm-panel .vm-space {
   padding: 8px 8px 6px;
   font-size: 11.5px;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.01em;
   opacity: 0.45;
 }
@@ -169,7 +192,7 @@
 }
 #vm-panel .vm-row:hover { background-color: color-mix(in srgb, var(--colorFg) 8%, transparent); }
 #vm-panel .vm-row { color: color-mix(in srgb, var(--colorFg) 84%, transparent); }
-#vm-panel .vm-row.active { background-color: color-mix(in srgb, var(--colorFg) 15%, transparent); color: var(--colorFg); font-weight: 500; }
+#vm-panel .vm-row.active { background-color: color-mix(in srgb, var(--colorFg) 15%, transparent); color: var(--colorFg); font-weight: 700; }
 #vm-panel .vm-row.discarded { opacity: 0.6; }
 #vm-panel .vm-folder-head { font-weight: 500; }
 /* Open tabs inside a closed folder: a small count at the end of the folder's row (hidden while it is open). */
@@ -527,6 +550,25 @@
 /* The window frame around the sidebar and the page (the strip under the sidebar, the rounded corners) takes the
    space color too, like Arc, instead of Vivaldi's theme background. */
 #browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) { background-color: var(--vm-tint) !important; background-image: none !important; }
+/* One surface, like Arc: in a themed space (not glass) the sidebar is see-through and the window behind it carries the
+   tint and the grain, so the strip above the page and the corners around it match the sidebar with no seam. */
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) { isolation: isolate; }
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) #tabs-tabbar-container { background-color: transparent !important; background-image: none !important; }
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) #tabs-tabbar-container::before { display: none; }
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  app-region: none;
+  background-image: var(--vm-noise);
+  opacity: var(--vm-grain, 0.1);
+  mix-blend-mode: overlay;
+}
+/* A gradient tint (two or three colors) runs through the sidebar and the window frame as one, fixed to the window. */
+#browser.vm-on.vm-themed.vm-gradient:not(.vm-glass, .vm-little-arc) { background-image: var(--vm-tint-image) !important; background-attachment: fixed !important; }
+#browser.vm-themed.vm-gradient.vm-little-arc:not(.vm-glass) #tabs-tabbar-container { background-image: var(--vm-tint-image) !important; background-attachment: fixed !important; }
 /* isolation makes the bar its own stacking context, painted under the page: lift it while the address bar or
    one of its popups (site permission requests) is open, or they are cut off at the sidebar's edge */
 #browser.vm-themed #tabs-tabbar-container:is(:focus-within, :has(.addressfield-popup-container)) { z-index: 1; }
@@ -560,6 +602,72 @@
 }
 .vm-theme-pop button { font: inherit; color: inherit; cursor: pointer; }
 .vm-theme-heading { font-weight: 500; margin-bottom: 10px; }
+.vm-theme-head { display: flex; gap: 8px; margin-bottom: 10px; }
+.vm-theme-head input {
+  height: 34px;
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, var(--vm-text) 16%, transparent);
+  border-radius: 9px;
+  outline: 0;
+  background: color-mix(in srgb, var(--vm-text) 6%, transparent);
+  color: inherit;
+  font: inherit;
+}
+.vm-theme-head input:focus { border-color: color-mix(in srgb, var(--vm-text) 40%, transparent); }
+.vm-theme-mark {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, var(--vm-text) 16%, transparent);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--vm-text) 6%, transparent);
+}
+.vm-theme-mark:hover { background: color-mix(in srgb, var(--vm-text) 12%, transparent); }
+.vm-theme-mark .vm-mark-emoji { font-size: 17px; line-height: 1; }
+.vm-theme-mark .vm-mark-icon { width: 16px; height: 16px; }
+.vm-theme-mark-letter { font-size: 14px; font-weight: 600; opacity: 0.6; }
+.vm-theme-name { flex: 1; min-width: 0; padding: 0 10px; font-size: 14px !important; font-weight: 500 !important; }
+.vm-theme-picker { display: none; margin: -2px 0 10px; padding: 8px; border-radius: 10px; background: color-mix(in srgb, var(--vm-text) 5%, transparent); }
+.vm-theme-picker.open { display: block; }
+.vm-theme-emoji-field {
+  box-sizing: border-box;
+  width: 100%;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--vm-text) 18%, transparent);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--vm-surface);
+  color: inherit;
+  font: inherit;
+}
+.vm-theme-emoji-field:focus { border-color: color-mix(in srgb, var(--vm-text) 45%, transparent); }
+.vm-theme-hint { margin: 5px 2px 8px; font-size: 11.5px; opacity: 0.6; }
+.vm-theme-label { margin: 6px 2px 4px; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; opacity: 0.55; }
+.vm-theme-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
+.vm-theme-pick { display: flex; align-items: center; justify-content: center; height: 28px; padding: 0; border: 0; border-radius: 7px; background: transparent; font-size: 16px !important; }
+.vm-theme-pick:hover { background: color-mix(in srgb, var(--vm-text) 12%, transparent); }
+.vm-theme-pick-icon { width: 16px; height: 16px; }
+.vm-theme-none { width: 100%; margin-top: 6px; padding: 5px; border: 0; border-radius: 7px; background: transparent; font-size: 12px !important; opacity: 0.65; }
+.vm-theme-none:hover { opacity: 1; background: color-mix(in srgb, var(--vm-text) 10%, transparent); }
+.vm-theme-colors { display: flex; align-items: center; gap: 8px; margin: 12px 2px 0; }
+.vm-theme-chip {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+.vm-theme-chip.selected { outline: 2px solid var(--vm-text); outline-offset: 2px; }
+.vm-theme-add { background: transparent; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--vm-text) 35%, transparent); font-size: 15px !important; line-height: 1; opacity: 0.8; }
+.vm-theme-add:hover { opacity: 1; }
+.vm-theme-remove { margin-left: auto; padding: 4px 8px; border: 0; border-radius: 7px; background: transparent; opacity: 0.6; font-size: 12px !important; }
+.vm-theme-remove:hover { opacity: 1; background: color-mix(in srgb, var(--vm-text) 10%, transparent); }
 .vm-theme-modes { display: flex; gap: 6px; margin-bottom: 10px; }
 .vm-theme-mode {
   flex: 1;
@@ -572,14 +680,16 @@
 .vm-theme-pad { position: relative; height: 130px; border-radius: 12px; cursor: crosshair; touch-action: none; }
 .vm-theme-dot {
   position: absolute;
-  width: 18px;
-  height: 18px;
-  margin: -9px 0 0 -9px;
-  border: 3px solid #fff;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
   border-radius: 50%;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
   pointer-events: none;
 }
+.vm-theme-dot.selected { z-index: 1; width: 20px; height: 20px; margin: -10px 0 0 -10px; border: 3px solid #fff; }
 .vm-theme-swatches { display: flex; justify-content: space-between; margin: 12px 2px; }
 .vm-theme-swatch { width: 22px; height: 22px; border: 0; border-radius: 50%; }
 .vm-theme-slider { display: flex; align-items: center; gap: 10px; margin: 8px 2px; }
@@ -807,10 +917,12 @@
 }
 #browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #tabs-tabbar-container::before { display: none; }
 
-/* Separate the page from the wallpaper without changing its rounded corners. */
-#browser.vm-on.vm-sidebar-wallpaper:not(.fullscreen):not(.is-settingspage) #webpage-stack {
-  border-radius: var(--radius);
-  box-shadow: -6px 0 22px rgba(29, 26, 50, 0.14), 0 3px 12px rgba(29, 26, 50, 0.08);
+/* The page's corners: rounder than Vivaldi's 8 px, like Arc. Vivaldi clips the page itself with --radius, read here. */
+#browser.vm-on:not(.fullscreen) #webpage-stack { --radius: 12px; border-radius: 12px; }
+/* Separate the page from a theme wallpaper. In a space color the page sits on the same surface as the sidebar, with
+   no shadow (it read as a line between the two). */
+#browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed):not(.fullscreen):not(.is-settingspage) #webpage-stack {
+  box-shadow: 0 2px 14px rgba(29, 26, 50, 0.10);
 }
 
 /* Give pinned favorites a legible surface against light or dark theme wallpapers. */
@@ -937,6 +1049,13 @@
   animation: vm-ts-in 140ms cubic-bezier(.2, .8, .2, 1);
 }
 @keyframes vm-ts-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+/* The command bar opens (Cmd+T, Cmd+L, a new tab) with a short drop and fade, like Arc's. */
+#browser.vm-on #vm-cmd .vm-cmd-box { animation: vm-cmd-in 190ms cubic-bezier(.2, .8, .2, 1); transform-origin: 50% 20%; }
+@keyframes vm-cmd-in { from { opacity: 0; transform: translateY(-10px) scale(.97); } to { opacity: 1; transform: none; } }
+#browser.vm-on #vm-cmd.vm-closing { pointer-events: none; }
+#browser.vm-on #vm-cmd.vm-closing .vm-cmd-box { animation: vm-cmd-out 140ms cubic-bezier(.4, 0, 1, 1) forwards; }
+@keyframes vm-cmd-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-6px) scale(.98); } }
+@media (prefers-reduced-motion: reduce) { #browser.vm-on #vm-cmd .vm-cmd-box { animation: none; } }
 #browser.vm-on .tabswitcher { background: transparent; }
 #browser.vm-on .tabswitcher.list {
   grid-template-columns: 300px minmax(0, 1fr);
@@ -1127,7 +1246,7 @@
   gap: 2px;
   height: 28px;
   color: var(--colorFg);
-  font: 12.5px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  font: 12.5px/1 var(--vm-font);
   app-region: no-drag;
 }
 #browser.vm-on .vm-little-toolbar button {
@@ -1193,7 +1312,7 @@
   border-radius: 5px;
   background: color-mix(in srgb, currentColor 7%, transparent);
   color: color-mix(in srgb, currentColor 60%, transparent);
-  font: 500 11.5px/1 -apple-system, BlinkMacSystemFont, sans-serif;
+  font: 500 11.5px/1 var(--vm-font);
 }
 #browser.vm-on .vm-little-toolbar .vm-little-pick { display: none; min-width: 0; width: 26px; padding: 0 2px 0 0; color: color-mix(in srgb, currentColor 70%, transparent); }
 #browser.vm-on .vm-little-toolbar .vm-little-pill.has-spaces .vm-little-promote { padding-right: 8px; }

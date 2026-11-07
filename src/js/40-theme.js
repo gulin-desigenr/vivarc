@@ -1,11 +1,23 @@
-// Vivarc theme editor: each space has its own tint, shade and grain, saved in the profile.
+// Vivarc space editor: each space's name and emoji (kept by Vivaldi's workspaces, changed through the sidebar) and
+// its theme: a tint of one to three colors (a gradient), shade and grain, saved in the profile. The first color is
+// theme.hue/sat/light, as before gradients; the others are in theme.more.
 (() => {
   const { store } = window.__vm;
   const PRESETS = [
     ["#efe9e4", 30, 20, 90], ["#e89bbb", 335, 55, 75], ["#a0739f", 305, 25, 54], ["#e0626e", 355, 65, 62],
     ["#ef8c5f", 18, 80, 65], ["#f2d56b", 47, 85, 68], ["#6fe3a0", 143, 65, 65], ["#7db7dc", 203, 55, 67], ["#6d6a92", 245, 18, 48],
   ];
-  const DEFAULT = { on: false, hue: 250, sat: 28, light: 20, grain: 30 };
+  const DEFAULT = { on: false, hue: 250, sat: 28, light: 20, grain: 30, more: [] };
+  const MAX_COLORS = 3;
+  const EMOJIS = ["💼", "🏠", "🎨", "🧪", "📚", "💡", "📝", "🛠️", "🚀", "🧠", "💰", "📈", "🛒", "✈️", "🌍", "🎵",
+    "🎬", "📷", "🎮", "⚽", "🧘", "🍳", "☕", "🌱", "🐶", "❤️", "⭐", "🔥"];
+  const colorsOf = (t) => [{ hue: t.hue, sat: t.sat, light: t.light }, ...(Array.isArray(t.more) ? t.more : [])].slice(0, MAX_COLORS);
+  const hsl = (c) => `hsl(${c.hue} ${c.sat}% ${c.light}%)`;
+  // The gradient runs down and across the sidebar and the window frame as one, fixed to the window.
+  const gradientOf = (t) => {
+    const colors = colorsOf(t);
+    return colors.length > 1 ? `linear-gradient(160deg, ${colors.map(hsl).join(", ")})` : "";
+  };
   let theme = { ...DEFAULT };
   let pop = null;
   let activeSpace = null;
@@ -23,11 +35,15 @@
     browser.classList.toggle("vm-themed", theme.on);
     const style = browser.style;
     if (!theme.on) {
-      for (const k of ["--vm-tint", "--vm-fg", "--vm-fg-muted", "--vm-space-solid", "--vm-space-solid-fg", "--vm-grain", "--vm-noise", "--vm-fav-color", "--vm-fav-opacity", "--vm-fav-hover-opacity", "--vm-fav-active-opacity"]) style.removeProperty(k);
+      browser.classList.toggle("vm-gradient", false);
+      for (const k of ["--vm-tint", "--vm-tint-image", "--vm-fg", "--vm-fg-muted", "--vm-space-solid", "--vm-space-solid-fg", "--vm-grain", "--vm-noise", "--vm-fav-color", "--vm-fav-opacity", "--vm-fav-hover-opacity", "--vm-fav-active-opacity"]) style.removeProperty(k);
       return;
     }
-    style.setProperty("--vm-tint", `hsl(${theme.hue} ${theme.sat}% ${theme.light}%)`);
-    const ink = window.__vm.colors?.inkFor(window.__vm.colors.hslToRgb(theme.hue, theme.sat, theme.light));
+    style.setProperty("--vm-tint", hsl(theme));
+    const gradient = gradientOf(theme);
+    if (gradient) style.setProperty("--vm-tint-image", gradient); else style.removeProperty("--vm-tint-image");
+    browser.classList.toggle("vm-gradient", !!gradient);
+    const ink = window.__vm.colors?.inkFor(colorsOf(theme).map((c) => window.__vm.colors.hslToRgb(c.hue, c.sat, c.light)));
     style.setProperty("--vm-fg", ink?.fg || fgFor(theme.light));
     style.setProperty("--vm-fg-muted", ink?.muted || fgFor(theme.light));
     const solid = window.__vm.colors?.spaceSolid(theme);
@@ -57,7 +73,10 @@
     return e;
   };
 
-  const close = () => { pop?.remove(); pop = null; };
+  // The name field may still hold an edit when the editor closes (a click outside removes it without a blur).
+  let beforeClose = null;
+  let shield = null; // catches a click on the page, which this document never sees (see the sidebar's menu)
+  const close = () => { const commit = beforeClose; beforeClose = null; commit?.(); pop?.remove(); pop = null; shield?.remove(); shield = null; };
 
   const open = async () => {
     if (!window.__vm.cssLoaded) return;
@@ -65,32 +84,125 @@
     const space = activeSpace;
     await pending;
     if (space !== activeSpace || activeSpace === null) return;
-    if (!theme.on) { theme = { ...theme, on: true }; save(); }
+    const item = window.__vm.spaceList?.().find((i) => i.id === space) || { id: space, name: "", emoji: "" };
+    let selected = 0; // which color of the gradient the pad, swatches and Intensity change
     pop = el("div", "vm-theme-pop");
-    const heading = el("div", "vm-theme-heading", "Theme for this space");
+
+    // Name and mark. The mark button opens a picker: any emoji typed or pasted in its field (Ctrl+Cmd+Space opens
+    // the macOS emoji picker there), a few emoji, Vivaldi's workspace icons, or none.
+    const head = el("div", "vm-theme-head");
+    const markButton = el("button", "vm-theme-mark");
+    markButton.title = "Emoji or icon";
+    const name = el("input", "vm-theme-name");
+    name.value = item.name || "";
+    name.placeholder = "Space name";
+    head.append(markButton, name);
+    const showMark = () => {
+      markButton.replaceChildren();
+      const mark = window.__vm.spaceMark?.(item, "vm-theme-mark-glyph");
+      if (mark) markButton.append(mark);
+      else markButton.append(el("span", "vm-theme-mark-letter", (item.name || "?").trim().charAt(0).toUpperCase()));
+    };
+    showMark();
+    const picks = el("div", "vm-theme-picker");
+    const typed = el("input", "vm-theme-emoji-field");
+    typed.placeholder = "Type or paste any emoji";
+    const hint = el("div", "vm-theme-hint", "Press ⌃⌘Space here for every emoji");
+    const setEmoji = (value) => {
+      const one = window.__vm.workspaces?.firstGrapheme?.(value) ?? value;
+      item.emoji = one;
+      item.icon = "";
+      showMark();
+      window.__vm.setSpaceEmoji?.(space, one);
+    };
+    const setIcon = (index, svg) => {
+      item.emoji = "";
+      item.icon = svg;
+      showMark();
+      window.__vm.setSpaceIcon?.(space, index);
+    };
+    typed.addEventListener("input", () => { if (typed.value.trim()) { setEmoji(typed.value); typed.value = ""; picks.classList.remove("open"); } });
+    typed.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Escape" || e.key === "Enter") picks.classList.remove("open"); });
+    const emojiGrid = el("div", "vm-theme-grid");
+    for (const e of EMOJIS) {
+      const b = el("button", "vm-theme-pick", e);
+      b.addEventListener("click", () => { setEmoji(e); picks.classList.remove("open"); });
+      emojiGrid.append(b);
+    }
+    const iconGrid = el("div", "vm-theme-grid");
+    (window.__vm.spaceIcons?.() || []).forEach((svg, index) => {
+      const b = el("button", "vm-theme-pick");
+      const glyph = el("span", "vm-mark-icon vm-theme-pick-icon");
+      glyph.style.setProperty?.("--vm-icon", window.__vm.workspaces.iconMask(svg));
+      b.append(glyph);
+      b.addEventListener("click", () => { setIcon(index, svg); picks.classList.remove("open"); });
+      iconGrid.append(b);
+    });
+    const none = el("button", "vm-theme-none", "No emoji or icon");
+    none.addEventListener("click", () => { setEmoji(""); picks.classList.remove("open"); });
+    picks.append(typed, hint, el("div", "vm-theme-label", "Emoji"), emojiGrid,
+      ...(iconGrid.children.length ? [el("div", "vm-theme-label", "Icons"), iconGrid] : []), none);
+    markButton.addEventListener("click", () => {
+      picks.classList.toggle("open");
+      if (picks.classList.contains("open")) typed.focus();
+    });
+    let asked = item.name;
+    const commitName = async () => {
+      const value = name.value.trim();
+      if (!value || value === asked) { if (!value) name.value = item.name || ""; return; }
+      asked = value;
+      const ok = await window.__vm.renameSpace?.(space, value);
+      if (ok) { item.name = value; showMark(); } else { asked = item.name; name.value = item.name || ""; }
+    };
+    name.addEventListener("keydown", (e) => {
+      e.stopPropagation();
+      if (e.key === "Enter") name.blur();
+      if (e.key === "Escape") { name.value = item.name || ""; name.blur(); }
+    });
+    name.addEventListener("blur", commitName);
+    beforeClose = commitName;
+
+    // Opening the editor no longer turns the theme on: changing a color does.
+    const colors = () => colorsOf(theme);
+    const current = () => colors()[selected];
+    const setCurrent = (patch) => {
+      const list = colors().map((c, i) => (i === selected ? { ...c, ...patch } : c));
+      const [first, ...more] = list;
+      theme = { ...theme, ...first, more, on: true };
+      save();
+      sync();
+    };
 
     const modes = el("div", "vm-theme-modes");
     for (const [label, light] of [["Dark", 18], ["Light", 88]]) {
       const b = el("button", "vm-theme-mode", label);
-      b.addEventListener("click", () => { theme.light = light; save(); sync(); });
+      b.addEventListener("click", () => {
+        const [first, ...more] = colors().map((c) => ({ ...c, light }));
+        theme = { ...theme, ...first, more, on: true };
+        save();
+        sync();
+      });
       modes.append(b);
     }
 
     const pad = el("div", "vm-theme-pad");
-    const dot = el("div", "vm-theme-dot");
-    pad.append(dot);
     const stops = [0, 60, 120, 180, 240, 300, 360].map((h) => `hsl(${h} 70% 50%)`).join(",");
     pad.style.background = `linear-gradient(to bottom, hsla(0,0%,100%,.75), transparent 45%, hsla(0,0%,0%,.8)), linear-gradient(to right, ${stops})`;
+    const position = (c) => ({ x: c.hue / 360, y: (90 - c.light) / 80 });
     const place = (e) => {
       const r = pad.getBoundingClientRect();
       const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
       const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
-      theme.hue = Math.round(x * 360);
-      theme.light = Math.round(90 - y * 80);
-      save();
-      sync();
+      setCurrent({ hue: Math.round(x * 360), light: Math.round(90 - y * 80) });
     };
     pad.addEventListener("pointerdown", (e) => {
+      // Pressing on another color's dot picks it up instead of moving the selected one there.
+      const r = pad.getBoundingClientRect();
+      const near = colors().findIndex((c) => {
+        const p = position(c);
+        return Math.hypot(r.left + p.x * r.width - e.clientX, r.top + p.y * r.height - e.clientY) < 12;
+      });
+      if (near >= 0 && near !== selected) { selected = near; sync(); }
       pad.setPointerCapture(e.pointerId);
       place(e);
       const move = (ev) => place(ev);
@@ -98,41 +210,94 @@
       pad.addEventListener("pointerup", () => pad.removeEventListener("pointermove", move), { once: true });
     });
 
+    // The colors of the gradient: pick one to change it, + adds one (up to three), Remove takes the picked one out.
+    const chips = el("div", "vm-theme-colors");
+    const addColor = () => {
+      const list = colors();
+      if (list.length >= MAX_COLORS) return;
+      const last = list.at(-1);
+      list.push({ hue: (last.hue + 40) % 360, sat: last.sat, light: last.light });
+      const [first, ...more] = list;
+      theme = { ...theme, ...first, more, on: true };
+      selected = list.length - 1;
+      save();
+      sync();
+    };
+    const removeColor = () => {
+      const list = colors();
+      if (list.length < 2) return;
+      list.splice(selected, 1);
+      const [first, ...more] = list;
+      theme = { ...theme, ...first, more };
+      selected = Math.min(selected, list.length - 1);
+      save();
+      sync();
+    };
+
     const swatches = el("div", "vm-theme-swatches");
     for (const [color, hue, sat, light] of PRESETS) {
       const s = el("button", "vm-theme-swatch");
       s.style.backgroundColor = color;
-      s.addEventListener("click", () => { Object.assign(theme, { hue, sat, light }); save(); sync(); });
+      s.addEventListener("click", () => setCurrent({ hue, sat, light }));
       swatches.append(s);
     }
 
-    const slider = (label, key) => {
+    const slider = (label, onInput) => {
       const row = el("label", "vm-theme-slider");
       row.append(el("span", null, label));
       const input = el("input");
       input.type = "range";
       input.min = "0";
       input.max = "100";
-      input.addEventListener("input", () => { theme[key] = Number(input.value); save(); });
+      input.addEventListener("input", () => onInput(Number(input.value)));
       row.append(input);
       return { row, input };
     };
-    const intensity = slider("Intensity", "sat");
-    const grain = slider("Grain", "grain");
+    const intensity = slider("Intensity", (value) => setCurrent({ sat: value }));
+    const grain = slider("Grain", (value) => { theme = { ...theme, grain: value, on: true }; save(); });
 
     const reset = el("button", "vm-theme-reset", "Reset space theme");
     reset.addEventListener("click", () => { theme = { ...DEFAULT }; save(); close(); });
 
     const sync = () => {
-      dot.style.left = `${theme.hue / 360 * 100}%`;
-      dot.style.top = `${(90 - theme.light) / 80 * 100}%`;
-      intensity.input.value = String(theme.sat);
+      const list = colors();
+      selected = Math.min(selected, list.length - 1);
+      pad.replaceChildren(...list.map((c, i) => {
+        const dot = el("div", `vm-theme-dot${i === selected ? " selected" : ""}`);
+        const p = position(c);
+        dot.style.left = `${p.x * 100}%`;
+        dot.style.top = `${p.y * 100}%`;
+        dot.style.backgroundColor = hsl(c);
+        return dot;
+      }));
+      chips.replaceChildren(...list.map((c, i) => {
+        const chip = el("button", `vm-theme-chip${i === selected ? " selected" : ""}`);
+        chip.style.backgroundColor = hsl(c);
+        chip.title = `Color ${i + 1}`;
+        chip.addEventListener("click", () => { selected = i; sync(); });
+        return chip;
+      }));
+      if (list.length < MAX_COLORS) {
+        const add = el("button", "vm-theme-chip vm-theme-add", "+");
+        add.title = "Add a color (gradient)";
+        add.addEventListener("click", addColor);
+        chips.append(add);
+      }
+      if (list.length > 1) {
+        const remove = el("button", "vm-theme-remove", "Remove color");
+        remove.addEventListener("click", removeColor);
+        chips.append(remove);
+      }
+      intensity.input.value = String(current().sat);
       grain.input.value = String(theme.grain);
     };
     sync();
 
-    pop.append(heading, modes, pad, swatches, intensity.row, grain.row, reset);
-    (document.querySelector("#browser") || document.body).append(pop);
+    pop.append(head, picks, modes, pad, chips, swatches, intensity.row, grain.row, reset);
+    shield = el("div", "vm-menu-shield");
+    shield.addEventListener?.("mousedown", (e) => { e.preventDefault(); close(); });
+    (document.querySelector("#browser") || document.body).append(shield, pop);
+    if (!item.name) name.focus();
   };
 
   const outside = (e) => { if (pop && !pop.contains(e.target)) close(); };
