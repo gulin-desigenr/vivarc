@@ -858,8 +858,8 @@
 }
 #browser.vm-on #vm-cmd .vm-cmd-box,
 #browser.vm-on.vm-glass #vm-cmd .vm-cmd-box {
-  width: min(clamp(640px, min(33.333vw, 59.259vh), 896px), calc(100vw - 32px));
-  max-height: min(76vh, clamp(680px, min(35.417vw, 62.963vh), 952px));
+  width: min(clamp(640px, calc(320px + min(16.666vw, 29.63vh)), 768px), calc(100vw - 32px));
+  max-height: min(76vh, clamp(680px, calc(340px + min(17.709vw, 31.482vh)), 816px));
   display: flex;
   flex-direction: column;
   border-radius: 13px;
@@ -871,56 +871,56 @@
 }
 #browser.vm-on #vm-cmd .vm-cmd-head {
   flex: none;
-  gap: clamp(10px, min(.521vw, .926vh), 14px);
-  padding: clamp(10px, min(.521vw, .926vh), 14px) clamp(14px, min(.729vw, 1.296vh), 19.6px);
+  gap: clamp(10px, calc(5px + min(0.261vw, 0.463vh)), 12px);
+  padding: clamp(10px, calc(5px + min(0.261vw, 0.463vh)), 12px) clamp(14px, calc(7px + min(0.364vw, 0.648vh)), 16.8px);
   border-bottom: 1px solid var(--cmd-line);
 }
 #browser.vm-on #vm-cmd .vm-cmd-head > .vm-cmd-glyph { color: var(--cmd-muted); }
-#browser.vm-on #vm-cmd .vm-cmd-head > .vm-cmd-glyph svg { width: clamp(20px, min(1.042vw, 1.852vh), 28px); height: clamp(20px, min(1.042vw, 1.852vh), 28px); }
+#browser.vm-on #vm-cmd .vm-cmd-head > .vm-cmd-glyph svg { width: clamp(20px, calc(10px + min(0.521vw, 0.926vh)), 24px); height: clamp(20px, calc(10px + min(0.521vw, 0.926vh)), 24px); }
 #browser.vm-on #vm-cmd input {
-  height: clamp(32px, min(1.667vw, 2.963vh), 44.8px);
+  height: clamp(32px, calc(16px + min(0.834vw, 1.482vh)), 38.4px);
   padding: 0 9px;
   border: 1px solid transparent;
   border-radius: 8px;
   color: var(--cmd-text);
-  font-size: clamp(14px, min(.729vw, 1.296vh), 19.6px);
+  font-size: clamp(14px, calc(7px + min(0.364vw, 0.648vh)), 16.8px);
   outline: none;
 }
 #browser.vm-on #vm-cmd input:focus { border-color: transparent; box-shadow: none; }
 #browser.vm-on #vm-cmd input::placeholder { color: var(--cmd-muted); opacity: 1; }
-#browser.vm-on #vm-cmd .vm-cmd-chip { padding: 4px 10px; font-size: clamp(12px, min(.625vw, 1.111vh), 16.8px); }
-#browser.vm-on #vm-cmd .vm-cmd-escape { color: var(--cmd-muted); font-size: clamp(11px, min(.573vw, 1.019vh), 15.4px); }
+#browser.vm-on #vm-cmd .vm-cmd-chip { padding: 4px 10px; font-size: clamp(12px, calc(6px + min(0.312vw, 0.555vh)), 14.4px); }
+#browser.vm-on #vm-cmd .vm-cmd-escape { color: var(--cmd-muted); font-size: clamp(11px, calc(5.5px + min(0.286vw, 0.509vh)), 13.2px); }
 #browser.vm-on #vm-cmd .vm-cmd-list { flex: 0 1 auto; min-height: 0; max-height: 58vh; overflow-y: auto; padding: 8px; scrollbar-width: thin; }
 #browser.vm-on #vm-cmd .vm-cmd-divider { height: 1px; margin: 6px 10px; background: var(--cmd-line); }
-#browser.vm-on #vm-cmd .vm-cmd-section { padding: 10px 10px 5px; color: var(--cmd-muted); font-size: clamp(10.5px, min(.547vw, .972vh), 14.7px); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+#browser.vm-on #vm-cmd .vm-cmd-section { padding: 10px 10px 5px; color: var(--cmd-muted); font-size: clamp(10.5px, calc(5.25px + min(0.274vw, 0.486vh)), 12.6px); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
 #browser.vm-on #vm-cmd .vm-cmd-row {
-  min-height: clamp(38px, min(1.979vw, 3.519vh), 53.2px);
+  min-height: clamp(38px, calc(19px + min(0.99vw, 1.76vh)), 45.6px);
   height: auto;
-  gap: clamp(11px, min(.573vw, 1.019vh), 15.4px);
-  padding: clamp(6px, min(.313vw, .556vh), 8.4px) clamp(10px, min(.521vw, .926vh), 14px);
+  gap: clamp(11px, calc(5.5px + min(0.286vw, 0.509vh)), 13.2px);
+  padding: clamp(6px, calc(3px + min(0.157vw, 0.278vh)), 7.2px) clamp(10px, calc(5px + min(0.261vw, 0.463vh)), 12px);
   border-radius: 7px;
   color: var(--cmd-text);
-  font-size: clamp(13px, min(.677vw, 1.204vh), 18.2px);
+  font-size: clamp(13px, calc(6.5px + min(0.339vw, 0.602vh)), 15.6px);
 }
 #browser.vm-on #vm-cmd .vm-cmd-row.sel,
 #browser.vm-on.vm-glass #vm-cmd .vm-cmd-row.sel { background: var(--cmd-selected); box-shadow: none; }
-#browser.vm-on #vm-cmd .vm-cmd-ico { width: clamp(22px, min(1.146vw, 2.037vh), 30.8px); height: clamp(22px, min(1.146vw, 2.037vh), 30.8px); }
+#browser.vm-on #vm-cmd .vm-cmd-ico { width: clamp(22px, calc(11px + min(0.573vw, 1.018vh)), 26.4px); height: clamp(22px, calc(11px + min(0.573vw, 1.018vh)), 26.4px); }
 #browser.vm-on #vm-cmd .vm-cmd-ico svg { width: 80%; height: 80%; }
-#browser.vm-on #vm-cmd .vm-cmd-letter { font-size: clamp(13px, min(.677vw, 1.204vh), 18.2px); }
+#browser.vm-on #vm-cmd .vm-cmd-letter { font-size: clamp(13px, calc(6.5px + min(0.339vw, 0.602vh)), 15.6px); }
 #browser.vm-on #vm-cmd .vm-cmd-content { display: flex; flex: 1 1 auto; min-width: 0; align-items: baseline; gap: 8px; }
 #browser.vm-on #vm-cmd .vm-cmd-content > .vm-cmd-title { flex: 0 1 auto; min-width: 0; white-space: nowrap; }
 #browser.vm-on #vm-cmd .vm-cmd-content > .vm-cmd-sub { flex: 0 100 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #browser.vm-on #vm-cmd .vm-cmd-ico .vm-ico { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; }
 #browser.vm-on #vm-cmd .vm-cmd-ico .vm-ico img { width: 100%; height: 100%; object-fit: contain; }
-#browser.vm-on #vm-cmd .vm-cmd-ico .vm-letter { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; border-radius: 6px; color: #fff; font-weight: 600; font-size: clamp(12px, min(.625vw, 1.111vh), 16.8px); }
+#browser.vm-on #vm-cmd .vm-cmd-ico .vm-letter { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; border-radius: 6px; color: #fff; font-weight: 600; font-size: clamp(12px, calc(6px + min(0.312vw, 0.555vh)), 14.4px); }
 #browser.vm-on #vm-cmd .vm-cmd-title { font-weight: 450; letter-spacing: -0.003em; }
 #browser.vm-on #vm-cmd .vm-cmd-row.sel .vm-cmd-title { font-weight: 500; }
-#browser.vm-on #vm-cmd .vm-cmd-sub { flex: none; color: var(--cmd-muted); font-size: clamp(12px, min(.625vw, 1.111vh), 16.8px); font-weight: 400; }
-#browser.vm-on #vm-cmd .vm-cmd-hint { display: none; flex: none; gap: 6px; color: var(--cmd-muted); font-size: clamp(11px, min(.573vw, 1.019vh), 15.4px); font-weight: 400; }
+#browser.vm-on #vm-cmd .vm-cmd-sub { flex: none; color: var(--cmd-muted); font-size: clamp(12px, calc(6px + min(0.312vw, 0.555vh)), 14.4px); font-weight: 400; }
+#browser.vm-on #vm-cmd .vm-cmd-hint { display: none; flex: none; gap: 6px; color: var(--cmd-muted); font-size: clamp(11px, calc(5.5px + min(0.286vw, 0.509vh)), 13.2px); font-weight: 400; }
 #browser.vm-on #vm-cmd .vm-cmd-row.sel .vm-cmd-hint { display: flex; }
 #browser.vm-on #vm-cmd .vm-cmd-arrow { width: 24px; height: 24px; background: transparent; color: var(--cmd-muted); }
-#browser.vm-on #vm-cmd .vm-cmd-footer { display: flex; flex: none; gap: 16px; align-items: center; padding: 8px 16px; border-top: 1px solid var(--cmd-line); color: var(--cmd-muted); font-size: clamp(11px, min(.573vw, 1.019vh), 15.4px); }
-#browser.vm-on #vm-cmd .vm-cmd-empty { padding: 18px 12px; color: var(--cmd-muted); font-size: clamp(13px, min(.677vw, 1.204vh), 18.2px); }
+#browser.vm-on #vm-cmd .vm-cmd-footer { display: flex; flex: none; gap: 16px; align-items: center; padding: 8px 16px; border-top: 1px solid var(--cmd-line); color: var(--cmd-muted); font-size: clamp(11px, calc(5.5px + min(0.286vw, 0.509vh)), 13.2px); }
+#browser.vm-on #vm-cmd .vm-cmd-empty { padding: 18px 12px; color: var(--cmd-muted); font-size: clamp(13px, calc(6.5px + min(0.339vw, 0.602vh)), 15.6px); }
 #browser.vm-on #vm-cmd .vm-cmd-shortcut { display: flex; align-items: center; gap: 5px; }
 #browser.vm-on #vm-cmd kbd { padding: 1px 5px; border: 1px solid var(--cmd-line); border-radius: 4px; color: var(--cmd-muted); font: inherit; }
 
