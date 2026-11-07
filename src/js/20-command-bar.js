@@ -96,7 +96,9 @@
     const fresh = await chrome.tabs.get(tab.id);
     let ext = {};
     try { ext = JSON.parse(fresh.vivExtData || "{}"); } catch (_) {}
-    await chrome.tabs.update(tab.id, { vivExtData: JSON.stringify({ ...ext, ...patch }) });
+    // Vivaldi merges vivExtData into what the tab has, so a key left out stays; null is what removes it.
+    const cleared = Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, v === undefined ? null : v]));
+    await chrome.tabs.update(tab.id, { vivExtData: JSON.stringify({ ...ext, ...cleared }) });
   };
   // Split view like Arc's: the page behind the bar and a new tab form a fresh Vivaldi tile group. "row" puts them
   // side by side, "column" one above the other (measured from the rendered panes in Vivaldi 8.2). If the page was
@@ -117,6 +119,26 @@
     if (others.length === 1) await setExtData(others[0], { tiling: undefined });
     else await Promise.all(others.map((t, index) => setExtData(t, { tiling: { ...window.__vm.tilingOf(t), index } })));
   };
+  // Selected tabs (2 to 4) from the sidebar become one tile group, side by side, leaving any group they were in;
+  // a group left with a single tab is dissolved. The first selected tab is activated so the split shows.
+  const splitTabs = async (tabs, layout = "row") => {
+    const fresh = await Promise.all(tabs.map((t) => chrome.tabs.get(t.id)));
+    const ids = new Set(fresh.map((t) => t.id));
+    const left = new Set(fresh.map((t) => window.__vm.tilingOf(t)?.id).filter(Boolean));
+    const id = crypto.randomUUID();
+    const write = () => Promise.all(fresh.map((t, index) => setExtData(t, { tiling: { id, layout, type: "selection", index } })));
+    await write();
+    setTimeout(() => write().catch(() => {}), 400);
+    const all = await chrome.tabs.query({ currentWindow: true });
+    for (const old of left) {
+      const rest = all.filter((t) => !ids.has(t.id) && window.__vm.tilingOf(t)?.id === old);
+      if (rest.length === 1) await setExtData(rest[0], { tiling: undefined });
+      else await Promise.all(rest.map((t, index) => setExtData(t, { tiling: { ...window.__vm.tilingOf(t), index } })));
+    }
+    await chrome.tabs.update(fresh[0].id, { active: true });
+  };
+  window.__vm.splitTabs = splitTabs;
+  window.__vm.closeSplitView = (tab) => closeSplitView(tab);
   const closeSplitView = async (tab) => {
     const id = window.__vm.tilingOf(tab)?.id;
     const peers = (await chrome.tabs.query({ currentWindow: true })).filter((t) => window.__vm.tilingOf(t)?.id === id);

@@ -881,11 +881,22 @@
       tweaks: ["do-not-reparent", "create-new-group"], debug: "Vivarc.stackSelected" });
     refresh(false);
   };
+  // Split view in a stack of its own, so the split tabs stay together in the sidebar: stack first, then tile.
+  const splitSelected = async () => {
+    const tabs = selectedTabs();
+    if (tabs.length < 2) return;
+    await stackSelected();
+    await window.__vm.splitTabs(tabs).catch(() => {});
+    refresh(false);
+  };
   const selectionMenu = () => {
     const tabs = selectedTabs();
     const n = tabs.length;
     return [
       [`Stack ${n} Tabs`, stackSelected],
+      ...(tabs.every((t) => window.__vm.tilingOf(t)) && window.__vm.closeSplitView
+        ? [["Close Split View", () => { clearSelection(); Promise.all(tabs.map((t) => window.__vm.closeSplitView(t))).then(() => refresh(false)).catch(() => {}); }]]
+        : n <= 4 && window.__vm.splitTabs ? [[`Open ${n} Tabs in Split View`, () => splitSelected()]] : []),
       [`Archive ${n} Tabs`, () => { clearSelection(); window.__vm.archive.archiveTabs(tabs); }],
       [],
       ["Clear Selection", clearSelection],
@@ -940,6 +951,7 @@
       ["Duplicate Tab", () => chrome.tabs.duplicate(tab.id)],
       ["Copy Link", () => copy(tab.url)],
       [],
+      ...(window.__vm.tilingOf(tab) && window.__vm.closeSplitView ? [["Close Split View", () => window.__vm.closeSplitView(tab).then(() => refresh(false)).catch(() => {})]] : []),
       ...(tabStackId(tab) ? [["Remove from Stack", () => unstack([tab.id])]] : []),
       ["Archive Tab", () => window.__vm.archive.archiveTabs([tab])],
       ["Close Tab", () => chrome.tabs.remove(tab.id)],
