@@ -237,10 +237,21 @@
     setTimeout(done, 60000);
   };
 
+  // A pinned link opens in the space whose list it was clicked in. Vivaldi puts a tab the mod creates in its own
+  // idea of the current workspace, which can differ from the space on screen (right after a switch, or when
+  // Vivaldi still holds the previous one), so the tab is moved there if it landed elsewhere.
   const openPin = async (node) => {
+    const space = state.active;
     const tab = await chrome.tabs.create({ url: node.url });
     await writeExt(tab.id, { [pinLinks.PIN]: node.id });
     recordHome(tab.id, node.id);
+    try {
+      const fresh = await chrome.tabs.get(tab.id);
+      if (state.workspaces?.length && spacesOf.of(fresh) !== space) {
+        await vivaldi.tabsPrivate.move({ tabIds: [tab.id], target: "last", tweaks: ["do-not-reparent"], workspaceId: space || null });
+        await chrome.tabs.update(tab.id, { active: true });
+      }
+    } catch (e) { console.warn("[vivarc] pinned tab space:", e); }
   };
 
   // A favorite has one tab for every space, like Arc's: when its tab is in another space, it comes to this one
