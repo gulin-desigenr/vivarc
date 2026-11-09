@@ -844,11 +844,7 @@
     head.title = name ? `${name} \u2014 from ${window.__vm.titleOf(ordered[0])}` : title;
     const body = el("div", "vm-folder-body");
     const content = el("div", "vm-folder-content vm-stack-content");
-    ordered.forEach((tab, i) => {
-      const row = tabRow(tab);
-      if (i === 0) { row.classList.add("vm-stack-origin"); row.title = `Where this stack started\n${tab.url}`; }
-      content.append(row);
-    });
+    ordered.forEach((tab) => content.append(tabRow(tab)));
     body.append(content);
     const sync = () => {
       const open = !collapsedStacks.has(id);
