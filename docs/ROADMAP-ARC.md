@@ -20,6 +20,7 @@ Pesquisa e prioridades registradas em 4 de novembro de 2026 para o fork pessoal.
 
 ## Backlog
 
+- **Redesign das configurações do Vivarc** (pedido em 2026-11-09): a janela "Vivarc Settings" é uma lista longa de interruptores com textos longos. Agrupar por assunto (aparência, sidebar, command bar, abas, Little Vivarc), encurtar os textos e seguir o visual novo (DM Sans, cantos maiores). Fazer o desenho no Figma antes.
 1. **Tradução para português:** interface do Vivarc em pt-BR (command bar, menus, ajustes, avisos, Little Vivarc), seguindo o idioma do Vivaldi e mantendo o inglês como fallback. Hoje todos os textos estão em inglês dentro dos módulos; centralizar as strings antes de traduzir.
 
 ## Ignorados
