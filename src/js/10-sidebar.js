@@ -678,6 +678,8 @@
   // one needs Vivarc: once the source is in a stack, Vivaldi's own "Open links within current tab stack" puts the
   // next ones there, and takes a tab opened in front out again (Vivaldi would stack those too). Left alone: tabs of other windows, a source bound to a
   // pinned link or favorite (its pages stay in the list), pinned tabs, Peek's temporary tabs, and a source already
+  // in a stack. Every stacking move passes the tabs' space: without workspaceId, Vivaldi moves the stack (or the tab
+  // joining one) into the default space.
   // in a stack. Vivaldi 8.3 creates a stack with tabsPrivate.move(..., ["do-not-reparent", "create-new-group"]),
   // the call its own "Stack tabs" action makes.
   const autoStack = async (tab) => {
@@ -697,11 +699,11 @@
       const now = await chrome.tabs.get(source.id).catch(() => null);
       const mine = await chrome.tabs.get(tab.id).catch(() => null);
       if (!now || !mine || !tabStackId(now) || tabStackId(mine)) return;
-      await vivaldi.tabsPrivate.move({ tabIds: [tab.id], target: source.id, tweaks: ["do-not-reparent", "into"], debug: "Vivarc.autoStack" });
+      await vivaldi.tabsPrivate.move({ tabIds: [tab.id], target: source.id, workspaceId: spacesOf.of(source) || null, tweaks: ["do-not-reparent", "into"], debug: "Vivarc.autoStack" });
       refresh(false);
       return;
     }
-    const job = vivaldi.tabsPrivate.move({ tabIds: [source.id, tab.id], target: source.id,
+    const job = vivaldi.tabsPrivate.move({ tabIds: [source.id, tab.id], target: source.id, workspaceId: spacesOf.of(source) || null,
       tweaks: ["do-not-reparent", "create-new-group"], debug: "Vivarc.autoStack" });
     stacking.set(source.id, job);
     try {
@@ -749,7 +751,7 @@
     }
     const moved = [];
     for (const { ids, name } of create) {
-      const { group } = (await vivaldi.tabsPrivate.move({ tabIds: ids, target: ids[0],
+      const { group } = (await vivaldi.tabsPrivate.move({ tabIds: ids, target: ids[0], workspaceId: state.active || null,
         tweaks: ["do-not-reparent", "create-new-group"], debug: "Vivarc.tidy" })) || {};
       if (group) await vivaldi.tabsPrivate.setGroupProperties({ groupExtId: group, groupTitle: name });
       moved.push(...ids);
@@ -757,7 +759,7 @@
     for (const { group, ids } of join) {
       const target = stacks.find((st) => st.group === group)?.first;
       if (target == null) continue;
-      await vivaldi.tabsPrivate.move({ tabIds: ids, target, tweaks: ["do-not-reparent", "into"], debug: "Vivarc.tidy" });
+      await vivaldi.tabsPrivate.move({ tabIds: ids, target, workspaceId: state.active || null, tweaks: ["do-not-reparent", "into"], debug: "Vivarc.tidy" });
       moved.push(...ids);
     }
     refresh(false);
@@ -776,7 +778,7 @@
     refresh(false);
   };
   const joinStack = async (tabId, memberId) => {
-    await vivaldi.tabsPrivate.move({ tabIds: [tabId], target: memberId, tweaks: ["do-not-reparent", "into"], debug: "Vivarc.joinStack" });
+    await vivaldi.tabsPrivate.move({ tabIds: [tabId], target: memberId, workspaceId: state.active || null, tweaks: ["do-not-reparent", "into"], debug: "Vivarc.joinStack" });
     refresh(false);
   };
 
@@ -819,7 +821,7 @@
       tabs.push(open || await chrome.tabs.create({ url: link.url, active: false }));
     }
     const ids = tabs.map((t) => t.id);
-    const { group } = (await vivaldi.tabsPrivate.move({ tabIds: ids, target: ids[0],
+    const { group } = (await vivaldi.tabsPrivate.move({ tabIds: ids, target: ids[0], workspaceId: state.active || null,
       tweaks: ["do-not-reparent", "create-new-group"], debug: "Vivarc.folderToStack" })) || {};
     if (group) await vivaldi.tabsPrivate.setGroupProperties({ groupExtId: group, groupTitle: node.title || undefined });
     discard(node);
@@ -906,7 +908,7 @@
     const tabs = selectedTabs();
     if (tabs.length < 2) return;
     clearSelection();
-    await vivaldi.tabsPrivate.move({ tabIds: tabs.map((t) => t.id), target: tabs[0].id,
+    await vivaldi.tabsPrivate.move({ tabIds: tabs.map((t) => t.id), target: tabs[0].id, workspaceId: spacesOf.of(tabs[0]) || null,
       tweaks: ["do-not-reparent", "create-new-group"], debug: "Vivarc.stackSelected" });
     refresh(false);
   };

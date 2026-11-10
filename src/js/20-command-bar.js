@@ -349,7 +349,8 @@
       const group = groupOf(tab);
       if (outside && group) await vivaldi.tabsPrivate.move({ tabIds: [id], target: "last", tweaks: ["ungroup"], debug: "Vivarc.cmdOutside" });
       else if (!outside && group !== stack.group) {
-        await vivaldi.tabsPrivate.move({ tabIds: [id], target: stack.memberId, tweaks: ["do-not-reparent", "into"], debug: "Vivarc.cmdIntoStack" });
+        await vivaldi.tabsPrivate.move({ tabIds: [id], target: stack.memberId, workspaceId: window.__vm.workspaces.of(await chrome.tabs.get(stack.memberId)) || null,
+          tweaks: ["do-not-reparent", "into"], debug: "Vivarc.cmdIntoStack" });
       } else return;
       window.dispatchEvent(new CustomEvent("vm-refresh-sidebar"));
     };
