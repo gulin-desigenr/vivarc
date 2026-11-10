@@ -39,10 +39,12 @@ LEGACY_UPDATE_COMMAND = os.path.join(HOME, "Applications", "Update Vivarc.comman
 UNINSTALL_COMMAND = os.path.join(HOME_DIR, "Uninstall Vivarc.command")
 UNINSTALL_APP = os.path.join(HOME, "Applications", "Uninstall Vivarc.app")
 UPDATE_MARK = "# Created by Vivarc"
+REAPPLY_COMMAND = os.path.join(HOME_DIR, "Put Vivarc back.command")
 RELEASES_LATEST = "https://github.com/gulin-desigenr/vivarc/releases/latest"
 REMINDER_LABEL = "com.vivarc.reminder"
 REMINDER_PLIST = os.path.join(HOME, "Library", "LaunchAgents", f"{REMINDER_LABEL}.plist")
 REMIND_EVERY = 12 * 3600
+SETTLE = 20  # seconds to let a Vivaldi update finish replacing the app before re-applying
 RESOURCES = "Contents/Frameworks/Vivaldi Framework.framework/Resources/vivaldi"
 POINTER_LABEL = "com.vivarc.pointer"  # tells Little Vivarc which screen the pointer is on
 POINTER_PLIST = os.path.join(HOME, "Library", "LaunchAgents", f"{POINTER_LABEL}.plist")
@@ -540,6 +542,20 @@ def write_update_command(path):
     write_command(path, "updates Vivarc and brings it back after a Vivaldi update", "update")
 
 
+def write_reapply_command(path, app):
+    """What the automatic reminder opens in Terminal: macOS lets Terminal, not a background job, write into Vivaldi."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    script = ("#!/bin/bash\n"
+              f"{UPDATE_MARK}: puts Vivarc back after a Vivaldi update.\n"
+              f"/usr/bin/python3 {shlex.quote(os.path.join(HERE, 'vivarc.py'))} --app {shlex.quote(app)} apply --offer-restart\n"
+              "status=$?\n"
+              "echo\n"
+              "[ $status -eq 0 ] && echo \"Done. You can close this window.\"\n"
+              "exit $status\n")
+    write_atomic(path, script)
+    os.chmod(path, 0o755)
+
+
 def write_uninstall_command(path):
     write_command(path, "removes Vivarc and puts Vivaldi back as it was", "uninstall")
 
@@ -584,14 +600,14 @@ def launchctl(*args):
     return subprocess.run(["launchctl", *args], capture_output=True, check=False)
 
 
-def enable_reminder(app):
+def enable_reminder(app, auto=False):
     for folder in ("Documents", "Desktop", "Downloads"):
         if HERE.startswith(os.path.join(HOME, folder) + os.sep):
             say(f"Note: macOS does not let background jobs read ~/{folder}, so the reminder cannot run from this copy. "
                 "Use the copy the one-line install puts in ~/.vivarc/app.")
     agent = {
         "Label": REMINDER_LABEL,
-        "ProgramArguments": ["/usr/bin/python3", os.path.join(HERE, "vivarc.py"), "--app", app, "remind"],
+        "ProgramArguments": ["/usr/bin/python3", os.path.join(HERE, "vivarc.py"), "--app", app, "remind", *(["--auto"] if auto else [])],
         "RunAtLoad": True,
         "StartInterval": 3600,
         "WatchPaths": [os.path.join(app, "Contents", "Info.plist")],
@@ -608,6 +624,63 @@ def disable_reminder():
     launchctl("bootout", f"gui/{os.getuid()}/{REMINDER_LABEL}")
     if os.path.exists(REMINDER_PLIST):
         os.remove(REMINDER_PLIST)
+
+
+def reminder_state():
+    if not os.path.exists(REMINDER_PLIST):
+        return "off"
+    try:
+        with open(REMINDER_PLIST, "rb") as f:
+            return "auto" if "--auto" in plistlib.load(f).get("ProgramArguments", []) else "on"
+    except (OSError, plistlib.InvalidFileException):
+        return "on"
+
+
+def bundle_id(app):
+    try:
+        with open(os.path.join(app, "Contents", "Info.plist"), "rb") as f:
+            return plistlib.load(f).get("CFBundleIdentifier") or "com.vivaldi.Vivaldi"
+    except (OSError, plistlib.InvalidFileException):
+        return "com.vivaldi.Vivaldi"
+
+
+def app_running(app):
+    out = subprocess.run(["osascript", "-e", f'application id "{bundle_id(app)}" is running'], capture_output=True, text=True)
+    return out.stdout.strip() == "true"
+
+
+def restart_app(app):
+    subprocess.run(["osascript", "-e", f'quit app id "{bundle_id(app)}"'], capture_output=True, check=False)
+    for _ in range(40):
+        if not app_running(app):
+            break
+        time.sleep(0.5)
+    subprocess.run(["open", "-a", app], check=False)
+
+
+def ask_restart():
+    script = ('display dialog "Vivaldi was updated, so Vivarc was put back. Restart Vivaldi now to load it?" '
+              'with title "Vivarc" buttons {"Later", "Restart Vivaldi"} default button "Restart Vivaldi" giving up after 600')
+    out = subprocess.run(["osascript", "-e", script], capture_output=True, text=True)
+    return "button returned:Restart Vivaldi" in out.stdout
+
+
+def notify(message):
+    subprocess.run(["osascript", "-e", f'display notification "{message}" with title "Vivarc"'], capture_output=True, check=False)
+
+
+def reapply_quietly(app):
+    """Re-apply from the background job after a Vivaldi update. False when macOS does not let it write into the app."""
+    resources = os.path.join(app, RESOURCES)
+    if not can_write(resources):
+        return False
+    try:
+        sync_guide()
+        install_pointer_helper()
+        apply_js(app, resources, os.path.exists(os.path.join(HOME_DIR, "peek", "VividPeek.js")))
+    except PermissionError:
+        return False
+    return True
 
 
 def permission_hint(error):
@@ -672,7 +745,7 @@ def cmd_install(args):
     write_update_app(UNINSTALL_APP, UNINSTALL_COMMAND)
     remove_update_command(LEGACY_UPDATE_COMMAND)
     if os.path.exists(REMINDER_PLIST):
-        enable_reminder(app)
+        enable_reminder(app, auto=reminder_state() == "auto")
     elif (ask("Show a reminder when a Vivaldi update removes Vivarc? [y/N] ") or "").lower() in ("y", "yes"):
         enable_reminder(app)
         say("Reminder on. Turn it off any time with: python3 ~/.vivarc/app/vivarc.py reminder off")
@@ -691,6 +764,8 @@ def cmd_apply(args):
     except PermissionError as error:
         permission_hint(error)
     say(f"Re-applied to Vivaldi {app_version(args.app)}" + (". Restart Vivaldi to see it." if vivaldi_running() else ""))
+    if getattr(args, "offer_restart", False) is True and app_running(args.app) and ask_restart():
+        restart_app(args.app)
 
 
 def cmd_update(args):
@@ -721,6 +796,26 @@ def cmd_update(args):
 
 def cmd_remind(args):
     resources = os.path.join(args.app, RESOURCES)
+    if needs_reapply(resources) and getattr(args, "auto", False) is True:
+        time.sleep(SETTLE)  # the update may still be replacing the app
+        if not needs_reapply(resources):
+            return
+        if reapply_quietly(args.app):
+            if not app_running(args.app):
+                notify("Vivaldi was updated, so Vivarc was put back.")
+            elif ask_restart():
+                restart_app(args.app)
+            return
+        # macOS does not let a background job write into Vivaldi.app (App Management); Terminal may, so re-apply
+        # there. Once per half day, so an unfinished permission prompt does not reopen it every hour.
+        stamp = os.path.join(HOME_DIR, "reminded")
+        if os.path.exists(stamp) and time.time() - float(read_text(stamp)) < REMIND_EVERY:
+            return
+        os.makedirs(HOME_DIR, exist_ok=True)
+        write_atomic(stamp, str(time.time()))
+        write_reapply_command(REAPPLY_COMMAND, args.app)
+        open_in_terminal(REAPPLY_COMMAND)
+        return
     if needs_reapply(resources):
         stamp = os.path.join(HOME_DIR, "reminded")
         if os.path.exists(stamp) and time.time() - float(read_text(stamp)) < REMIND_EVERY:
@@ -743,7 +838,10 @@ def cmd_remind(args):
 
 
 def cmd_reminder(args):
-    if args.state == "on":
+    if args.state == "auto":
+        enable_reminder(args.app, auto=True)
+        say("Automatic: when a Vivaldi update removes Vivarc, it is put back by itself and you are asked to restart Vivaldi.")
+    elif args.state == "on":
         enable_reminder(args.app)
         say("Reminder on: you will be asked when a Vivaldi update removes Vivarc.")
     else:
@@ -801,7 +899,7 @@ def cmd_status(args):
     injected = os.path.exists(html_path) and BEGIN in read_text(html_path)
     say(f"Vivarc {VERSION}; Vivaldi {app_version(args.app)} (running: {vivaldi_running()})")
     say(f"JS injected: {injected}" + ("" if injected else "  -> run ./vivarc.py apply"))
-    say(f"Update reminder: {'on' if os.path.exists(REMINDER_PLIST) else 'off'}")
+    say(f"Update reminder: {reminder_state()}")
     state = load_state()
     for directory, name in find_profiles(read_json(os.path.join(args.data_dir, "Local State"))):
         path = os.path.join(args.data_dir, directory, "Preferences")
@@ -823,10 +921,12 @@ def main(argv=None):
     install = sub.add_parser("install")
     install.add_argument("--no-peek", action="store_true")
     install.add_argument("--dry-run", action="store_true")
-    sub.add_parser("apply")
-    sub.add_parser("remind", help="ask to re-apply when Vivaldi has been updated (run by the reminder)")
-    reminder = sub.add_parser("reminder", help="turn the update reminder on or off")
-    reminder.add_argument("state", choices=["on", "off"])
+    apply = sub.add_parser("apply")
+    apply.add_argument("--offer-restart", action="store_true", help="then ask whether to restart Vivaldi")
+    remind = sub.add_parser("remind", help="ask to re-apply when Vivaldi has been updated (run by the reminder)")
+    remind.add_argument("--auto", action="store_true", help="re-apply by itself, then offer to restart Vivaldi")
+    reminder = sub.add_parser("reminder", help="turn the update reminder on, automatic or off")
+    reminder.add_argument("state", choices=["on", "auto", "off"])
     update = sub.add_parser("update")
     update.add_argument("--no-peek", action="store_true")
     update.set_defaults(dry_run=False)

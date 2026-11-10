@@ -27,6 +27,7 @@ class ReminderCase(unittest.TestCase):
         for p in (mock.patch.object(vivarc, "HOME_DIR", self.home),
                   mock.patch.object(vivarc, "REMINDER_PLIST", self.plist),
                   mock.patch.object(vivarc, "UPDATE_COMMAND", self.command),
+                  mock.patch.object(vivarc, "REAPPLY_COMMAND", os.path.join(self.tmp, "home", "Put Vivarc back.command")),
                   mock.patch.object(vivarc, "launchctl", self.launchctl)):
             p.start()
             self.addCleanup(p.stop)
@@ -137,6 +138,80 @@ class NewRelease(ReminderCase):
         asked, _ = self.remind(False, self.NEWER)
         self.assertEqual(len(asked), 1)
         self.assertIn("Vivaldi was updated", asked[0])
+
+
+class AutoReapply(ReminderCase):
+    def run_auto(self, running=False, restart=True, writable=True, reapply_fixes=True):
+        calls = {"asked": [], "notified": [], "restarted": [], "terminal": [], "applied": []}
+
+        def apply(app, resources, with_peek):
+            calls["applied"].append(app)
+            if reapply_fixes:
+                self.inject()
+
+        with mock.patch.object(vivarc, "can_write", return_value=writable), \
+                mock.patch.object(vivarc, "sync_guide"), mock.patch.object(vivarc, "install_pointer_helper"), \
+                mock.patch.object(vivarc, "apply_js", side_effect=apply), \
+                mock.patch.object(vivarc, "app_running", return_value=running), \
+                mock.patch.object(vivarc, "ask_restart", side_effect=lambda: calls["asked"].append(1) or restart), \
+                mock.patch.object(vivarc, "restart_app", side_effect=calls["restarted"].append), \
+                mock.patch.object(vivarc, "notify", side_effect=calls["notified"].append), \
+                mock.patch.object(vivarc, "prompt_update", side_effect=lambda m: calls["asked"].append(m) or True), \
+                mock.patch.object(vivarc, "open_in_terminal", side_effect=calls["terminal"].append), \
+                mock.patch.object(vivarc, "latest_release_tag", return_value=None), \
+                mock.patch("time.sleep"), redirect_stdout(io.StringIO()):
+            vivarc.cmd_remind(mock.Mock(app=self.app, auto=True))
+        return calls
+
+    def test_puts_vivarc_back_and_offers_a_restart_while_vivaldi_runs(self):
+        self.inject(html=False)
+        calls = self.run_auto(running=True)
+        self.assertEqual(calls["applied"], [self.app])
+        self.assertEqual(calls["asked"], [1])
+        self.assertEqual(calls["restarted"], [self.app])
+        self.assertEqual(calls["terminal"], [])
+
+    def test_later_leaves_vivaldi_running(self):
+        self.inject(html=False)
+        calls = self.run_auto(running=True, restart=False)
+        self.assertEqual(calls["restarted"], [])
+
+    def test_only_a_notification_when_vivaldi_is_closed(self):
+        self.inject(html=False)
+        calls = self.run_auto(running=False)
+        self.assertEqual(calls["applied"], [self.app])
+        self.assertEqual(calls["asked"], [])
+        self.assertEqual(len(calls["notified"]), 1)
+
+    def test_re_applies_from_terminal_when_macos_blocks_the_background_job(self):
+        self.inject(html=False)
+        calls = self.run_auto(writable=False)
+        self.assertEqual((calls["applied"], calls["asked"]), ([], []))
+        self.assertEqual(calls["terminal"], [vivarc.REAPPLY_COMMAND])
+        script = open(vivarc.REAPPLY_COMMAND).read()
+        self.assertIn("apply --offer-restart", script)
+        self.assertIn(self.app, script)
+        self.assertTrue(os.access(vivarc.REAPPLY_COMMAND, os.X_OK))
+
+    def test_opens_terminal_at_most_once_per_half_day(self):
+        self.inject(html=False)
+        self.run_auto(writable=False)
+        self.assertEqual(self.run_auto(writable=False)["terminal"], [])
+
+    def test_does_nothing_while_vivarc_is_in_place(self):
+        self.inject()
+        calls = self.run_auto(running=True)
+        self.assertEqual((calls["applied"], calls["asked"], calls["notified"]), ([], [], []))
+
+    def test_agent_runs_remind_auto_and_status_reports_it(self):
+        vivarc.enable_reminder(self.app, auto=True)
+        with open(self.plist, "rb") as f:
+            self.assertEqual(plistlib.load(f)["ProgramArguments"][-2:], ["remind", "--auto"])
+        self.assertEqual(vivarc.reminder_state(), "auto")
+        vivarc.enable_reminder(self.app)
+        self.assertEqual(vivarc.reminder_state(), "on")
+        vivarc.disable_reminder()
+        self.assertEqual(vivarc.reminder_state(), "off")
 
 
 class ReminderAgent(ReminderCase):

@@ -10,6 +10,7 @@ Atualizado em 05/11/2026 (Vivaldi 8.3.4191.26).
 - Instalação: `~/.vivarc/app` aponta para o checkout. Dados, ajustes, Peek e backups permanecem em `~/.vivarc`.
 - O botão Update Vivarc e `python3 ~/.vivarc/app/vivarc.py update` usam o checkout Git, executam `git pull --ff-only` do branch e reaplicam o código. O atualizador não integra mudanças de `upstream` automaticamente.
 - Após atualizar o Vivaldi, reabra o Vivarc com Update Vivarc ou feche o navegador, rode `python3 vivarc.py apply` e abra-o novamente. A alteração do instalador original pode remover a injeção.
+- Reinstalação automática ligada (`python3 vivarc.py reminder auto`; `status` mostra `Update reminder: auto`). O LaunchAgent `com.vivarc.reminder` observa o `Info.plist` do Vivaldi e roda a cada hora; quando a injeção some, espera 20 s e abre no Terminal `~/.vivarc/Put Vivarc back.command` (`apply --offer-restart`), que reaplica e pergunta se reinicia o Vivaldi. O Terminal é necessário: o macOS (App Management) bloqueia a escrita no Vivaldi.app por jobs em segundo plano. No máximo uma vez a cada 12 h.
 
 ## Personalizações
 

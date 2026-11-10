@@ -71,7 +71,7 @@ python3 ~/.vivarc/app/vivarc.py uninstall   # same as Uninstall Vivarc (add --pu
 python3 ~/.vivarc/app/vivarc.py status      # what is installed
 ```
 
-**Update reminder (optional).** The installer offers it. When a Vivaldi update removes Vivarc, or a new Vivarc release is out, a small dialog asks whether to update. Switch it on or off with `python3 ~/.vivarc/app/vivarc.py reminder on` (or `off`).
+**Update reminder (optional).** The installer offers it. When a Vivaldi update removes Vivarc, or a new Vivarc release is out, a small dialog asks whether to update. Switch it on or off with `python3 ~/.vivarc/app/vivarc.py reminder on` (or `off`). With `reminder auto` it does not ask: after a Vivaldi update it puts Vivarc back by itself (from a Terminal window, since macOS only lets apps with the App Management permission change Vivaldi) and then offers to restart Vivaldi.
 
 ## What you get
 
