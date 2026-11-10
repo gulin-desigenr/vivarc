@@ -68,6 +68,7 @@
   // is not brought forward (a minimised window stays minimised). Only normal windows wait; the helper answers
   // "stop" to a Vivaldi it does not serve (a development copy), and a helper that is not running is asked again later.
   const LITTLE_WAIT = "http://127.0.0.1:47391/little/wait";
+  const LITTLE_OPENED = "http://127.0.0.1:47391/little/opened";
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const waitForShortcut = async () => {
     if (typeof fetch !== "function") return;
@@ -80,7 +81,13 @@
         reply = response.ok ? await response.json() : null;
       } catch (_) {}
       if (reply?.stop) return;
-      if (reply?.open) window.__vm.openLittleArc().catch((error) => console.warn("[vivarc] Little Vivarc shortcut:", error));
+      if (reply?.open) {
+        // Opening it activates Vivaldi, and macOS brings this window forward too: the helper puts the app you were
+        // in back above it, leaving only the Little Vivarc in front.
+        window.__vm.openLittleArc()
+          .then(() => fetch(LITTLE_OPENED, { method: "POST", cache: "no-store", headers: { "X-Vivarc": "1" } }))
+          .catch((error) => console.warn("[vivarc] Little Vivarc shortcut:", error));
+      }
       else if (!reply) await sleep(10000);
     }
   };

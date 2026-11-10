@@ -151,6 +151,85 @@ class Waiters:
 WAITERS = Waiters()
 
 
+# ---- Keeping Vivaldi's main window where it was ----
+# Opening the Little Vivarc activates Vivaldi, and macOS then brings its main window forward too, over the app you
+# were in. The app that was in front when the shortcut was pressed is remembered; once the Little Vivarc is open,
+# that app is activated again (its windows go back above Vivaldi's main window) and right after it Vivaldi, but
+# only its key window, the Little Vivarc (NSApplicationActivateIgnoringOtherApps without ActivateAllWindows).
+LITTLE_OPENED = "/little/opened"
+ACTIVATE_IGNORING_OTHER_APPS = 2
+_objc = None
+
+
+def _send(obj, selector, *args, restype=ctypes.c_void_p, argtypes=()):
+    global _objc
+    if _objc is None:
+        _objc = ctypes.cdll.LoadLibrary("/usr/lib/libobjc.A.dylib")
+        ctypes.cdll.LoadLibrary("/System/Library/Frameworks/AppKit.framework/AppKit")
+        _objc.objc_getClass.restype = ctypes.c_void_p
+        _objc.objc_getClass.argtypes = [ctypes.c_char_p]
+        _objc.sel_registerName.restype = ctypes.c_void_p
+        _objc.sel_registerName.argtypes = [ctypes.c_char_p]
+    call = ctypes.CFUNCTYPE(restype, ctypes.c_void_p, ctypes.c_void_p, *argtypes)(ctypes.cast(_objc.objc_msgSend, ctypes.c_void_p).value)
+    return call(obj, _objc.sel_registerName(selector.encode()), *args)
+
+
+def frontmost_app():
+    """(pid, bundle id) of the app in front, or None. Read with lsappinfo: NSWorkspace's frontmostApplication is only
+    kept up to date in a process that runs an AppKit run loop, which this one does not."""
+    try:
+        front = subprocess.run(["lsappinfo", "front"], capture_output=True, text=True, timeout=2).stdout.strip()
+        if not front:
+            return None
+        info = subprocess.run(["lsappinfo", "info", "-only", "pid", "-only", "bundleid", front],
+                              capture_output=True, text=True, timeout=2).stdout
+        pid = re.search(r"pid\s*=\s*(\d+)", info)
+        bundle = re.search(r'bundleID="([^"]*)"', info)
+        return (int(pid.group(1)), bundle.group(1) if bundle else "") if pid else None
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+def _objc_class(name):
+    if _objc is None:
+        _send(None, "self")  # loads the runtime and AppKit
+    return _objc.objc_getClass(name.encode())
+
+
+def activate(pid):
+    app = _send(_objc_class("NSRunningApplication"), "runningApplicationWithProcessIdentifier:", pid, argtypes=(ctypes.c_int,))
+    if app:
+        _send(app, "activateWithOptions:", ACTIVATE_IGNORING_OTHER_APPS, restype=ctypes.c_bool, argtypes=(ctypes.c_ulong,))
+
+
+class FrontBefore:
+    """The app in front when the shortcut was pressed, kept for a few seconds."""
+
+    def __init__(self):
+        self.app, self.at = None, 0.0
+
+    def remember(self, app):
+        self.app, self.at = app, time.monotonic()
+
+    def take(self, within=5.0):
+        app, fresh = self.app, time.monotonic() - self.at <= within
+        self.app = None
+        return app if fresh else None
+
+
+FRONT_BEFORE = FrontBefore()
+
+
+def restore_front(previous, vivaldi):
+    """previous, vivaldi: (pid, bundle id). Nothing to do when Vivaldi itself was in front."""
+    if not previous or not vivaldi or previous[0] == vivaldi[0] or previous[1].startswith("com.vivaldi."):
+        return False
+    activate(previous[0])
+    time.sleep(0.05)
+    activate(vivaldi[0])
+    return True
+
+
 def client_app(port):
     """The path of the process on the other end of a local connection (lsof, then ps), or ""."""
     try:
@@ -184,6 +263,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         path, _, query = self.path.partition("?")
+        if path == LITTLE_OPENED and self.from_ui():
+            previous, vivaldi = FRONT_BEFORE.take(), frontmost_app()
+            threading.Thread(target=restore_front, args=(previous, vivaldi), daemon=True).start()
+            self.reply(200, b'{"ok": true}')
+            return
         if path != "/backup" or not self.from_ui():
             self.send_error(404)
             return
@@ -269,6 +353,7 @@ HANDLER = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_void_p, ctypes.c_void_p, cty
 def open_little(_port=None):
     """Tell a waiting Vivaldi window to open a blank Little Vivarc. Nothing is opened in Vivaldi itself, so it stays
     where it is (minimised, behind other apps, in its current space). With Vivaldi closed nothing happens."""
+    FRONT_BEFORE.remember(frontmost_app())  # before Vivaldi is activated by the Little Vivarc
     def run():
         for _ in range(6):  # a window between two waits asks again at once
             if WAITERS.give():
