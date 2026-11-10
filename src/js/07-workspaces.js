@@ -3,6 +3,7 @@
 // A workspace is not a login: all of them share the profile's cookies (profiles are the isolation boundary).
 (() => {
   const ARC_PREFIX = "Arc - ";
+  const BLANK = /^(chrome|vivaldi):\/\/(newtab|vivaldi-webui\/startpage)/;
 
   // Vivaldi keeps the workspace id in the tab's vivExtData JSON; no key means the default space (id 0).
   const of = (tab) => {
@@ -48,7 +49,11 @@
   const stayIn = (tabs, closed, removedIds = new Set()) => {
     const active = tabs.find((t) => t.active);
     if (!active || of(active) === closed) return null;
-    const tab = recentTab(tabs.filter((t) => !removedIds.has(t.id)), closed);
+    // A page wins over the blank landing tab an empty space keeps; with only that left, the caller opens the
+    // command bar on it (from KASOGIT/vivarc a071ee4).
+    const left = tabs.filter((t) => !removedIds.has(t.id));
+    const pages = left.filter((t) => !BLANK.test(t.pendingUrl || t.url || ""));
+    const tab = recentTab(pages, closed) ?? recentTab(left, closed);
     return tab ? { tab } : { empty: true };
   };
 
