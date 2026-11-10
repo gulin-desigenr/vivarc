@@ -776,39 +776,64 @@
   font-size: 12px;
 }
 
-/* Settings page (45-settings.js) */
+/* Settings window (45-settings.js), from the Figma design: a side list of sections and cards of rows. */
 .vm-set-overlay {
   position: fixed;
   inset: 0;
   z-index: 100003;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
-  padding-top: 12vh;
-  background: rgba(0, 0, 0, 0.35);
+  align-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.32);
   app-region: no-drag;
+  --set-bg: #f5f5f7; --set-side: #ececef; --set-card: #fff; --set-text: #1d1d1f; --set-muted: #8e8e93;
+  --set-line: rgba(0, 0, 0, 0.06); --set-sub: #fafafb; --set-accent: #7b6cf6; --set-off: #d1d1d6; --set-pop: #f2f2f4;
 }
-.vm-set-card {
-  width: min(480px, 92vw);
-  padding: 8px 10px 12px;
-  border-radius: 18px;
-  color: var(--vm-text);
-  background: var(--vm-surface);
-  border: 1px solid color-mix(in srgb, var(--vm-text) 12%, transparent);
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
-  font-size: 13.5px;
+#browser.theme-dark .vm-set-overlay {
+  --set-bg: #1f1f23; --set-side: #26262b; --set-card: #2c2c31; --set-text: #f2f2f5; --set-muted: #9a9aa2;
+  --set-line: rgba(255, 255, 255, 0.08); --set-sub: #303036; --set-accent: #8f82ff; --set-off: #4a4a52; --set-pop: #38383e;
 }
-.vm-set-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 8px 6px; }
-.vm-set-title { font-size: 16px; font-weight: 600; }
-.vm-set-close, .vm-set-reset { font: inherit; color: inherit; cursor: pointer; border: 0; background: transparent; opacity: 0.6; border-radius: 8px; padding: 4px 8px; }
-.vm-set-close:hover, .vm-set-reset:hover { opacity: 1; background: color-mix(in srgb, var(--vm-text) 10%, transparent); }
-.vm-set-row { display: flex; align-items: center; gap: 16px; padding: 10px 8px; border-radius: 12px; cursor: pointer; }
-.vm-set-row:hover { background: color-mix(in srgb, var(--vm-text) 7%, transparent); }
+.vm-set-win {
+  display: flex;
+  width: min(760px, 100%);
+  height: min(640px, 100%);
+  overflow: hidden;
+  border-radius: 22px;
+  color: var(--set-text);
+  background: var(--set-bg);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 30px 80px rgba(0, 0, 0, 0.3);
+  font-size: 13px;
+  animation: vm-cmd-in 190ms cubic-bezier(.2, .8, .2, 1);
+}
+.vm-set-win button { font: inherit; color: inherit; cursor: pointer; border: 0; }
+.vm-set-side { display: flex; flex: none; flex-direction: column; width: 208px; padding: 18px 12px; background: var(--set-side); border-right: 1px solid var(--set-line); }
+.vm-set-brand { display: flex; align-items: center; gap: 8px; margin: 2px 6px 18px; font-size: 15px; font-weight: 700; }
+.vm-set-logo { width: 22px; height: 22px; border-radius: 7px; background: linear-gradient(140deg, #7b6cf6, #e86fb0); }
+.vm-set-nav { display: flex; flex-direction: column; gap: 2px; }
+#browser .vm-set-overlay .vm-set-nav-item { display: flex; align-items: center; gap: 10px; height: 34px; padding: 0 10px; border-radius: 9px; background: transparent; font-weight: 500; text-align: left; opacity: 0.85; }
+#browser .vm-set-overlay .vm-set-nav-item:hover { background: color-mix(in srgb, var(--set-text) 6%, transparent); }
+#browser .vm-set-overlay .vm-set-nav-item.selected { opacity: 1; background: var(--set-card); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
+.vm-set-nav-icon { display: flex; width: 18px; height: 18px; color: var(--set-muted); }
+.vm-set-nav-item.selected .vm-set-nav-icon { color: var(--set-accent); }
+.vm-set-nav-icon svg { width: 18px; height: 18px; }
+.vm-set-side-foot { margin-top: auto; padding: 0 8px; color: var(--set-muted); font-size: 11.5px; line-height: 1.5; }
+.vm-set-main { display: flex; flex: 1; flex-direction: column; min-width: 0; }
+.vm-set-top { display: flex; flex: none; align-items: center; justify-content: space-between; height: 56px; padding: 0 22px; border-bottom: 1px solid var(--set-line); }
+.vm-set-title { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+#browser .vm-set-overlay .vm-set-close { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border-radius: 50%; background: color-mix(in srgb, var(--set-text) 7%, transparent); color: var(--set-muted) !important; font-size: 16px !important; line-height: 1; }
+#browser .vm-set-overlay .vm-set-close:hover { background: color-mix(in srgb, var(--set-text) 12%, transparent); }
+.vm-set-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 22px 8px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--set-text) 25%, transparent) transparent; }
+.vm-set-section { margin-bottom: 16px; }
+.vm-set-section-title { margin: 0 4px 7px; color: var(--set-muted); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.vm-set-group { border-radius: 14px; background: var(--set-card); box-shadow: 0 0 0 1px var(--set-line); overflow: hidden; }
+.vm-set-row { display: flex; align-items: center; gap: 14px; padding: 11px 14px; border-top: 1px solid var(--set-line); cursor: pointer; }
+.vm-set-row:first-child { border-top: 0; }
 .vm-set-text { flex: 1; min-width: 0; }
-.vm-set-label { font-weight: 500; }
-.vm-set-row > select.vm-set-select { flex: 0 0 auto; width: auto; min-width: 0; max-width: 150px; height: 28px; margin: 0; padding: 0 8px; border: 1px solid color-mix(in srgb, var(--vm-text) 18%, transparent); border-radius: 7px; background: color-mix(in srgb, var(--vm-text) 6%, transparent); color: inherit; font: inherit; font-size: 13px; }
-.vm-set-hint { margin-top: 2px; opacity: 0.6; font-size: 12.5px; }
-.vm-set-switch {
+.vm-set-label { font-size: 13.5px; font-weight: 600; }
+.vm-set-hint { margin-top: 2px; color: var(--set-muted); font-size: 12px; }
+.vm-set-value { margin-left: 6px; color: var(--set-muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+#browser .vm-set-overlay .vm-set-switch {
   appearance: none;
   flex: none;
   position: relative;
@@ -817,11 +842,20 @@
   margin: 0;
   border-radius: 11px;
   cursor: pointer;
-  background: color-mix(in srgb, var(--vm-text) 22%, transparent);
+  background: var(--set-off);
   transition: background 150ms;
 }
-.vm-set-switch::after {
-  content: "";
+/* Vivaldi draws its own check mark on checkboxes (::before, and ::after hidden when off): none of it here. */
+#browser .vm-set-overlay .vm-set-switch::before { content: none !important; display: none !important; }
+#browser .vm-set-overlay .vm-set-switch::after {
+  inset: auto !important;
+  transform: none !important;
+  transform-origin: 50% 50% !important;
+  content: "" !important;
+  display: block !important;
+  border: 0 !important;
+  mask: none !important;
+  -webkit-mask: none !important;
   position: absolute;
   top: 2px;
   left: 2px;
@@ -829,13 +863,44 @@
   height: 18px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   transition: transform 150ms;
 }
-.vm-set-switch:checked { background: var(--colorHighlightBg, #6b63a0); }
-.vm-set-switch:checked::after { transform: translateX(16px); }
-.vm-set-foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 8px 0; }
-.vm-set-note { opacity: 0.5; font-size: 12.5px; }
+#browser .vm-set-overlay .vm-set-switch:checked { background: var(--set-accent); }
+#browser .vm-set-overlay .vm-set-switch:checked::after { transform: translateX(16px) !important; }
+#browser .vm-set-overlay :is(.vm-set-switch, .vm-set-select, .vm-set-slider):focus-visible { outline: 2px solid var(--set-accent); outline-offset: 2px; }
+.vm-set-range { padding-left: 28px; background: var(--set-sub); cursor: default; }
+.vm-set-range.dim { opacity: 0.45; }
+.vm-set-range-control { display: flex; flex: none; align-items: center; gap: 10px; width: 300px; }
+.vm-set-end { color: var(--set-muted); font-size: 11.5px; }
+#browser .vm-set-overlay .vm-set-slider {
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  margin: 0;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--set-accent) var(--fill, 50%), color-mix(in srgb, var(--set-text) 12%, transparent) var(--fill, 50%));
+}
+#browser .vm-set-overlay .vm-set-slider::-webkit-slider-thumb { appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); cursor: pointer; }
+.vm-set-pop { position: relative; display: flex; flex: none; align-items: center; }
+#browser .vm-set-overlay .vm-set-select {
+  appearance: none;
+  height: 28px;
+  padding: 0 28px 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--set-pop);
+  box-shadow: 0 0 0 1px var(--set-line);
+  color: inherit;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.vm-set-chevron { position: absolute; right: 10px; display: flex; pointer-events: none; color: var(--set-muted); }
+.vm-set-bottom { display: flex; flex: none; align-items: center; justify-content: space-between; height: 48px; padding: 0 22px; border-top: 1px solid var(--set-line); color: var(--set-muted); font-size: 12px; }
+#browser .vm-set-overlay .vm-set-reset { padding: 6px 10px; border-radius: 8px; background: color-mix(in srgb, var(--set-text) 6%, transparent); font-weight: 600 !important; font-size: 12px !important; }
+#browser .vm-set-overlay .vm-set-reset:hover { background: color-mix(in srgb, var(--set-text) 11%, transparent); }
 
 /* Liquid glass (setting "glass"), after Apple's Human Interface Guidelines, Materials: glass is for the layer of controls
    and navigation (sidebar, menus, command bar, dialogs), never for the content layer, and never stacked on itself, so the
@@ -852,7 +917,7 @@
   --vm-lozenge-rim: inset 0 1px 0 rgba(255, 255, 255, 0.38), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
   --vm-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-#browser.vm-on.vm-glass :is(.vm-menu, #vm-cmd .vm-cmd-box, .vm-theme-pop, .vm-set-card, #vm-copied) {
+#browser.vm-on.vm-glass :is(.vm-menu, #vm-cmd .vm-cmd-box, .vm-theme-pop, #vm-copied) {
   background: var(--vm-glass-sheen), var(--vm-glass-fill);
   backdrop-filter: var(--vm-glass-blur);
   border-color: transparent;
@@ -886,11 +951,11 @@
 #browser.vm-on.vm-glass .vm-space-chip { box-shadow: var(--vm-lozenge-rim); }
 #browser.vm-on.vm-glass .vm-space-chip.active { box-shadow: var(--vm-lozenge-rim), 0 0 0 2px var(--colorHighlightBg, #7b8cff); }
 #browser.vm-on.vm-glass #vm-cmd .vm-cmd-row.sel { background: var(--vm-lozenge-strong), var(--vm-sel); box-shadow: var(--vm-lozenge-rim); }
-#browser.vm-on.vm-glass :is(.vm-menu-item:hover, .vm-set-row:not(.vm-set-range):hover, .vm-theme-mode) { background: var(--vm-lozenge); box-shadow: var(--vm-lozenge-rim); }
+#browser.vm-on.vm-glass :is(.vm-menu-item:hover, .vm-theme-mode) { background: var(--vm-lozenge); box-shadow: var(--vm-lozenge-rim); }
 
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
   #browser.vm-on.vm-glass #tabs-tabbar-container { background-image: none; }
-  #browser.vm-on.vm-glass :is(.vm-menu, #vm-cmd .vm-cmd-box, .vm-theme-pop, .vm-set-card, #vm-copied) {
+  #browser.vm-on.vm-glass :is(.vm-menu, #vm-cmd .vm-cmd-box, .vm-theme-pop, #vm-copied) {
     background: var(--vm-surface);
     backdrop-filter: none;
   }
@@ -898,17 +963,11 @@
   #browser.vm-on.vm-glass.vm-themed #tabs-tabbar-container { background-color: var(--vm-tint) !important; }
 }
 @media (prefers-reduced-motion: reduce) {
-  #browser.vm-on.vm-glass :is(#vm-panel, #vm-cmd, .vm-menu, .vm-theme-pop, .vm-set-card, #vm-copied),
-  #browser.vm-on.vm-glass :is(#vm-panel, #vm-cmd, .vm-menu, .vm-theme-pop, .vm-set-card, #vm-copied) * { transition: none !important; }
+  #browser.vm-on.vm-glass :is(#vm-panel, #vm-cmd, .vm-menu, .vm-theme-pop, #vm-copied),
+  #browser.vm-on.vm-glass :is(#vm-panel, #vm-cmd, .vm-menu, .vm-theme-pop, #vm-copied) * { transition: none !important; }
   #browser.vm-on.vm-glass #vm-panel :is(.vm-fav, .vm-space-pill):hover { transform: none; }
 }
 
-.vm-set-range { display: block; cursor: default; }
-.vm-set-range:hover { background: none; }
-.vm-set-range.dim { opacity: 0.4; }
-.vm-set-value { margin-left: 4px; font-weight: 500; opacity: 0.6; font-variant-numeric: tabular-nums; }
-.vm-set-slider { width: 100%; margin: 8px 0 0; accent-color: var(--colorHighlightBg, #6b63a0); }
-.vm-set-ends { display: flex; justify-content: space-between; margin-top: 2px; opacity: 0.5; font-size: 12px; }
 
 /* Keep the page surface intact and let Vivaldi's own theme wallpaper fill the sidebar. */
 #browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #tabs-tabbar-container {

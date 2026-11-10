@@ -1,4 +1,7 @@
-// Vivarc settings page: an overlay with one switch per setting (see 01-settings.js).
+// Vivarc settings window (designed in Figma, GULIN.CO APPs, "Vivarc Settings / Proposta"): a side list of sections
+// and, on the right, the settings of every section in cards, each row a name, a short line and its control
+// (see 01-settings.js for the settings themselves). Clicking a section scrolls to it; scrolling marks the section
+// in view.
 (() => {
   const { settings } = window.__vm;
   let overlay = null;
@@ -10,23 +13,44 @@
     if (text) e.textContent = text;
     return e;
   };
+  const ICONS = {
+    appearance: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="6.5"/><path d="M10 3.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg>',
+    sidebar: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="14" height="12" rx="2.5"/><path d="M8 4v12"/></svg>',
+    command: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="5"/><path d="m13 13 3.5 3.5"/></svg>',
+    tabs: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3.5" y="5.5" width="13" height="10" rx="2"/><path d="M6 3.5h8"/></svg>',
+    little: '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="6" width="10" height="8" rx="2"/><path d="M3 3l3 3M17 3l-3 3"/></svg>',
+  };
+  const CHEVRON = '<svg viewBox="0 0 12 12" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.6"><path d="m3 4.5 3 3 3-3"/></svg>';
 
   const close = () => { overlay?.remove(); overlay = null; unsubs.forEach((off) => off()); unsubs = []; };
 
+  const texts = (item) => {
+    const text = el("div", "vm-set-text");
+    text.append(el("div", "vm-set-label", item.label));
+    if (item.hint) text.append(el("div", "vm-set-hint", item.hint));
+    return text;
+  };
+
+  // A range belongs to the setting above it (Glass opacity under Liquid glass): an indented row, dimmed while that
+  // setting is off.
   const rangeRow = (item) => {
     const line = el("div", "vm-set-row vm-set-range");
     const text = el("div", "vm-set-text");
     const value = el("span", "vm-set-value");
-    const top = el("div", "vm-set-label", item.label + " ");
-    top.append(value);
+    const label = el("div", "vm-set-label", item.label);
+    label.append(value);
+    text.append(label);
     const slider = el("input", "vm-set-slider");
     slider.type = "range";
     slider.min = String(item.min);
     slider.max = String(item.max);
     slider.step = String(item.step);
-    const ends = el("div", "vm-set-ends");
-    ends.append(el("span", null, item.low), el("span", null, item.high));
-    const show = () => { value.textContent = `${slider.value}${item.unit || ""}`; };
+    const control = el("div", "vm-set-range-control");
+    control.append(el("span", "vm-set-end", item.low), slider, el("span", "vm-set-end", item.high));
+    const show = () => {
+      value.textContent = `${slider.value}${item.unit || ""}`;
+      slider.style.setProperty("--fill", `${((slider.value - item.min) / (item.max - item.min)) * 100}%`);
+    };
     const sync = () => {
       slider.value = String(settings.get(item.key));
       slider.disabled = !!item.needs && !settings.get(item.needs);
@@ -35,16 +59,14 @@
     };
     slider.addEventListener("input", () => { settings.set(item.key, Number(slider.value)); show(); });
     unsubs.push(settings.onChange(sync));
-    text.append(top, el("div", "vm-set-hint", item.hint), slider, ends);
-    line.append(text);
+    line.append(text, control);
     sync();
     return line;
   };
 
   const choiceRow = (item) => {
     const line = el("label", "vm-set-row");
-    const text = el("div", "vm-set-text");
-    text.append(el("div", "vm-set-label", item.label), el("div", "vm-set-hint", item.hint));
+    const pop = el("span", "vm-set-pop");
     const select = el("select", "vm-set-select");
     for (const [value, label] of item.options) {
       const option = el("option", null, label);
@@ -52,42 +74,101 @@
       select.append(option);
     }
     select.value = String(settings.get(item.key));
+    const chevron = el("span", "vm-set-chevron");
+    chevron.innerHTML = CHEVRON;
     select.addEventListener("change", () => settings.set(item.key, Number(select.value)));
-    line.append(text, select);
+    pop.append(select, chevron);
+    line.append(texts(item), pop);
     return line;
   };
 
-  const row = (item) => {
-    if (item.type === "range") return rangeRow(item);
-    if (item.type === "choice") return choiceRow(item);
+  const switchRow = (item) => {
     const line = el("label", "vm-set-row");
-    const text = el("div", "vm-set-text");
-    text.append(el("div", "vm-set-label", item.label), el("div", "vm-set-hint", item.hint));
     const box = el("input", "vm-set-switch");
     box.type = "checkbox";
-    box.checked = !!settings.get(item.key);
+    const sync = () => { box.checked = !!settings.get(item.key); };
     box.addEventListener("change", () => settings.set(item.key, box.checked));
-    line.append(text, box);
+    unsubs.push(settings.onChange(sync));
+    sync();
+    line.append(texts(item), box);
     return line;
   };
+
+  const row = (item) => (item.type === "range" ? rangeRow(item) : item.type === "choice" ? choiceRow(item) : switchRow(item));
+
+  const sections = () => settings.GROUPS.map(([id, name]) => {
+    const section = el("section", "vm-set-section");
+    section.dataset.group = id;
+    const card = el("div", "vm-set-group");
+    settings.SCHEMA.filter((s) => s.group === id).forEach((s) => card.append(row(s)));
+    section.append(el("div", "vm-set-section-title", name), card);
+    return section;
+  });
 
   const open = () => {
     if (!window.__vm.cssLoaded) return;
     if (overlay) return close();
     overlay = el("div", "vm-set-overlay");
-    const card = el("div", "vm-set-card");
-    const head = el("div", "vm-set-head");
-    const x = el("button", "vm-set-close", "✕");
+    const win = el("div", "vm-set-win");
+    win.setAttribute("role", "dialog");
+    win.setAttribute("aria-label", "Vivarc Settings");
+
+    const side = el("nav", "vm-set-side");
+    const brand = el("div", "vm-set-brand");
+    brand.append(el("span", "vm-set-logo"), el("span", null, "Vivarc"));
+    const nav = el("div", "vm-set-nav");
+    side.append(brand, nav, el("div", "vm-set-side-foot", "Saved for this profile."));
+
+    const main = el("div", "vm-set-main");
+    const top = el("div", "vm-set-top");
+    const x = el("button", "vm-set-close", "×");
+    x.setAttribute("aria-label", "Close");
     x.addEventListener("click", close);
-    head.append(el("div", "vm-set-title", "Vivarc Settings"), x);
+    top.append(el("h1", "vm-set-title", "Settings"), x);
+    const scroll = el("div", "vm-set-scroll");
+    const bottom = el("div", "vm-set-bottom");
     const reset = el("button", "vm-set-reset", "Reset to defaults");
-    reset.addEventListener("click", () => { settings.reset(); card.replaceChildren(head, ...settings.SCHEMA.map(row), foot); });
-    const foot = el("div", "vm-set-foot");
-    foot.append(el("div", "vm-set-note", "Saved for this profile."), reset);
-    card.append(head, ...settings.SCHEMA.map(row), foot);
-    overlay.append(card);
+    bottom.append(el("span", null, "Changes apply right away."), reset);
+    main.append(top, scroll, bottom);
+
+    const items = settings.GROUPS.map(([id, name]) => {
+      const item = el("button", "vm-set-nav-item");
+      item.dataset.group = id;
+      const icon = el("span", "vm-set-nav-icon");
+      icon.innerHTML = ICONS[id] || "";
+      item.append(icon, el("span", null, name));
+      item.addEventListener("click", () => {
+        chosen = id; // the last sections cannot reach the top: keep the one clicked marked until you scroll yourself
+        items.forEach((i) => i.classList.toggle("selected", i === item));
+        const target = scroll.querySelector(`.vm-set-section[data-group="${id}"]`);
+        if (target) scroll.scrollTo({ top: target.offsetTop - scroll.offsetTop - 12, behavior: "smooth" });
+      });
+      return item;
+    });
+    nav.append(...items);
+    let chosen = null;
+    const mark = () => {
+      if (chosen) return;
+      const all = [...scroll.querySelectorAll(".vm-set-section")];
+      const atEnd = scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 4;
+      const current = atEnd ? all.at(-1) : all.filter((s) => s.offsetTop - scroll.offsetTop - 40 <= scroll.scrollTop).at(-1) || all[0];
+      items.forEach((i) => i.classList.toggle("selected", i.dataset.group === current?.dataset.group));
+    };
+    const fill = () => {
+      unsubs.forEach((off) => off());
+      unsubs = [];
+      scroll.replaceChildren(...sections());
+      mark();
+    };
+    scroll.addEventListener("scroll", mark, { passive: true });
+    for (const ev of ["wheel", "touchmove", "keydown", "pointerdown"]) scroll.addEventListener(ev, () => { chosen = null; }, { passive: true });
+    reset.addEventListener("click", () => { settings.reset(); fill(); });
+
+    win.append(side, main);
+    overlay.append(win);
     overlay.addEventListener("mousedown", (e) => { if (e.target === overlay) close(); });
     (document.querySelector("#browser") || document.body).append(overlay);
+    fill();
   };
 
   window.__vm.onShortcut((key) => { if (key === "esc") close(); });

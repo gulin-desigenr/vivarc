@@ -2,25 +2,27 @@
 // Precedence: what the user saved, then the install config (~/.vivarc/config.json), then the default.
 (() => {
   // onClass / offClass: a marker class on #browser while the setting is on / off (the stylesheet reacts to it).
+  // group: the section of the settings window (45-settings.js); label and hint are its row's two lines.
   const SCHEMA = [
-    { key: "sidebarWallpaper", label: "Sidebar wallpaper", hint: "Show the Vivaldi theme wallpaper behind the sidebar.", default: true, onClass: "vm-sidebar-wallpaper" },
-    { key: "glass", label: "Liquid glass", hint: "Translucent, blurred sidebar, menus, command bar and dialogs, after Apple's Liquid Glass. Follows Reduce Transparency and Increase Contrast.",
+    { key: "sidebarWallpaper", group: "appearance", label: "Sidebar wallpaper", hint: "Your Vivaldi theme\u2019s wallpaper behind the sidebar", default: true, onClass: "vm-sidebar-wallpaper" },
+    { key: "glass", group: "appearance", label: "Liquid glass", hint: "Translucent sidebar, menus and command bar",
       default: false, onClass: "vm-glass" },
-    { key: "glassOpacity", type: "range", min: 15, max: 95, step: 1, default: 55, unit: "%", needs: "glass", cssVar: "--vm-glass-opacity",
-      label: "Glass opacity", hint: "From clear to frosted: how much of the surface colour shows through the glass.", low: "Clear", high: "Frosted" },
-    { key: "spaceBar", label: "Space bar", hint: "The row of space tiles under the sidebar.", default: true, offClass: "vm-no-space-bar" },
-    { key: "compactBottomBar", label: "Compact bottom bar", hint: "A tighter row for the profile avatars and downloads.", default: true,
+    { key: "glassOpacity", group: "appearance", type: "range", min: 15, max: 95, step: 1, default: 55, unit: "%", needs: "glass", cssVar: "--vm-glass-opacity",
+      label: "Glass opacity", hint: "", low: "Clear", high: "Frosted" },
+    { key: "arcWindowControls", group: "appearance", label: "Window controls in the sidebar", hint: "Traffic lights in the sidebar\u2019s top row, like Arc", default: true },
+    { key: "spaceBar", group: "sidebar", label: "Space bar", hint: "Space dots under the sidebar", default: true, offClass: "vm-no-space-bar" },
+    { key: "compactBottomBar", group: "sidebar", label: "Compact bottom bar", hint: "Tighter row for profiles and downloads", default: true,
       fromConfig: (c) => c.compactBottomBar, onClass: "vm-compact-bottom" },
-    { key: "searchSuggestions", label: "Search suggestions", hint: "Show DuckDuckGo suggestions in the command bar while you type.", default: true,
+    { key: "stackOpenedTabs", group: "sidebar", label: "Stack pages opened from a tab", hint: "\u2318-click a link to stack it with its page, like Dia", default: true },
+    { key: "searchSuggestions", group: "command", label: "Search suggestions", hint: "From DuckDuckGo while you type", default: true,
       fromConfig: (c) => (c.suggestions === undefined ? undefined : c.suggestions === "ddg") },
-    { key: "arcWindowControls", label: "Window controls in the sidebar", hint: "Keep the red, yellow and green buttons in the sidebar's top row, like Arc, instead of a title bar that appears at the top edge.", default: true },
-    { key: "commandBarForAddress", label: "Edit the address in the command bar", hint: "Cmd+L opens the page's address in the command bar, centred, like Arc. The address field in the sidebar stays as it is.", default: true },
-    { key: "stackOpenedTabs", label: "Stack pages opened from a tab", hint: "Like Dia: a link you open with Cmd+click stacks with the page it came from (links that open a new tab by themselves stay loose), as a native Vivaldi tab stack. Pinned tabs and favorites keep their pages in the list.", default: true },
-    { key: "archiveAfter", type: "choice", default: 12, label: "Archive tabs automatically",
-      hint: "Like Arc: loose tabs you have not looked at for this long move to the archive (find them with \u201cView Archived Tabs\u201d). Pinned tabs, favorites, the open tab, tabs playing sound, stacks and split views stay.",
+    { key: "commandBarForAddress", group: "command", label: "Edit the address with \u2318L", hint: "The page address opens in the command bar", default: true },
+    { key: "archiveAfter", group: "tabs", type: "choice", default: 12, label: "Archive tabs",
+      hint: "Loose tabs you haven\u2019t opened move to the archive",
       options: [[0, "Never"], [12, "After 12 hours"], [24, "After 1 day"], [168, "After 7 days"], [720, "After 30 days"]] },
-    { key: "littleExternalLinks", label: "Little Vivarc for other apps", hint: "Open links clicked in other apps in a small, centred window instead of a new tab.", default: true },
+    { key: "littleExternalLinks", group: "little", label: "Links from other apps", hint: "Open in a small window on the screen you are on", default: true },
   ];
+  const GROUPS = [["appearance", "Appearance"], ["sidebar", "Sidebar"], ["command", "Command bar"], ["tabs", "Tabs"], ["little", "Little Vivarc"]];
 
   const resolve = (schema, config, saved) => Object.fromEntries(schema.map((s) => {
     const mine = saved?.[s.key];
@@ -41,7 +43,7 @@
     ...(s.offClass ? [[s.offClass, !values[s.key]]] : []),
   ]));
 
-  const api = { SCHEMA, resolve, classes, vars };
+  const api = { SCHEMA, GROUPS, resolve, classes, vars };
   window.__vm.settings = api;
   if (!window.__vm.store) return;
 
