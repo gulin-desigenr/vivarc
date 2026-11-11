@@ -37,6 +37,8 @@
   --vm-danger: #e5484d;
   --vm-shadow-window: 0 0 0 0.5px rgb(0 0 0 / 0.1), 0 24px 64px rgb(0 0 0 / 0.28);
 }
+/* Popovers follow Vivaldi's light or dark theme, like the command bar's surfaces. */
+#browser.vm-on.theme-dark { --vm-shadow-pop: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 10px 32px rgb(0 0 0 / 0.5); }
 #browser.vm-on.theme-dark:not(.vm-themed), #browser.vm-on.vm-themed.vm-light-ink {
   --vm-pill: rgb(255 255 255 / 0.13);
   --vm-pill-shadow: 0 0 0 0.5px rgb(255 255 255 / 0.05), 0 1px 2px rgb(0 0 0 / 0.3);
@@ -410,7 +412,6 @@
   background: var(--cmd-surface);
   box-shadow: var(--vm-shadow-pop);
 }
-#browser.vm-on.theme-dark .vm-menu { box-shadow: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 10px 32px rgb(0 0 0 / 0.5); }
 .vm-menu-item { padding: 4px 10px; border-radius: var(--vm-r-sm); cursor: default; }
 .vm-menu-item:hover { background-color: var(--vm-accent); color: var(--vm-accent-fg); }
 .vm-menu-item.danger { color: var(--vm-danger); }
@@ -506,15 +507,15 @@
   z-index: 100002;
   box-sizing: border-box;
   padding: 6px 8px;
-  border: 1px solid color-mix(in srgb, var(--vm-text) 30%, transparent);
+  border: 0;
   border-radius: var(--vm-r-md);
   outline: 0;
-  background: var(--vm-surface);
-  color: var(--vm-text);
+  background: var(--cmd-surface);
+  color: var(--cmd-text);
   font: inherit;
   font-size: var(--vm-fs-3);
   font-weight: 500;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--vm-accent) 55%, transparent), var(--vm-shadow-pop);
 }
 
 /* Bottom toolbar (profile button): shorter, content centred so it sits lower */
@@ -539,10 +540,9 @@
   border-radius: var(--vm-r-xl);
   font-size: var(--vm-fs-3);
   font-weight: 500;
-  color: var(--vm-text);
-  background: var(--vm-surface);
-  border: 1px solid color-mix(in srgb, var(--vm-text) 10%, transparent);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  color: var(--cmd-text);
+  background: var(--cmd-surface);
+  box-shadow: var(--vm-shadow-pop);
   opacity: 0;
   transform: translateY(-6px);
   transition: opacity 180ms, transform 180ms;
@@ -555,13 +555,13 @@
   padding: 0 12px;
   border: 0;
   border-radius: var(--vm-r-md);
-  background: color-mix(in srgb, var(--colorHighlightBg, #5d7aee) 16%, transparent);
-  color: var(--colorHighlightBg, #5d7aee);
+  background: color-mix(in srgb, var(--vm-accent) 14%, transparent);
+  color: var(--vm-accent);
   font: inherit;
   font-weight: 600;
   cursor: pointer;
 }
-#vm-copied .vm-toast-action:hover { background: color-mix(in srgb, var(--colorHighlightBg, #5d7aee) 26%, transparent); }
+#vm-copied .vm-toast-action:hover { background: color-mix(in srgb, var(--vm-accent) 24%, transparent); }
 #vm-copied .vm-copied-icon {
   display: flex;
   align-items: center;
@@ -569,7 +569,7 @@
   width: 36px;
   height: 30px;
   border-radius: var(--vm-r-md);
-  background: color-mix(in srgb, var(--vm-text) 10%, transparent);
+  background: color-mix(in srgb, var(--cmd-text) 6%, transparent);
 }
 #vm-copied .vm-copied-icon svg { width: 18px; height: 18px; }
 
@@ -662,74 +662,84 @@
   opacity: var(--vm-grain, 0.1);
   mix-blend-mode: overlay;
 }
+/* The space editor: a macOS popover on the command bar's surface, like the menus. Fields and buttons are quiet wells
+   of the text colour (--pop-well), no borders; the focused field gets the accent ring. */
 .vm-theme-pop {
+  --pop-well: color-mix(in srgb, var(--cmd-text) 6%, transparent);
+  --pop-hover: color-mix(in srgb, var(--cmd-text) 10%, transparent);
   position: fixed;
   z-index: 100001;
   left: 10px;
   bottom: 46px;
-  width: 290px;
+  width: 280px;
   padding: 12px;
-  border-radius: var(--vm-r-2xl);
-  color: var(--vm-text);
-  background: var(--vm-surface);
-  border: 1px solid color-mix(in srgb, var(--vm-text) 14%, transparent);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+  border-radius: var(--vm-r-xl);
+  color: var(--cmd-text);
+  background: var(--cmd-surface);
+  box-shadow: var(--vm-shadow-pop);
   font-size: var(--vm-fs-3);
 }
-.vm-theme-pop button { font: inherit; color: inherit; cursor: pointer; }
+.vm-theme-pop button { font: inherit; color: inherit; cursor: default; }
 .vm-theme-heading { font-weight: 500; margin-bottom: 10px; }
-.vm-theme-head { display: flex; gap: 8px; margin-bottom: 10px; }
-.vm-theme-head input {
-  height: 34px;
+.vm-theme-head { display: flex; gap: 6px; margin-bottom: 10px; }
+.vm-theme-head input, .vm-theme-emoji-field {
+  height: 32px;
   box-sizing: border-box;
-  border: 1px solid color-mix(in srgb, var(--vm-text) 16%, transparent);
+  border: 0;
   border-radius: var(--vm-r-md);
   outline: 0;
-  background: color-mix(in srgb, var(--vm-text) 6%, transparent);
+  background: var(--pop-well);
   color: inherit;
   font: inherit;
+  box-shadow: none;
 }
-.vm-theme-head input:focus { border-color: color-mix(in srgb, var(--vm-text) 40%, transparent); }
+.vm-theme-head input:focus, .vm-theme-emoji-field:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--vm-accent) 55%, transparent); }
 .vm-theme-mark {
   display: flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--vm-text) 16%, transparent);
+  border: 0;
   border-radius: var(--vm-r-md);
-  background: color-mix(in srgb, var(--vm-text) 6%, transparent);
+  background: var(--pop-well);
 }
-.vm-theme-mark:hover { background: color-mix(in srgb, var(--vm-text) 12%, transparent); }
-.vm-theme-mark .vm-mark-emoji { font-size: var(--vm-fs-5); line-height: 1; }
+.vm-theme-mark:hover { background: var(--pop-hover); }
+.vm-theme-mark .vm-mark-emoji { font-size: var(--vm-fs-4); line-height: 1; }
 .vm-theme-mark .vm-mark-icon { width: 16px; height: 16px; }
-.vm-theme-mark-letter { font-size: var(--vm-fs-3); font-weight: 600; opacity: 0.6; }
+.vm-theme-mark-letter { font-size: var(--vm-fs-3); font-weight: 600; color: var(--cmd-muted); }
 .vm-theme-name { flex: 1; min-width: 0; padding: 0 10px; font-size: var(--vm-fs-3) !important; font-weight: 500 !important; }
-.vm-theme-picker { display: none; margin: -2px 0 10px; padding: 8px; border-radius: var(--vm-r-lg); background: color-mix(in srgb, var(--vm-text) 5%, transparent); }
+.vm-theme-picker { display: none; margin: -4px 0 10px; padding: 8px; border-radius: var(--vm-r-lg); background: var(--pop-well); }
 .vm-theme-picker.open { display: block; }
-.vm-theme-emoji-field {
-  box-sizing: border-box;
-  width: 100%;
-  height: 30px;
-  padding: 0 9px;
-  border: 1px solid color-mix(in srgb, var(--vm-text) 18%, transparent);
-  border-radius: var(--vm-r-md);
-  outline: 0;
-  background: var(--vm-surface);
-  color: inherit;
-  font: inherit;
-}
-.vm-theme-emoji-field:focus { border-color: color-mix(in srgb, var(--vm-text) 45%, transparent); }
-.vm-theme-hint { margin: 5px 2px 8px; font-size: var(--vm-fs-2); opacity: 0.6; }
-.vm-theme-label { margin: 6px 2px 4px; font-size: var(--vm-fs-1); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; opacity: 0.55; }
+.vm-theme-emoji-field { width: 100%; height: 28px; padding: 0 9px; background: var(--cmd-surface); }
+.vm-theme-hint { margin: 5px 2px 8px; font-size: var(--vm-fs-1); color: var(--cmd-muted); }
+.vm-theme-label { margin: 8px 2px 4px; font-size: var(--vm-fs-1); font-weight: 600; color: var(--cmd-muted); }
 .vm-theme-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
-.vm-theme-pick { display: flex; align-items: center; justify-content: center; height: 28px; padding: 0; border: 0; border-radius: var(--vm-r-md); background: transparent; font-size: var(--vm-fs-4) !important; }
-.vm-theme-pick:hover { background: color-mix(in srgb, var(--vm-text) 12%, transparent); }
+.vm-theme-pick { display: flex; align-items: center; justify-content: center; height: 28px; padding: 0; border: 0; border-radius: var(--vm-r-sm); background: transparent; font-size: var(--vm-fs-4) !important; }
+.vm-theme-pick:hover { background: var(--pop-hover); }
 .vm-theme-pick-icon { width: 16px; height: 16px; }
-.vm-theme-none { width: 100%; margin-top: 6px; padding: 5px; border: 0; border-radius: var(--vm-r-md); background: transparent; font-size: var(--vm-fs-2) !important; opacity: 0.65; }
-.vm-theme-none:hover { opacity: 1; background: color-mix(in srgb, var(--vm-text) 10%, transparent); }
+.vm-theme-none { width: 100%; margin-top: 6px; padding: 5px; border: 0; border-radius: var(--vm-r-sm); background: transparent; font-size: var(--vm-fs-2) !important; color: var(--cmd-muted) !important; }
+.vm-theme-none:hover { background: var(--pop-hover); color: var(--cmd-text) !important; }
+/* Dark and Light set every color's lightness at once: two buttons in one segmented well. */
+.vm-theme-modes { display: flex; gap: 2px; margin-bottom: 10px; padding: 2px; border-radius: var(--vm-r-md); background: var(--pop-well); }
+.vm-theme-mode { flex: 1; height: 24px; padding: 0; border: 0; border-radius: var(--vm-r-sm); background: transparent; font-weight: 500 !important; }
+.vm-theme-mode:hover { background: var(--cmd-surface); box-shadow: var(--vm-pill-shadow); }
+.vm-theme-pad { position: relative; height: 130px; border-radius: var(--vm-r-lg); box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.12); cursor: crosshair; touch-action: none; }
+/* The color dots sit on any color of the pad: white rings with a dark hairline. */
+.vm-theme-dot {
+  position: absolute;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid rgb(255 255 255 / 0.85);
+  border-radius: 50%;
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.35), 0 1px 3px rgb(0 0 0 / 0.25);
+  pointer-events: none;
+}
+.vm-theme-dot.selected { z-index: 1; width: 20px; height: 20px; margin: -10px 0 0 -10px; border: 3px solid #fff; }
 .vm-theme-colors { display: flex; align-items: center; gap: 8px; margin: 12px 2px 0; }
 .vm-theme-chip {
   width: 22px;
@@ -737,50 +747,39 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.15);
 }
-.vm-theme-chip.selected { outline: 2px solid var(--vm-text); outline-offset: 2px; }
-.vm-theme-add { background: transparent; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--vm-text) 35%, transparent); font-size: var(--vm-fs-4) !important; line-height: 1; opacity: 0.8; }
-.vm-theme-add:hover { opacity: 1; }
-.vm-theme-remove { margin-left: auto; padding: 4px 8px; border: 0; border-radius: var(--vm-r-md); background: transparent; opacity: 0.6; font-size: var(--vm-fs-2) !important; }
-.vm-theme-remove:hover { opacity: 1; background: color-mix(in srgb, var(--vm-text) 10%, transparent); }
-.vm-theme-modes { display: flex; gap: 6px; margin-bottom: 10px; }
-.vm-theme-mode {
-  flex: 1;
-  padding: 6px;
-  border: 0;
-  border-radius: var(--vm-r-md);
-  background: color-mix(in srgb, var(--vm-text) 10%, transparent);
-}
-.vm-theme-mode:hover { background: color-mix(in srgb, var(--vm-text) 18%, transparent); }
-.vm-theme-pad { position: relative; height: 130px; border-radius: var(--vm-r-xl); cursor: crosshair; touch-action: none; }
-.vm-theme-dot {
-  position: absolute;
-  box-sizing: border-box;
-  width: 14px;
-  height: 14px;
-  margin: -7px 0 0 -7px;
-  border: 2px solid rgba(255, 255, 255, 0.85);
-  border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
-  pointer-events: none;
-}
-.vm-theme-dot.selected { z-index: 1; width: 20px; height: 20px; margin: -10px 0 0 -10px; border: 3px solid #fff; }
+.vm-theme-chip.selected { outline: 2px solid var(--cmd-text); outline-offset: 2px; }
+.vm-theme-add { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cmd-text) 25%, transparent); color: var(--cmd-muted) !important; font-size: var(--vm-fs-4) !important; line-height: 1; }
+.vm-theme-add:hover { background: var(--pop-hover); color: var(--cmd-text) !important; }
+.vm-theme-remove { margin-left: auto; height: 24px; padding: 0 8px; border: 0; border-radius: var(--vm-r-sm); background: transparent; color: var(--cmd-muted) !important; font-size: var(--vm-fs-2) !important; }
+.vm-theme-remove:hover { background: var(--pop-hover); color: var(--cmd-text) !important; }
 .vm-theme-swatches { display: flex; justify-content: space-between; margin: 12px 2px; }
-.vm-theme-swatch { width: 22px; height: 22px; border: 0; border-radius: 50%; }
-.vm-theme-slider { display: flex; align-items: center; gap: 10px; margin: 8px 2px; }
-.vm-theme-slider span { width: 62px; opacity: 0.7; }
-.vm-theme-slider input { flex: 1; accent-color: var(--vm-text); }
+.vm-theme-swatch { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.15); transition: transform 120ms; }
+.vm-theme-swatch:hover { transform: scale(1.12); }
+/* macOS sliders: a thin track filled with the accent up to the thumb (--fill, set by the editor). */
+.vm-theme-slider { display: flex; align-items: center; gap: 12px; margin: 10px 2px; }
+.vm-theme-slider span { width: 60px; color: var(--cmd-muted); }
+#browser .vm-theme-slider input {
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  margin: 0;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--vm-accent) var(--fill, 50%), color-mix(in srgb, var(--cmd-text) 12%, transparent) var(--fill, 50%));
+}
+#browser .vm-theme-slider input::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 1px 3px rgb(0 0 0 / 0.3); }
 .vm-theme-reset {
   width: 100%;
-  margin-top: 6px;
-  padding: 6px;
+  height: 28px;
+  margin-top: 4px;
+  padding: 0;
   border: 0;
   border-radius: var(--vm-r-md);
   background: transparent;
-  opacity: 0.6;
+  color: var(--cmd-muted) !important;
 }
-.vm-theme-reset:hover { opacity: 1; background: color-mix(in srgb, var(--vm-text) 10%, transparent); }
+.vm-theme-reset:hover { background: var(--pop-hover); color: var(--cmd-text) !important; }
 
 #vm-panel .vm-space { display: flex; align-items: center; justify-content: space-between; }
 #vm-panel .vm-space .vm-act { display: flex; visibility: hidden; }
@@ -1072,7 +1071,7 @@
 #browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #vm-panel .vm-fav.active { background: var(--vm-pill); box-shadow: var(--vm-pill-shadow); outline-color: transparent; }
 
 /* Command palette and menus: neutral surfaces follow Vivaldi's light/dark theme, independently of each space tint. */
-#browser.vm-on :is(#vm-cmd, .dialog-javascript, .modal-tabswitcher, .vm-menu) {
+#browser.vm-on :is(#vm-cmd, .dialog-javascript, .modal-tabswitcher, .vm-menu, .vm-theme-pop, #vm-copied, .vm-rename-float) {
   --cmd-surface: #fafbfc;
   --cmd-text: #20242b;
   --cmd-muted: #5f6672;
@@ -1080,7 +1079,7 @@
   --cmd-selected: #dfedfb;
   --cmd-shadow: 0 20px 60px rgba(20, 28, 38, .28), 0 2px 8px rgba(20, 28, 38, .12);
 }
-#browser.vm-on.theme-dark :is(#vm-cmd, .dialog-javascript, .modal-tabswitcher, .vm-menu) {
+#browser.vm-on.theme-dark :is(#vm-cmd, .dialog-javascript, .modal-tabswitcher, .vm-menu, .vm-theme-pop, #vm-copied, .vm-rename-float) {
   --cmd-surface: #24262d;
   --cmd-text: #f1f2f4;
   --cmd-muted: #b3b9c3;

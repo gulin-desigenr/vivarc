@@ -251,6 +251,8 @@
       swatches.append(s);
     }
 
+    // The track is filled up to the thumb, like a macOS slider (the CSS paints up to --fill).
+    const fill = (input) => input.style?.setProperty?.("--fill", `${input.value}%`);
     const slider = (label, onInput) => {
       const row = el("label", "vm-theme-slider");
       row.append(el("span", null, label));
@@ -258,7 +260,7 @@
       input.type = "range";
       input.min = "0";
       input.max = "100";
-      input.addEventListener("input", () => onInput(Number(input.value)));
+      input.addEventListener("input", () => { fill(input); onInput(Number(input.value)); });
       row.append(input);
       return { row, input };
     };
@@ -299,6 +301,8 @@
       }
       intensity.input.value = String(current().sat);
       grain.input.value = String(theme.grain);
+      fill(intensity.input);
+      fill(grain.input);
     };
     sync();
 
