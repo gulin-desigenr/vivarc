@@ -18,6 +18,8 @@
 
 > **Arc is being discontinued on December 22, 2026**, according to the announcement email The Browser Company sent. If you want to keep the sidebar and command bar workflow somewhere else, Vivarc gives you most of it in Vivaldi, free and open source.
 
+> This is a personal fork of [Vivarc by KASOGIT](https://github.com/KASOGIT/vivarc), tuned to a calmer look after Dia (system font, a neutral active tab, one type and radius scale) and extended with tab stacks, Tidy Tabs, archiving, Little Vivarc, a space editor and more. Its releases start at 1.0.0 and are independent from the original's. The original project made all of this possible.
+
 ## Install
 
 No developer experience needed. It takes about two minutes.
@@ -138,10 +140,10 @@ The command bar sends what you type to DuckDuckGo's autocomplete for suggestions
 
 ## Contributing
 
-**Contributions are very welcome, and they make this project better.** Bug reports, ideas, testing on other setups, docs fixes and pull requests all help, and you do not need to be an expert. See [CONTRIBUTING.md](CONTRIBUTING.md) to get started, and open an issue if you want to talk something through first. The notes in [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md) cover the Vivaldi quirks worth knowing. If Vivarc saves you time, a star on the repo helps others find it, and you can [sponsor the project](https://github.com/sponsors/KASOGIT) to support its development.
+**Contributions are very welcome, and they make this project better.** Bug reports, ideas, testing on other setups, docs fixes and pull requests all help, and you do not need to be an expert. See [CONTRIBUTING.md](CONTRIBUTING.md) to get started, and open an issue if you want to talk something through first. The notes in [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md) cover the Vivaldi quirks worth knowing. If Vivarc saves you time, a star on the repo helps others find it, and you can [sponsor KASOGIT](https://github.com/sponsors/KASOGIT), who created Vivarc, to support the original project.
 
 ## Credits and licence
 
-MIT, see [LICENSE](LICENSE). Peek is [VividPeek by PaRr0tBoY and contributors](https://github.com/PaRr0tBoY/Awesome-Vivaldi) (GPL-3.0); it is not part of this repository.
+Vivarc was created by [KASOGIT](https://github.com/KASOGIT/vivarc); this fork is maintained by [gulin-desigenr](https://github.com/gulin-desigenr/vivarc). MIT, see [LICENSE](LICENSE). Peek is [VividPeek by PaRr0tBoY and contributors](https://github.com/PaRr0tBoY/Awesome-Vivaldi) (GPL-3.0); it is not part of this repository.
 
 Not affiliated with The Browser Company or Vivaldi Technologies. "Arc" and "Vivaldi" are their owners' trademarks; the names are used only to describe compatibility. A separate project, [VivalArc](https://github.com/tovifun/VivalArc), restyles Vivaldi's tabs with CSS and a theme; Vivarc adds the behaviour (command bar, favorites, importer, installer).

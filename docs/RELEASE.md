@@ -15,7 +15,7 @@ Roteiro para qualquer agente ou pessoa. Siga os passos na ordem. Se um passo fal
 
 **Quem não recebe:** a instalação vinculada ao checkout (`~/.vivarc/app` aponta para este repositório). Ela atualiza com `git pull --ff-only` e ignora as releases.
 
-**Pendência conhecida:** o `install.sh` ainda baixa o `main`, não a tag (`install.sh`, bloco `URL=`). Até isso mudar, quem atualiza recebe o `main` do momento, e não exatamente a release. Por isso o `main` nunca deve ficar com trabalho pela metade.
+**O que é baixado:** o `install.sh` baixa o código da tag da última release (`/releases/latest` redireciona para `/releases/tag/vX.Y.Z`). Sem release publicada, ele cai no `main`. Então o que chega a quem instala é exatamente a release, e uma tag publicada nunca deve mudar.
 
 ## Numeração
 

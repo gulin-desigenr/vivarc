@@ -3,7 +3,7 @@
 #
 #   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/gulin-desigenr/vivarc/main/install.sh)"
 #
-# It downloads the current fork main into ~/.vivarc/app and runs its installer. Running it again updates
+# It downloads the latest release of the fork into ~/.vivarc/app and runs its installer. Running it again updates
 # Vivarc and re-applies it after a Vivaldi update. Extra arguments go to `vivarc.py install` (for example --no-peek).
 set -e
 
@@ -34,8 +34,15 @@ trap 'rm -rf "$TMP"' EXIT
 
 URL="${VIVARC_TARBALL_URL:-}"
 if [ -z "$URL" ]; then
-  say "Downloading the Vivarc fork (main)..."
-  URL="https://github.com/$REPO/archive/refs/heads/main.tar.gz"
+  # The latest release: GitHub redirects /releases/latest to /releases/tag/vX.Y.Z (to /releases when there is none).
+  TAG="$(curl -fsSIL -o /dev/null -w '%{url_effective}' "https://github.com/$REPO/releases/latest" 2>/dev/null | sed -n 's|.*/releases/tag/||p')"
+  if [ -n "$TAG" ]; then
+    say "Downloading Vivarc ${TAG#v}..."
+    URL="https://github.com/$REPO/archive/refs/tags/$TAG.tar.gz"
+  else
+    say "No Vivarc release found; downloading the current main..."
+    URL="https://github.com/$REPO/archive/refs/heads/main.tar.gz"
+  fi
 fi
 curl -fsSL "$URL" -o "$TMP/vivarc.tar.gz" || fail "Download failed. Check your internet connection."
 mkdir "$TMP/src"

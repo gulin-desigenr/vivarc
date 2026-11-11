@@ -23,7 +23,7 @@ Please include:
 ## Development setup
 
 ```sh
-git clone https://github.com/KASOGIT/vivarc.git && cd vivarc
+git clone https://github.com/gulin-desigenr/vivarc.git && cd vivarc
 python3 -m unittest discover -s tests     # Python tests, no dependencies
 ```
 
