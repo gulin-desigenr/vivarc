@@ -36,6 +36,7 @@
     const style = browser.style;
     if (!theme.on) {
       browser.classList.toggle("vm-gradient", false);
+      browser.classList.toggle("vm-light-ink", false);
       for (const k of ["--vm-tint", "--vm-tint-image", "--vm-fg", "--vm-fg-muted", "--vm-space-solid", "--vm-space-solid-fg", "--vm-grain", "--vm-noise", "--vm-fav-color", "--vm-fav-opacity", "--vm-fav-hover-opacity", "--vm-fav-active-opacity"]) style.removeProperty(k);
       return;
     }
@@ -44,7 +45,11 @@
     if (gradient) style.setProperty("--vm-tint-image", gradient); else style.removeProperty("--vm-tint-image");
     browser.classList.toggle("vm-gradient", !!gradient);
     const ink = window.__vm.colors?.inkFor(colorsOf(theme).map((c) => window.__vm.colors.hslToRgb(c.hue, c.sat, c.light)));
-    style.setProperty("--vm-fg", ink?.fg || fgFor(theme.light));
+    const fg = ink?.fg || fgFor(theme.light);
+    style.setProperty("--vm-fg", fg);
+    // Light ink means a dark space: the sidebar's pills and tiles lighten instead of whitening (vivarc.css).
+    const fgRgb = window.__vm.colors?.parse(fg);
+    browser.classList.toggle("vm-light-ink", fgRgb ? window.__vm.colors.luminance(fgRgb) > 0.4 : theme.light <= 58);
     style.setProperty("--vm-fg-muted", ink?.muted || fgFor(theme.light));
     const solid = window.__vm.colors?.spaceSolid(theme);
     if (solid) { style.setProperty("--vm-space-solid", solid.bg); style.setProperty("--vm-space-solid-fg", solid.fg); }
