@@ -5,7 +5,8 @@ Atualizado em 11/11/2026 (Vivaldi 8.3.4191.35).
 ## Projeto e instalação
 
 - Fork: https://github.com/gulin-desigenr/vivarc
-- Original: https://github.com/KASOGIT/vivarc
+- Original: https://github.com/KASOGIT/vivarc (o `FUNDING.yml` e o link de patrocínio do README continuam apontando para o KASOGIT, como crédito ao autor)
+- Versões do fork: série própria a partir de 1.0.0 (11/11/2026), publicadas como releases do `origin` seguindo `docs/RELEASE.md`. O `install.sh` baixa a tag da última release.
 - Checkout: `/Users/pedrogulin/Developer/produtos/vivarc`
 - Instalação: `~/.vivarc/app` aponta para o checkout. Dados, ajustes, Peek e backups permanecem em `~/.vivarc`.
 - O botão Update Vivarc e `python3 ~/.vivarc/app/vivarc.py update` usam o checkout Git, executam `git pull --ff-only` do branch e reaplicam o código. O atualizador não integra mudanças de `upstream` automaticamente.

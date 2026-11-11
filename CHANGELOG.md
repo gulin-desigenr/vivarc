@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.0.0 - 2026-11-11
+The first release of this fork ([gulin-desigenr/vivarc](https://github.com/gulin-desigenr/vivarc)), based on Vivarc 0.1.16 by [KASOGIT](https://github.com/KASOGIT/vivarc). The fork numbers its own releases from 1.0.0; the install command now downloads the latest release instead of the current code.
+
+**Look**
+- A calmer interface after Dia: the system font (SF Pro), one scale of sizes and corners, a neutral pill for the active tab and favorite, quiet tiles, chevron arrows, macOS-style menus and popovers, graphite sliders, and a thin page-load line in the address field.
+- The address field shows only the site's domain until you edit it; its buttons (reader view, translate, bookmark) appear on hover.
+- Favorites share their rows evenly; a hairline separates pinned and open tabs; dark site icons turn white in dark spaces.
+- Space colors are painted at a softer saturation, and in a themed space the sidebar and the window frame are one surface, with the gradient and grain running through both.
+
+**Spaces**
+- **Edit Space**: name, emoji or one of Vivaldi's workspace icons, and a theme of up to three colors in a gradient. Drag the space dots to reorder spaces, and create one from **+**.
+- A favorite has one tab for every space: clicking it in another space brings that tab over instead of opening a second one.
+- Hold **Ctrl+S** to show a hidden sidebar; let go to hide it.
+
+**Tabs**
+- **Stacks** like Dia's groups: pages opened from a tab with Cmd+click stack with it; select several tabs to stack them, rename a stack, save it as a pinned folder, or take tabs out.
+- **Tidy Tabs** groups the space's loose tabs into named stacks, without AI.
+- **Archive Tab**, and tabs you have not opened for a while are archived automatically (12 hours by default); **View Archived Tabs** searches them.
+- Open selected tabs in split view from the sidebar menu.
+
+**Command bar**
+- One line per result, the sidebar's icons, pickers for spaces, folders and tab names, and an already-open address offered as **Switch to Tab** or in a new tab.
+- **Cmd+L** edits the page address in the command bar.
+- It stays still while you type, and Enter acts on what you typed even before the results catch up.
+- Actions are ranked by how well their names match what you type ("setting" finds **Vivarc Settings**); Vivaldi's own settings action is now **Vivaldi Settings**.
+- The Tab Cycler (Ctrl+Tab) uses the command bar's card, and page dialogs (alert, confirm, prompt) its style.
+
+**Little Vivarc**
+- **Little Vivarc**, like Little Arc: a compact window for links from other apps and for **Option+Cmd+N**, with its own bar (back, forward, reload, address) and **Open in** your space (Cmd+O).
+
+**Settings and upkeep**
+- **Vivarc Settings** redesigned: one page per section, settings in cards with short descriptions, light and dark.
+- **Export Vivarc Backup**, **Back Up Vivarc Now** and **Restore Vivarc Backup…**, plus a daily automatic copy.
+- After a Vivaldi update, Vivarc can put itself back automatically and offer to restart Vivaldi.
+- Peek opens only with Option+click, and promoted Peek pages join their source tab's stack.
+- Fix: updating Vivarc keeps your Auto-Hide choices.
+- Fix: many smaller fixes to space switching, sidebar clicks, window dragging and toolbar alignment.
+
 ## 0.1.16 - 2026-10-28
 - **Uninstall Vivarc**: the installer now also leaves `~/Applications/Uninstall Vivarc.app` next to Update Vivarc. It quits Vivaldi, restores your settings, removes Vivarc and reopens Vivaldi, so removing or reinstalling no longer needs Terminal.
 - Docs: the README and the guide page now say that a sidebar hidden with Cmd+S slides back in when you move the pointer to the left edge of the window.
