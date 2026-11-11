@@ -150,7 +150,7 @@
     { label: "View History", words: "history visited", run: () => openPage("vivaldi://history") },
     { label: "View Downloads", words: "downloads files", run: openDownloads },
     { label: "View Bookmarks", words: "bookmarks saved", run: () => openPage("vivaldi://bookmarks") },
-    { label: "Open Settings", words: "settings preferences options", run: () => openPage("vivaldi://settings") },
+    { label: "Vivaldi Settings", words: "open settings preferences options browser", run: () => openPage("vivaldi://settings") },
     { label: "Create New Space", words: "space workspace new create add", run: () => (window.__vm.promptNewSpace ? window.__vm.promptNewSpace() : toast(window.__vm.workspaces.CREATE_HINT)) },
     { label: "Manage Extensions", words: "extensions addons", run: () => openPage("vivaldi://extensions") },
     { label: "Pin This Tab", words: "pin bookmark", tab: true, run: async (tab) => {
@@ -505,8 +505,9 @@
   };
 
   const matchingActions = async (needle) => {
-    const hits = ACTIONS.filter((a) => `${a.label} ${a.words}`.toLowerCase().split(/\s+/)
-      .some((w) => w.startsWith(needle)) || a.label.toLowerCase().includes(needle));
+    // Best match first (a stable sort keeps the list's order among equals), then the first three.
+    const hits = ACTIONS.map((a) => [a, window.__vm.match.actionScore(a.label, a.words, needle)])
+      .filter(([, score]) => score > 0).sort((a, b) => b[1] - a[1]).map(([a]) => a);
     if (!hits.length) return [];
     const tab = hits.some((a) => a.tab) ? await pageBehindBar() : null;
     return hits.filter((a) => (!a.tab || tab) && (!a.when || a.when(tab))).slice(0, 3)
