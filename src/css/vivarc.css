@@ -93,6 +93,10 @@
 #browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before [data-name="Back"] { --vm-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M9.75 3.5 5.25 8l4.5 4.5' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>"); }
 #browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before [data-name="Forward"] { --vm-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M6.25 3.5 10.75 8l-4.5 4.5' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>"); }
 #browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before :is([data-name="Back"], [data-name="Forward"]):disabled .button-icon::before { opacity: 0.35; }
+/* Vivaldi spaces the buttons of a vertical toolbar with a padding under every button but the last one in the page's
+   order. Vivarc reorders them (Tabs, Back, Forward, Reload), so the last one in the page's order sat 1.5px lower than
+   the others: no padding at all, and the row centres every button on one line. */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .button-toolbar { padding-bottom: 0; height: auto; }
 /* While a page loads Vivaldi fills the whole field with its highlight colour: a thin line along the bottom of the
    field instead, in the sidebar's ink. */
 #browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .pageload-indicator {
