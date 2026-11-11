@@ -38,29 +38,30 @@ const switchTo = async (space) => { events["vm-active-space-changed"]({ detail: 
 const open = async () => { events["vm-open-theme"](); await tick(); return browser.children.at(-1); };
 (async () => {
   await switchTo(0);
-  assert.equal(props["--vm-tint"], "hsl(250 28% 20%)");
+  assert.equal(props["--vm-tint"], "hsl(250 15% 20%)");
   let pop = await open();
   pop.children[5].children[3].listeners.click(); // red preset
   assert.equal(saved.get("theme:space:0").hue, 355);
   await switchTo(42);
-  assert.equal(props["--vm-tint"], "hsl(250 28% 20%)");
+  assert.equal(props["--vm-tint"], "hsl(250 15% 20%)");
   pop = await open();
   pop.children[5].children[6].listeners.click(); // green preset
   assert.equal(saved.get("theme:space:42").hue, 143);
   pop.children[4].children[1].listeners.click(); // + adds a second color: a gradient
   assert.equal(saved.get("theme:space:42").more.length, 1);
-  assert.match(props["--vm-tint-image"], /^linear-gradient\(160deg, hsl\(143 65% 65%\), hsl\(183 65% 65%\)\)$/);
+  assert.match(props["--vm-tint-image"], /^linear-gradient\(160deg, hsl\(143 36% 65%\), hsl\(183 36% 65%\)\)$/);
   pop.children[4].children.at(-1).listeners.click(); // Remove color
   assert.equal(saved.get("theme:space:42").more.length, 0);
   assert.equal(props["--vm-tint-image"], undefined);
   await switchTo(0);
-  assert.equal(props["--vm-tint"], "hsl(355 65% 62%)");
+  assert.equal(props["--vm-tint"], "hsl(355 36% 62%)");
   pop = await open();
   pop.children.at(-1).listeners.click();
   assert.equal(saved.get("theme:space:0").on, false);
   assert.equal(saved.get("theme:space:42").hue, 143);
   await switchTo(42);
-  assert.equal(props["--vm-tint"], "hsl(143 65% 65%)");
+  assert.equal(props["--vm-tint"], "hsl(143 36% 65%)"); // painted at 55% of the saturation chosen
+  assert.equal(saved.get("theme:space:42").sat, 65); // the choice itself is kept
   assert.equal(saved.get("theme").hue, 250);
 })().catch((error) => { console.error(error); process.exitCode = 1; });
 '''

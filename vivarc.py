@@ -11,7 +11,6 @@
 Standard library only. Every file it changes is backed up under ~/.vivarc/backup first.
 """
 import argparse
-import base64
 import copy
 import hashlib
 import json
@@ -431,32 +430,8 @@ def sync_guide():
     shutil.copy2(os.path.join(HERE, "src/start/index.html"), start_dir)
 
 
-# The interface font, DM Sans (SIL OFL, src/fonts/OFL.txt): the variable latin and latin-ext files, put in the bundle
-# as data URIs because the window cannot load files from outside Vivaldi's resources.
-FONT_FILES = (("DMSans-latin.woff2", "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, "
-                                     "U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"),
-              ("DMSans-latin-ext.woff2", "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, "
-                                         "U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, "
-                                         "U+2113, U+2C60-2C7F, U+A720-A7FF"))
-
-
-def font_css(folder=os.path.join(HERE, "src/fonts")):
-    faces = []
-    for name, unicode_range in FONT_FILES:
-        path = os.path.join(folder, name)
-        if not os.path.exists(path):
-            continue
-        with open(path, "rb") as f:
-            data = base64.b64encode(f.read()).decode("ascii")
-        faces.append("@font-face { font-family: \"Vivarc DM Sans\"; font-style: normal; font-weight: 100 1000; "
-                     f"font-display: swap; src: url(data:font/woff2;base64,{data}) format(\"woff2\"); "
-                     f"unicode-range: {unicode_range}; }}")
-    return "\n".join(faces)
-
-
 def write_bundle(resources, with_peek):
-    extras, pre = [], [("vivarc-fonts.css", style_script("vivarc-fonts", font_css())),
-                       ("vivarc.css", style_script("vivarc-css", read_text(os.path.join(HERE, "src/css/vivarc.css"))))]
+    extras, pre = [], [("vivarc.css", style_script("vivarc-css", read_text(os.path.join(HERE, "src/css/vivarc.css"))))]
     icons = os.path.join(HOME_DIR, "icons.js")
     if os.path.exists(icons):
         pre.append(("icons.js", read_text(icons)))

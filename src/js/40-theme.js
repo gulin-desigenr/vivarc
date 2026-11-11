@@ -12,7 +12,11 @@
   const EMOJIS = ["💼", "🏠", "🎨", "🧪", "📚", "💡", "📝", "🛠️", "🚀", "🧠", "💰", "📈", "🛒", "✈️", "🌍", "🎵",
     "🎬", "📷", "🎮", "⚽", "🧘", "🍳", "☕", "🌱", "🐶", "❤️", "⭐", "🔥"];
   const colorsOf = (t) => [{ hue: t.hue, sat: t.sat, light: t.light }, ...(Array.isArray(t.more) ? t.more : [])].slice(0, MAX_COLORS);
-  const hsl = (c) => `hsl(${c.hue} ${c.sat}% ${c.light}%)`;
+  // A space's color is painted at a little over half its saturation, so even the most intense one stays a tinted
+  // grey under the page, like Dia's themes; the Intensity slider keeps its whole range inside that.
+  const PAINT_SATURATION = 0.55;
+  const painted = (c) => ({ ...c, sat: Math.round(c.sat * PAINT_SATURATION) });
+  const hsl = (c) => { const p = painted(c); return `hsl(${p.hue} ${p.sat}% ${p.light}%)`; };
   // The gradient runs down and across the sidebar and the window frame as one, fixed to the window.
   const gradientOf = (t) => {
     const colors = colorsOf(t);
@@ -44,7 +48,7 @@
     const gradient = gradientOf(theme);
     if (gradient) style.setProperty("--vm-tint-image", gradient); else style.removeProperty("--vm-tint-image");
     browser.classList.toggle("vm-gradient", !!gradient);
-    const ink = window.__vm.colors?.inkFor(colorsOf(theme).map((c) => window.__vm.colors.hslToRgb(c.hue, c.sat, c.light)));
+    const ink = window.__vm.colors?.inkFor(colorsOf(theme).map(painted).map((c) => window.__vm.colors.hslToRgb(c.hue, c.sat, c.light)));
     const fg = ink?.fg || fgFor(theme.light);
     style.setProperty("--vm-fg", fg);
     // Light ink means a dark space: the sidebar's pills and tiles lighten instead of whitening (vivarc.css).
@@ -191,7 +195,7 @@
     }
 
     const pad = el("div", "vm-theme-pad");
-    const stops = [0, 60, 120, 180, 240, 300, 360].map((h) => `hsl(${h} 70% 50%)`).join(",");
+    const stops = [0, 60, 120, 180, 240, 300, 360].map((h) => `hsl(${h} ${Math.round(70 * PAINT_SATURATION)}% 50%)`).join(",");
     pad.style.background = `linear-gradient(to bottom, hsla(0,0%,100%,.75), transparent 45%, hsla(0,0%,0%,.8)), linear-gradient(to right, ${stops})`;
     const position = (c) => ({ x: c.hue / 360, y: (90 - c.light) / 80 });
     const place = (e) => {
@@ -242,7 +246,7 @@
     const swatches = el("div", "vm-theme-swatches");
     for (const [color, hue, sat, light] of PRESETS) {
       const s = el("button", "vm-theme-swatch");
-      s.style.backgroundColor = color;
+      s.style.backgroundColor = hsl({ hue, sat, light });
       s.addEventListener("click", () => setCurrent({ hue, sat, light }));
       swatches.append(s);
     }
