@@ -216,6 +216,11 @@ class FavoriteOwners(unittest.TestCase):
         tabs = [self.used(1, "f1", 100), self.used(2, "f1", 300), self.used(3, "f1", 200)]
         self.assertEqual(self.owners(tabs, ["f1"]), {"f1": 2})
 
+    def test_the_tab_on_screen_keeps_its_favorite(self):
+        tabs = [self.used(1, "f1", 100), self.used(2, "f1", 300)]
+        tabs[0]["active"] = True
+        self.assertEqual(self.owners(tabs, ["f1"]), {"f1": 1})
+
     def test_only_favorites_are_counted(self):
         tabs = [self.used(1, "f1", 100), self.used(2, "pinned", 300), tab(3, "https://example.com/")]
         self.assertEqual(self.owners(tabs, ["f1"]), {"f1": 1})

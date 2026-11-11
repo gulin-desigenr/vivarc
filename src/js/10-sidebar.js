@@ -293,12 +293,19 @@
     // Only links the sidebar shows can own a tab: the favorites grid shows the top level of Favorites, so a link in
     // a folder inside Favorites (never drawn) must not take a tab, or that tab would be shown nowhere.
     const favTiles = state.favs ? state.favs.children.filter((c) => !c.children) : [];
-    // A favorite whose tab is in another space stays with that tab (clicking it brings the tab here): a tab of this
-    // space that also carries it is a leftover duplicate and becomes a plain tab, and no other tab here takes it.
+    // A favorite stays with its one tab (clicking it in another space brings the tab there): any other tab of this
+    // space that carries it is a leftover duplicate, and no other tab here takes a favorite whose tab is elsewhere.
     const owners = pinLinks.owners(state.allTabs, new Set(favTiles.map((n) => n.id)));
     const elsewhere = new Set([...owners].filter(([, tab]) => spacesOf.of(tab) !== state.active).map(([id]) => id));
-    const leftovers = state.tabs.filter((t) => elsewhere.has(pinLinks.pinOf(t)));
-    for (const tab of leftovers) writeExt(tab.id, { [pinLinks.PIN]: undefined, [pinLinks.HOME]: undefined });
+    // A leftover still on the favorite's site is a second copy of the same page, and two copies of a site like
+    // WhatsApp Web take the session from each other ("open in another window"): it is closed. One that went
+    // elsewhere keeps its page as a plain tab.
+    const leftovers = state.tabs.filter((t) => owners.has(pinLinks.pinOf(t)) && owners.get(pinLinks.pinOf(t)).id !== t.id);
+    for (const tab of leftovers) {
+      const fav = favTiles.find((n) => n.id === pinLinks.pinOf(tab));
+      if (!tab.active && fav && !pinLinks.away(tab, fav.url) && pinLinks.sameSite(tab.url, fav.url)) chrome.tabs.remove(tab.id).catch(() => {});
+      else writeExt(tab.id, { [pinLinks.PIN]: undefined, [pinLinks.HOME]: undefined });
+    }
     const pins = [...favTiles.filter((n) => !elsewhere.has(n.id)), ...(state.pinned ? leaves(state.pinned) : [])]
       .map((n) => ({ id: n.id, url: n.url }));
     const allIds = state.folders.flatMap((f) => leaves(f)).map((n) => n.id);
