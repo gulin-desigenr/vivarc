@@ -112,6 +112,9 @@
   };
   const paintRow = (row) => {
     const origin = row.dataset.origin;
+    // A black or near-black mark (GitHub, MDN) disappears on a dark sidebar: vivarc.css lightens it there.
+    const mark = colorsOf.parse(tabColors.icon[origin]);
+    row.classList.toggle("vm-ico-dark", !!mark && colorsOf.rgbToHsl(mark)[2] < 20);
     const color = colorFor(origin);
     if (!color) return;
     row.style.setProperty("--vm-tab-bg", color.bg);
@@ -1424,6 +1427,13 @@
     panel.style.maxHeight = `${Math.max(120, window.innerHeight - top - bottomToolbar())}px`;
   };
 
+  const fitFavs = () => {
+    const grid = panel?.querySelector(".vm-favs");
+    const cols = grid && window.__vm.layout.favColumns(grid.querySelectorAll(":scope > .vm-fav").length, grid.clientWidth);
+    if (cols) grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+  };
+  const favResize = typeof ResizeObserver === "function" ? new ResizeObserver(() => fitFavs()) : null;
+
   const render = () => {
     if (!panel) return;
     const scroll = panel.querySelector(".vm-scroll")?.scrollTop ?? 0;
@@ -1501,6 +1511,7 @@
     entries.sort((a, b) => b.index - a.index).forEach((entry) => body.append(entry.node()));
 
     panel.replaceChildren(...(grid ? [grid] : []), body);
+    fitFavs();
     placeSpaceBar(spaceBar());
     body.scrollTop = scroll;
     fitHeight();
@@ -1717,6 +1728,7 @@
     if (!panel) {
       panel = el("div");
       panel.id = "vm-panel";
+      favResize?.observe(panel);
       // Vivaldi's vertical tab container opens a new tab on any double-click.
       // Keep rapid clicks inside Vivarc controls from triggering that handler.
       panel.addEventListener("dblclick", (e) => e.stopPropagation());

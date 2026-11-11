@@ -29,9 +29,12 @@
   --vm-press: color-mix(in srgb, var(--vm-ink) 10%, transparent);
   --vm-pill: rgb(255 255 255 / 0.8);
   --vm-pill-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.05), 0 1px 2px rgb(0 0 0 / 0.08), 0 1px 1px rgb(0 0 0 / 0.03);
-  --vm-tile: color-mix(in srgb, var(--vm-ink) 5%, transparent);
-  --vm-tile-line: color-mix(in srgb, var(--vm-ink) 7%, transparent);
+  --vm-tile: color-mix(in srgb, var(--vm-ink) 6%, transparent);
+  --vm-tile-line: color-mix(in srgb, var(--vm-ink) 8%, transparent);
   --vm-shadow-pop: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 10px 32px rgb(0 0 0 / 0.18);
+  --vm-accent: var(--colorHighlightBg, #0a6cff);
+  --vm-accent-fg: var(--colorHighlightFg, #fff);
+  --vm-danger: #e5484d;
   --vm-shadow-window: 0 0 0 0.5px rgb(0 0 0 / 0.1), 0 24px 64px rgb(0 0 0 / 0.28);
 }
 #browser.vm-on.theme-dark:not(.vm-themed), #browser.vm-on.vm-themed.vm-light-ink {
@@ -102,10 +105,21 @@
   background: transparent !important;
 }
 #browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .pageload-indicator::-webkit-progress-bar { background: transparent; }
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .pageload-ticker { display: none; }
 #browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .pageload-indicator::-webkit-progress-value {
   border-radius: 1px;
   background: color-mix(in srgb, var(--vm-address-fg) 45%, transparent) !important;
 }
+/* The address, like Arc's: only the site's domain while the field is not being edited (the subdomain and the path
+   are Vivaldi's "lowlight" fragments; the full address comes back on focus). Vivaldi's page buttons in the field
+   (reader view, translate, bookmark) show on hover or while editing, in the field's ink. */
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .UrlFragment-Wrapper .UrlFragment--Lowlight { display: none; }
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .button-toolbar:not(.button-addressfield) { opacity: 0; transition: opacity 120ms; }
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField:is(:hover, :focus-within) .button-toolbar { opacity: 1; }
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .BookmarkButton-Button svg { filter: grayscale(1); }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before [data-name="Reload"] .button-icon { opacity: 0.8; }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-after .button-toolbar > button { opacity: 0.7; transition: opacity 120ms; }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-after .button-toolbar > button:hover { opacity: 1; }
 /* Vivaldi's update button writes its state ("Update failed", "Restart to update") next to its icon, over the space
    dots in the middle of the bottom bar: the icon is enough there, the state stays in its tooltip. */
 #browser.vm-on #tabs-tabbar-container .toolbar-tabbar-after [data-name="UpdateButton"] .button-title { display: none; }
@@ -168,7 +182,6 @@
   border-radius: var(--vm-r-lg);
   cursor: pointer;
   background-color: var(--vm-tile);
-  box-shadow: inset 0 0 0 1px var(--vm-tile-line);
   transition: background-color 120ms, box-shadow 120ms, transform 120ms;
 }
 #vm-panel .vm-fav:hover { background-color: var(--vm-press); }
@@ -212,11 +225,12 @@
   height: 7px;
   border-radius: 50%;
   background-color: color-mix(in srgb, var(--colorFg) 30%, transparent);
-  transition: background-color 120ms, transform 160ms;
+  transition: background-color 120ms, transform 160ms, width 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 #browser.vm-on .vm-space-bar .vm-space-pill:hover::before { background-color: color-mix(in srgb, var(--colorFg) 60%, transparent); transform: scale(1.2); }
 #browser.vm-on .vm-space-bar .vm-space-pill.active { cursor: default; }
-#browser.vm-on .vm-space-bar .vm-space-pill.active::before { background-color: color-mix(in srgb, var(--colorFg) 88%, transparent); transform: none; }
+#browser.vm-on .vm-space-bar .vm-space-pill.active::before { width: 14px; border-radius: 999px; background-color: color-mix(in srgb, var(--colorFg) 88%, transparent); transform: none; }
+#browser.vm-on .vm-space-bar .vm-space-pill.active:not(.vm-has-mark) { width: 24px; }
 /* "+" stays available but quiet, the size of a dot. */
 #browser.vm-on .vm-space-bar .vm-space-pill.vm-space-plus { margin-left: 2px; font-size: var(--vm-fs-3); line-height: 1; color: var(--colorFg); opacity: 0.35; }
 #browser.vm-on .vm-space-bar .vm-space-pill.vm-space-plus::before { content: none; }
@@ -280,6 +294,8 @@
    around it. (10-sidebar.js still learns the page colours; nothing here paints with them.) */
 #vm-panel .vm-row { transition: background-color 120ms, box-shadow 120ms, color 120ms; }
 #vm-panel .vm-glyph svg { stroke-width: 1.5; }
+/* A black mark (GitHub, MDN) on a dark sidebar is shown in white (10-sidebar.js marks it vm-ico-dark). */
+#browser.vm-on:is(.theme-dark:not(.vm-themed), .vm-themed.vm-light-ink) #vm-panel :is(.vm-row, .vm-fav).vm-ico-dark .vm-ico img { filter: invert(1); }
 /* Tab stacks: the stack's row is its title (it folds and unfolds, it is not a tab), with a stack glyph, the count
    and an arrow. Its tabs are all alike under it, indented along a guide line: none of them stands as the parent. */
 #vm-panel .vm-stack-head { padding-left: 8px; }
@@ -348,14 +364,20 @@
 #vm-panel .vm-act:hover { opacity: 1; background-color: color-mix(in srgb, currentColor 18%, transparent); }
 
 #vm-panel .vm-divider {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
   min-height: 26px;
-  margin: 4px 4px 2px;
+  margin: 4px 10px 2px;
   font-size: var(--vm-fs-2);
 }
-#vm-panel .vm-divider::before { content: ""; flex: 1; }
+#vm-panel .vm-divider > :is(.vm-clear, .vm-tidy) { position: relative; z-index: 1; background-color: transparent; }
+#vm-panel .vm-divider::before { position: absolute; left: 0; right: 0; top: 50%; }
+#vm-panel .vm-divider:hover::before { right: var(--vm-divider-gap, 96px); }
+#vm-panel .vm-divider { justify-content: flex-end; }
+/* The line between pinned links and open tabs: a hairline, as quiet as the tiles. */
+#vm-panel .vm-divider::before { content: ""; flex: 1; height: 1px; background-color: var(--vm-tile-line); }
 #vm-panel .vm-clear {
   order: 2;
   padding: 2px 8px;
@@ -367,26 +389,29 @@
 }
 #vm-panel .vm-divider:hover .vm-clear { opacity: 0.7; }
 #vm-panel .vm-tidy { order: 1; margin-right: -4px; }
-#vm-panel .vm-clear:hover { opacity: 1; background-color: color-mix(in srgb, var(--colorFg) 14%, transparent); }
+#vm-panel .vm-clear:hover { opacity: 1; background-color: var(--vm-press); }
 #vm-panel .vm-newtab { opacity: 0.55; }
 #vm-panel .vm-plus { display: flex; justify-content: center; width: 18px; font-size: var(--vm-fs-5); line-height: 1; }
 
 .vm-menu {
+  /* A macOS menu: the command bar's surface, compact rows, the accent colour under the pointer. */
   position: fixed;
   z-index: 100000;
-  min-width: 220px;
-  padding: 6px;
-  border-radius: var(--vm-r-xl);
+  min-width: 200px;
+  padding: 5px;
+  border-radius: var(--vm-r-lg);
   font-size: var(--vm-fs-3);
-  color: var(--vm-text);
-  background: var(--vm-surface);
-  border: 1px solid color-mix(in srgb, var(--colorFg, #fff) 14%, transparent);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  line-height: 16px;
+  color: var(--cmd-text);
+  background: var(--cmd-surface);
+  box-shadow: var(--vm-shadow-pop);
 }
-.vm-menu-item { padding: 7px 12px; border-radius: var(--vm-r-md); cursor: pointer; }
-.vm-menu-item:hover { background-color: color-mix(in srgb, var(--colorFg, #fff) 14%, transparent); }
-.vm-menu-item.danger { color: #ff6b6b; }
-.vm-menu-sep { height: 1px; margin: 5px 8px; background-color: color-mix(in srgb, var(--colorFg, #fff) 14%, transparent); }
+#browser.vm-on.theme-dark .vm-menu { box-shadow: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 10px 32px rgb(0 0 0 / 0.5); }
+.vm-menu-item { padding: 4px 10px; border-radius: var(--vm-r-sm); cursor: default; }
+.vm-menu-item:hover { background-color: var(--vm-accent); color: var(--vm-accent-fg); }
+.vm-menu-item.danger { color: var(--vm-danger); }
+.vm-menu-item.danger:hover { background-color: var(--vm-danger); color: #fff; }
+.vm-menu-sep { height: 1px; margin: 4px 10px; background-color: var(--cmd-line); }
 
 /* Command bar (js/30-command-bar.js) */
 #vm-cmd {
@@ -1031,17 +1056,17 @@
 
 /* Give pinned favorites a legible surface against light or dark theme wallpapers. */
 #browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #vm-panel .vm-fav {
-  background: color-mix(in srgb, var(--vm-fg, var(--colorImageFg, var(--colorFg))) 9%, transparent);
-  outline: 1px solid color-mix(in srgb, var(--vm-fg, var(--colorImageFg, var(--colorFg))) 7%, transparent);
+  background: color-mix(in srgb, var(--vm-fg, var(--colorImageFg, var(--colorFg))) 8%, transparent);
+  outline: 0;
   outline-offset: -1px;
 }
 #browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #vm-panel .vm-fav:hover {
-  background: color-mix(in srgb, var(--vm-fg, var(--colorImageFg, var(--colorFg))) 14%, transparent);
+  background: color-mix(in srgb, var(--vm-fg, var(--colorImageFg, var(--colorFg))) 12%, transparent);
 }
 #browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #vm-panel .vm-fav.active { background: var(--vm-pill); box-shadow: var(--vm-pill-shadow); outline-color: transparent; }
 
-/* Command palette: neutral surfaces follow Vivaldi's light/dark theme, independently of each space tint. */
-#browser.vm-on :is(#vm-cmd, .dialog-javascript, .modal-tabswitcher) {
+/* Command palette and menus: neutral surfaces follow Vivaldi's light/dark theme, independently of each space tint. */
+#browser.vm-on :is(#vm-cmd, .dialog-javascript, .modal-tabswitcher, .vm-menu) {
   --cmd-surface: #fafbfc;
   --cmd-text: #20242b;
   --cmd-muted: #5f6672;
@@ -1049,7 +1074,7 @@
   --cmd-selected: #dfedfb;
   --cmd-shadow: 0 20px 60px rgba(20, 28, 38, .28), 0 2px 8px rgba(20, 28, 38, .12);
 }
-#browser.vm-on.theme-dark :is(#vm-cmd, .dialog-javascript, .modal-tabswitcher) {
+#browser.vm-on.theme-dark :is(#vm-cmd, .dialog-javascript, .modal-tabswitcher, .vm-menu) {
   --cmd-surface: #24262d;
   --cmd-text: #f1f2f4;
   --cmd-muted: #b3b9c3;
