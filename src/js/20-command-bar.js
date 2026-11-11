@@ -279,10 +279,23 @@
   let selected = 0;
   let seq = 0;
   let autoCompleted = false;
+  let rowsFor = null; // the text the rows on screen were found for: Enter on older rows acts on what is typed now
+  let listFloor = 0; // the list never shrinks while you type (it only grows), so the bar keeps still
+  const icons = new Map(); // icon nodes kept for the bar's lifetime: a row found again keeps its icon, no reload
   let editing = false; // opened by Cmd+L on the current page: Enter navigates that page, nothing is closed
 
-  const iconFor = (url, favicon) => {
+  // `used` holds the icons already placed in the list being built: a second row for the same page gets a copy.
+  const iconFor = (url, favicon, used = new Set(), owner = "") => {
+    const key = `${owner}|${url}|${favicon || ""}`; // owner: two open tabs on the same page each keep their own
+    const kept = icons.get(key);
+    if (kept) {
+      if (used.has(kept)) return kept.cloneNode(true);
+      used.add(kept);
+      return kept;
+    }
     const wrap = el("span", "vm-cmd-ico");
+    icons.set(key, wrap);
+    used.add(wrap);
     if (window.__vm.iconEl) {
       wrap.append(window.__vm.iconEl(url, favicon)); // live icon, then the sidebar's cache, then Vivaldi's database
     } else if (favicon) {
@@ -320,6 +333,9 @@
     bar = input = list = chipHolder = targetTab = mode = stackHere = null;
     editing = false;
     rows = [];
+    rowsFor = null;
+    listFloor = 0;
+    icons.clear();
     seq++;
     if (removeBlank && blank != null) removeBlankTab(blank);
   };
@@ -412,6 +428,7 @@
   const render = () => {
     if (!list) return;
     const nodes = [];
+    const used = new Set();
     // One line per result and no section titles, like Arc: the title, the site in grey, and what Enter does on the
     // selected row only.
     let lastGroup = null;
@@ -431,7 +448,7 @@
         icon = el("span", "vm-cmd-ico vm-cmd-glyph");
         icon.innerHTML = SEARCH_SVG;
       } else {
-        icon = iconFor(row.url, row.favicon);
+        icon = iconFor(row.url, row.favicon, used, row.tab?.id ?? "");
       }
       icon.setAttribute("aria-hidden", "true");
       const content = el("span", "vm-cmd-content");
@@ -460,9 +477,20 @@
       nodes.push(item);
     });
     list.replaceChildren(...nodes);
+    holdHeight();
     if (rows.length) input.setAttribute("aria-activedescendant", `vm-cmd-option-${selected}`);
     else input.removeAttribute("aria-activedescendant");
     list.querySelector(`#vm-cmd-option-${selected}`)?.scrollIntoView({ block: "nearest" });
+  };
+
+  // While something is typed the list keeps the tallest height it has had, so new suggestions arriving (or fewer
+  // matches) do not make the bar jump; clearing the field or switching mode lets it fit again.
+  const holdHeight = () => {
+    if (!list) return;
+    if (!input?.value.trim()) { listFloor = 0; list.style.minHeight = ""; return; }
+    list.style.minHeight = "";
+    listFloor = Math.max(listFloor, list.getBoundingClientRect().height);
+    list.style.minHeight = `${listFloor}px`;
   };
 
   const allTabs = async () =>
@@ -576,18 +604,31 @@
       const listed = new Set(siteTabs.map((t) => t.id));
       out.push(...matches.filter((m) => m !== prefix && !(m.type === "tab" && listed.has(m.tab.id))));
       if (window.__vm.settings.get("searchSuggestions") && !looksLikeUrl(text) && text.length > 1) {
+        // What is on this computer shows at once; the web's suggestions join below it when they arrive, without
+        // moving the rows above or the selection.
+        show(id, text, out);
         try {
           const reply = await fetch(DEFAULT.suggest.replace("{searchTerms}", encodeURIComponent(text)));
           const data = await reply.json();
           const phrases = Array.isArray(data[1]) ? data[1] : data.map((d) => d.phrase);
           if (id !== seq) return;
-          phrases.filter((p) => p && p.toLowerCase() !== needle).slice(0, 3)
-            .forEach((p) => out.push({ type: "suggest", engine: DEFAULT, query: p, label: p }));
+          const more = phrases.filter((p) => p && p.toLowerCase() !== needle).slice(0, 3)
+            .map((p) => ({ type: "suggest", engine: DEFAULT, query: p, label: p }));
+          if (!more.length) return;
+          const keep = selected;
+          rows = [...rows.slice(0, 10 - Math.min(more.length, 3)), ...more].slice(0, 10);
+          selected = Math.min(keep, rows.length - 1);
+          render();
         } catch (_) {}
+        return;
       }
     }
+    show(id, text, out);
+  };
+  const show = (id, text, out) => {
     if (id !== seq) return;
     rows = mode ? out : out.slice(0, 10); // a short list; pickers and the archive show all they find
+    rowsFor = text;
     selected = 0;
     render();
   };
@@ -618,7 +659,6 @@
     if (host && input.value === text) {
       input.value = host;
       input.setSelectionRange(text.length, host.length);
-      compute(); // the rows follow the completed address (its "Open in New Tab" row, for one)
     }
   };
 
@@ -631,7 +671,17 @@
       render();
       return;
     }
-    if (e.key === "Enter") { e.preventDefault(); run(rows[selected]); return; }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      // Typed faster than the rows came: the first row is still for an earlier text. Act on what is in the field.
+      const now = input.value.trim();
+      if (!mode && selected === 0 && now && now !== rowsFor) {
+        run(looksLikeUrl(now) ? { type: "url", url: toUrl(now), label: now } : { type: "search", engine: DEFAULT, query: now, label: now });
+        return;
+      }
+      run(rows[selected]);
+      return;
+    }
     // Cmd+Backspace removes the selected page from the archive for good.
     if (e.key === "Backspace" && e.metaKey && rows[selected]?.type === "archived") {
       e.preventDefault();
@@ -689,7 +739,8 @@
       }, { once: true, capture: true });
     });
     input.addEventListener("keydown", onKey);
-    input.addEventListener("input", async () => { await compute(); autocomplete(); });
+    // The address is completed first, so the rows are found once, for the completed address.
+    input.addEventListener("input", async () => { await autocomplete(); compute(); });
     (document.querySelector("#browser") || document.body).append(bar);
     if (editing) {
       input.value = edit;
