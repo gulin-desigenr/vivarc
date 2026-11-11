@@ -896,9 +896,7 @@
 #browser .vm-set-overlay .vm-set-close { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border-radius: 50%; background: color-mix(in srgb, var(--set-text) 7%, transparent); color: var(--set-muted) !important; font-size: var(--vm-fs-4) !important; line-height: 1; }
 #browser .vm-set-overlay .vm-set-close:hover { background: color-mix(in srgb, var(--set-text) 12%, transparent); }
 .vm-set-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 22px 8px; scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--set-text) 25%, transparent) transparent; }
-.vm-set-section { margin-bottom: 16px; }
-/* Section titles and row labels as in macOS settings: sentence case, the labels at medium weight. */
-.vm-set-section-title { margin: 0 4px 6px; color: var(--set-muted); font-size: var(--vm-fs-2); font-weight: 600; }
+/* Row labels at medium weight, as in macOS settings. The page title above names the section. */
 .vm-set-group { border-radius: var(--vm-r-xl); background: var(--set-card); box-shadow: 0 0 0 1px var(--set-line); overflow: hidden; }
 .vm-set-row { display: flex; align-items: center; gap: 14px; padding: 11px 14px; border-top: 1px solid var(--set-line); cursor: pointer; }
 .vm-set-row:first-child { border-top: 0; }

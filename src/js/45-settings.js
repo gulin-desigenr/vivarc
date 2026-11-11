@@ -96,14 +96,13 @@
 
   const row = (item) => (item.type === "range" ? rangeRow(item) : item.type === "choice" ? choiceRow(item) : switchRow(item));
 
-  const sections = () => settings.GROUPS.map(([id, name]) => {
-    const section = el("section", "vm-set-section");
-    section.dataset.group = id;
+  // One page per section: the sidebar switches pages instead of scrolling one long list to an anchor.
+  const page = (id) => {
     const card = el("div", "vm-set-group");
     settings.SCHEMA.filter((s) => s.group === id).forEach((s) => card.append(row(s)));
-    section.append(el("div", "vm-set-section-title", name), card);
-    return section;
-  });
+    return card;
+  };
+  let current = null; // the page shown, kept between openings
 
   const open = () => {
     if (!window.__vm.cssLoaded) return;
@@ -131,37 +130,28 @@
     bottom.append(el("span", null, "Changes apply right away."), reset);
     main.append(top, scroll, bottom);
 
+    const title = top.querySelector(".vm-set-title");
     const items = settings.GROUPS.map(([id, name]) => {
       const item = el("button", "vm-set-nav-item");
       item.dataset.group = id;
       const icon = el("span", "vm-set-nav-icon");
       icon.innerHTML = ICONS[id] || "";
       item.append(icon, el("span", null, name));
-      item.addEventListener("click", () => {
-        chosen = id; // the last sections cannot reach the top: keep the one clicked marked until you scroll yourself
-        items.forEach((i) => i.classList.toggle("selected", i === item));
-        const target = scroll.querySelector(`.vm-set-section[data-group="${id}"]`);
-        if (target) scroll.scrollTo({ top: target.offsetTop - scroll.offsetTop - 12, behavior: "smooth" });
-      });
+      item.addEventListener("click", () => show(id));
       return item;
     });
     nav.append(...items);
-    let chosen = null;
-    const mark = () => {
-      if (chosen) return;
-      const all = [...scroll.querySelectorAll(".vm-set-section")];
-      const atEnd = scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 4;
-      const current = atEnd ? all.at(-1) : all.filter((s) => s.offsetTop - scroll.offsetTop - 40 <= scroll.scrollTop).at(-1) || all[0];
-      items.forEach((i) => i.classList.toggle("selected", i.dataset.group === current?.dataset.group));
-    };
-    const fill = () => {
+    const show = (id) => {
+      const known = settings.GROUPS.find(([g]) => g === id) || settings.GROUPS[0];
+      current = known[0];
+      items.forEach((i) => i.classList.toggle("selected", i.dataset.group === current));
+      title.textContent = known[1];
       unsubs.forEach((off) => off());
       unsubs = [];
-      scroll.replaceChildren(...sections());
-      mark();
+      scroll.replaceChildren(page(current));
+      scroll.scrollTop = 0;
     };
-    scroll.addEventListener("scroll", mark, { passive: true });
-    for (const ev of ["wheel", "touchmove", "keydown", "pointerdown"]) scroll.addEventListener(ev, () => { chosen = null; }, { passive: true });
+    const fill = () => show(current);
     reset.addEventListener("click", () => { settings.reset(); fill(); });
 
     win.append(side, main);
