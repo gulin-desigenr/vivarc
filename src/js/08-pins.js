@@ -92,8 +92,23 @@
     return { bound, writes };
   };
 
+  // Favorites are shared by every space, like Arc's: a favorite owns one tab in the window, wherever it is. When
+  // several tabs carry the same favorite (opened before favorites were shared, or once in each space), the one used
+  // last keeps it, since that is the one a site like WhatsApp Web stays signed in on; the others become plain tabs.
+  // Returns a Map of favorite id to its tab.
+  const owners = (tabs, favIds) => {
+    const out = new Map();
+    for (const tab of tabs) {
+      const id = pinOf(tab);
+      if (id === undefined || !favIds.has(id)) continue;
+      const held = out.get(id);
+      if (!held || (tab.lastAccessed ?? 0) > (held.lastAccessed ?? 0)) out.set(id, tab);
+    }
+    return out;
+  };
+
   // Every folder under a Pinned tree, at any depth (the tree's own root is not one of them).
   const folderIds = (root) => (root?.children || []).flatMap((n) => (n.children ? [n.id, ...folderIds(n)] : []));
 
-  window.__vm.pins = { folderIds, PIN, HOME, pinOf, homeOf, patched, needsWrite, sameSite, norm, away, plan };
+  window.__vm.pins = { folderIds, PIN, HOME, pinOf, homeOf, patched, needsWrite, sameSite, norm, away, plan, owners };
 })();

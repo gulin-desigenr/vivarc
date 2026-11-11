@@ -260,9 +260,11 @@
   // A favorite has one tab for every space, like Arc's: when its tab is in another space, it comes to this one
   // instead of a second tab opening (a tab in a split view is left where it is, and Vivarc switches to it).
   const isFavorite = (node) => !!state.favs && node.parentId === state.favs.id;
-  const favoriteTabElsewhere = (node) => isFavorite(node)
-    ? state.allTabs.find((t) => pinLinks.pinOf(t) === node.id && spacesOf.of(t) !== state.active) ?? null
-    : null;
+  const favoriteTabElsewhere = (node) => {
+    if (!isFavorite(node)) return null;
+    const tab = pinLinks.owners(state.allTabs, new Set([node.id])).get(node.id);
+    return tab && spacesOf.of(tab) !== state.active ? tab : null;
+  };
   const focusOrOpen = async (node) => {
     const tab = boundTab(node);
     if (tab) { chrome.tabs.update(tab.id, { active: true }); return; }
@@ -291,10 +293,16 @@
     // Only links the sidebar shows can own a tab: the favorites grid shows the top level of Favorites, so a link in
     // a folder inside Favorites (never drawn) must not take a tab, or that tab would be shown nowhere.
     const favTiles = state.favs ? state.favs.children.filter((c) => !c.children) : [];
-    const pins = [...favTiles, ...(state.pinned ? leaves(state.pinned) : [])]
+    // A favorite whose tab is in another space stays with that tab (clicking it brings the tab here): a tab of this
+    // space that also carries it is a leftover duplicate and becomes a plain tab, and no other tab here takes it.
+    const owners = pinLinks.owners(state.allTabs, new Set(favTiles.map((n) => n.id)));
+    const elsewhere = new Set([...owners].filter(([, tab]) => spacesOf.of(tab) !== state.active).map(([id]) => id));
+    const leftovers = state.tabs.filter((t) => elsewhere.has(pinLinks.pinOf(t)));
+    for (const tab of leftovers) writeExt(tab.id, { [pinLinks.PIN]: undefined, [pinLinks.HOME]: undefined });
+    const pins = [...favTiles.filter((n) => !elsewhere.has(n.id)), ...(state.pinned ? leaves(state.pinned) : [])]
       .map((n) => ({ id: n.id, url: n.url }));
     const allIds = state.folders.flatMap((f) => leaves(f)).map((n) => n.id);
-    const { bound, writes } = pinLinks.plan(state.tabs, pins, allIds);
+    const { bound, writes } = pinLinks.plan(state.tabs.filter((t) => !leftovers.includes(t)), pins, allIds);
     state.bound = bound;
     for (const { tabId, patch } of writes) writeExt(tabId, patch);
   };
@@ -1086,6 +1094,35 @@
   };
 
   // ---- space bar: Vivaldi workspaces as Arc-style spaces ----
+  // Like Arc, the favorite you are on goes with you when you switch spaces, instead of the new space's last tab
+  // showing. Only a switch of space carries it (the space bar, Ctrl+1..9, Cmd+Option+Left/Right), never a tab of
+  // another space chosen on purpose (Switch to Tab, a pinned link). The switch request and the change of space
+  // arrive in either order, so each is kept for a moment and whichever comes second moves the tab.
+  const favoriteTab = (tab) => !!tab && !!state.favs && !window.__vm.tilingOf(tab)
+    && state.favs.children.some((c) => !c.children && c.id === pinLinks.pinOf(tab));
+  let wantCarry = 0; // when a switch of space was asked for
+  let lastDeparture = null; // { tabId, to, at }: the favorite left behind by the last change of space
+  const carry = async () => {
+    const now = Date.now();
+    if (!lastDeparture || now - wantCarry > 2000 || now - lastDeparture.at > 2000) return;
+    const { tabId, to } = lastDeparture;
+    lastDeparture = null;
+    wantCarry = 0;
+    if (to !== state.active) return; // already switched again
+    try {
+      await moveTabToSpace(tabId, to);
+      refresh(false);
+    } catch (e) { console.warn("[vivarc] favorite to space:", e); }
+  };
+  const departed = (before, to) => {
+    lastDeparture = favoriteTab(before.tab) ? { tabId: before.tab.id, to, at: Date.now() } : null;
+    if (lastDeparture) carry();
+  };
+  const askCarry = () => { wantCarry = Date.now(); carry(); };
+  window.__vm.onShortcut((key) => {
+    if (key === window.__vm.normalise("alt+meta+left") || key === window.__vm.normalise("alt+meta+right")) askCarry();
+  });
+
   const switchSpace = async (item, { force = false } = {}) => {
     if (item.id === state.active && !force) return;
     const activate = spacesOf.findSwitcher(chrome.extension.getBackgroundPage?.()?.webpackChunkgapp_browser_react);
@@ -1096,7 +1133,9 @@
     // An empty workspace can already have a blank landing tab from an earlier visit.
     const tabs = await chrome.tabs.query({ currentWindow: true });
     const targetTabs = spacesOf.tabsIn(tabs, item.id);
-    const empty = targetTabs.every((tab) => BLANK.test(tab.pendingUrl || tab.url || ""));
+    const carrying = item.id !== state.active && favoriteTab(tabs.find((t) => t.active));
+    const empty = !carrying && targetTabs.every((tab) => BLANK.test(tab.pendingUrl || tab.url || ""));
+    if (carrying) askCarry();
     window.__vm.switchingSpace = true;
     try {
       await activate(window.vivaldiWindowId, item.id);
@@ -1675,6 +1714,7 @@
       if (data.relatedTabId) temporary.add(Number(data.relatedTabId));
       if (data.parallelTabId) temporary.add(Number(data.parallelTabId));
     }
+    const before = { space: state.active, tab: state.allTabs.find((t) => t.active) };
     state.allTabs = (await chrome.tabs.query({ currentWindow: true })).filter((tab) => {
       if (temporary.has(tab.id)) return false;
       try { return !JSON.parse(tab.vivExtData || "{}").arcPeekRuntime; } catch (_) { return true; }
@@ -1682,6 +1722,7 @@
     state.workspaces = await readWorkspaces();
     ({ active: state.active, tabs: state.tabs } = spacesOf.scope(state.allTabs, state.workspaces));
     for (const id of selected) if (!state.tabs.some((t) => t.id === id)) selected.delete(id);
+    if (before.space !== state.active && state.workspaces.length) departed(before, state.active);
     if (window.__vm.activeSpace !== state.active) {
       window.__vm.activeSpace = state.active;
       window.dispatchEvent(new CustomEvent("vm-active-space-changed", { detail: state.active }));

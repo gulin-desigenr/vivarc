@@ -200,3 +200,25 @@ class Folders(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipUnless(shutil.which("node"), "node is needed to test the sidebar's JavaScript")
+class FavoriteOwners(unittest.TestCase):
+    @staticmethod
+    def owners(tabs, fav_ids):
+        return js("Object.fromEntries([...pins.owners(tabs, new Set(ids))].map(([f, t]) => [f, t.id]))", tabs=tabs, ids=fav_ids)
+
+    @staticmethod
+    def used(id, pin, last):
+        return {**tab(id, "https://web.whatsapp.com/", ext={"vivarcPin": pin}), "lastAccessed": last}
+
+    def test_the_tab_used_last_keeps_a_favorite_carried_by_several(self):
+        tabs = [self.used(1, "f1", 100), self.used(2, "f1", 300), self.used(3, "f1", 200)]
+        self.assertEqual(self.owners(tabs, ["f1"]), {"f1": 2})
+
+    def test_only_favorites_are_counted(self):
+        tabs = [self.used(1, "f1", 100), self.used(2, "pinned", 300), tab(3, "https://example.com/")]
+        self.assertEqual(self.owners(tabs, ["f1"]), {"f1": 1})
+
+    def test_a_favorite_without_a_tab_has_no_owner(self):
+        self.assertEqual(self.owners([tab(1, "https://example.com/")], ["f1"]), {})
