@@ -87,6 +87,17 @@ class InstallFlow(unittest.TestCase):
         self.run_cli("uninstall")
         self.assertEqual(self.prefs("Default")["vivaldi"]["toolbars"]["tabbar_before"], ["TabButton", "Spacer"])
 
+    def test_an_update_keeps_the_sidebar_hidden_if_the_user_hid_it(self):
+        self.run_cli("install", "--no-peek")
+        path = os.path.join(self.data, "Default", "Preferences")
+        prefs = self.prefs("Default")
+        prefs["vivaldi"]["auto_hide"]["tab_bar"] = True  # what Cmd+S does in Vivaldi
+        with open(path, "w") as f:
+            json.dump(prefs, f)
+        self.run_cli("install", "--no-peek")
+        self.assertIs(self.prefs("Default")["vivaldi"]["auto_hide"]["tab_bar"], True)
+        self.assertIs(self.prefs("Profile 1")["vivaldi"]["auto_hide"]["tab_bar"], False)
+
     def test_uninstall_restores_prefs_flags_and_window_html(self):
         before = self.prefs("Default")
         self.run_cli("install", "--no-peek")
