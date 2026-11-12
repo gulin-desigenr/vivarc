@@ -1084,10 +1084,13 @@
 
 /* The page's corners: rounder than Vivaldi's 8 px, like Arc. Vivaldi clips the page itself with --radius, read here. */
 #browser.vm-on:not(.fullscreen) #webpage-stack { --radius: 12px; border-radius: var(--vm-r-xl); }
-/* Separate the page from a theme wallpaper. In a space color the page sits on the same surface as the sidebar, with
-   no shadow (it read as a line between the two). */
-#browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed):not(.fullscreen):not(.is-settingspage) #webpage-stack {
+/* The page floats a little above the window in every space, on a space color or on the theme's wallpaper alike. */
+#browser.vm-on:not(.fullscreen):not(.is-settingspage) #webpage-stack {
   box-shadow: 0 2px 14px rgba(29, 26, 50, 0.10);
+}
+/* On a dark space the same shadow would vanish; it is deepened there. */
+#browser.vm-on:is(.theme-dark:not(.vm-themed), .vm-themed.vm-light-ink):not(.fullscreen):not(.is-settingspage) #webpage-stack {
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.32);
 }
 
 /* Give pinned favorites a legible surface against light or dark theme wallpapers. */
