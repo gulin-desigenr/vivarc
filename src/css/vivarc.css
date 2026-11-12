@@ -682,6 +682,8 @@
   pointer-events: none;
   app-region: none;
   background-image: var(--vm-noise);
+  background-size: var(--vm-noise-size, 128px);
+  image-rendering: pixelated;
   opacity: var(--vm-grain, 0.1);
   mix-blend-mode: overlay;
 }
@@ -707,6 +709,8 @@
   pointer-events: none;
   app-region: none;
   background-image: var(--vm-noise);
+  background-size: var(--vm-noise-size, 128px);
+  image-rendering: pixelated;
   opacity: var(--vm-grain, 0.1);
   mix-blend-mode: overlay;
 }

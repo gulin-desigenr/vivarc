@@ -31,7 +31,40 @@
   const updates = typeof BroadcastChannel === "function" ? new BroadcastChannel("vivarc-space-themes") : null;
 
   const fgFor = (light) => (light > 58 ? "#1b1b1f" : "#f2f2f5");
-  const noise = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
+  // Grain like Arc's (measured on its screen): every screen pixel its own random speck, each color channel apart,
+  // not the soft blotches of an SVG turbulence. A 128px tile of random pixels, drawn once, one tile pixel per screen
+  // pixel (so 64 CSS px on a Retina screen).
+  const FALLBACK_NOISE = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
+  let noiseTile = null;
+  const noise = () => {
+    if (noiseTile) return noiseTile;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext?.("2d");
+    if (!ctx) return FALLBACK_NOISE;
+    canvas.width = canvas.height = 128;
+    const image = ctx.createImageData(128, 128);
+    for (let i = 0; i < image.data.length; i += 4) {
+      image.data[i] = Math.random() * 256;
+      image.data[i + 1] = Math.random() * 256;
+      image.data[i + 2] = Math.random() * 256;
+      image.data[i + 3] = 255;
+    }
+    ctx.putImageData(image, 0, 0);
+    noiseTile = `url("${canvas.toDataURL("image/png")}")`;
+    return noiseTile;
+  };
+  // The grain is blended with "overlay", whose effect shrinks toward white and black: the layer's opacity is raised
+  // on light and dark colors so the slider gives the same visible grain on any color (up to about 20 levels of
+  // variation per pixel at 100, Arc's strong end).
+  const grainOpacity = (t) => {
+    // How far overlay can move the space's colors: the channel nearest the middle (it moves most) sets the opacity.
+    const toRgb = window.__vm.colors?.hslToRgb;
+    const levels = toRgb
+      ? colorsOf(t).map(painted).flatMap((c) => toRgb(c.hue, c.sat, c.light).map((v) => v / 255))
+      : colorsOf(t).map((c) => c.light / 100);
+    const reach = Math.max(0.12, ...levels.map((v) => 2 * Math.min(v, 1 - v)));
+    return Math.min(1, (t.grain / 100) * 20 / (reach * 0.289 * 255));
+  };
 
   const apply = () => {
     const browser = document.querySelector("#browser");
@@ -41,7 +74,7 @@
     if (!theme.on) {
       browser.classList.toggle("vm-gradient", false);
       browser.classList.toggle("vm-light-ink", false);
-      for (const k of ["--vm-tint", "--vm-tint-image", "--vm-fg", "--vm-fg-muted", "--vm-space-solid", "--vm-space-solid-fg", "--vm-grain", "--vm-noise", "--vm-fav-color", "--vm-fav-opacity", "--vm-fav-hover-opacity", "--vm-fav-active-opacity", "--vm-stop-1", "--vm-stop-2", "--vm-stop-3", "--vm-space-select"]) style.removeProperty(k);
+      for (const k of ["--vm-tint", "--vm-tint-image", "--vm-fg", "--vm-fg-muted", "--vm-space-solid", "--vm-space-solid-fg", "--vm-grain", "--vm-noise", "--vm-noise-size", "--vm-fav-color", "--vm-fav-opacity", "--vm-fav-hover-opacity", "--vm-fav-active-opacity", "--vm-stop-1", "--vm-stop-2", "--vm-stop-3", "--vm-space-select"]) style.removeProperty(k);
       return;
     }
     style.setProperty("--vm-tint", hsl(theme));
@@ -73,8 +106,9 @@
     style.setProperty("--vm-fav-opacity", pale ? "46%" : theme.light >= 87 ? "20%" : "16%");
     style.setProperty("--vm-fav-hover-opacity", pale ? "58%" : theme.light >= 87 ? "27%" : "23%");
     style.setProperty("--vm-fav-active-opacity", pale ? "64%" : theme.light >= 87 ? "30%" : "24%");
-    style.setProperty("--vm-grain", String(theme.grain / 100 * 0.35));
-    style.setProperty("--vm-noise", noise);
+    style.setProperty("--vm-grain", String(Math.round(grainOpacity(theme) * 1000) / 1000));
+    style.setProperty("--vm-noise", noise());
+    style.setProperty("--vm-noise-size", `${128 / (window.devicePixelRatio || 1)}px`);
   };
 
   // Between spaces the color crossfades (vivarc.css); edits in the space editor stay instant.
