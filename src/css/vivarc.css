@@ -150,6 +150,7 @@
 #browser.vm-on, body:has(> #browser.vm-on) > :not(#browser) { -webkit-font-smoothing: antialiased; }
 
 #vm-panel {
+  position: relative;
   flex: 0 1 auto;
   display: flex;
   flex-direction: column;
@@ -167,6 +168,17 @@
    swallows every click. Vivarc's own UI opts out, including the menus and popovers that float over it. */
 #vm-panel, .vm-menu, .vm-theme-pop, #vm-cmd, .vm-rename-float { app-region: no-drag; }
 .vm-menu-shield { position: fixed; inset: 0; z-index: 100000; background: transparent; app-region: no-drag; }
+/* Switching spaces (10-sidebar.js, 40-theme.js): the old space's content slides out over the new one, and the
+   space's color crossfades instead of jumping, like Arc. A registered color is what lets the variable transition. */
+@property --vm-tint { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --vm-stop-1 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --vm-stop-2 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --vm-stop-3 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+#browser.vm-on.vm-space-fading {
+  transition: --vm-tint 420ms, --vm-stop-1 420ms, --vm-stop-2 420ms, --vm-stop-3 420ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+#vm-panel .vm-scroll.vm-leaving { box-sizing: border-box; }
 #vm-panel .vm-scroll {
   flex: 1 1 auto;
   min-height: 0;
@@ -647,6 +659,11 @@
 }
 /* A gradient tint (two or three colors) runs through the sidebar and the window frame as one, fixed to the window. */
 #browser.vm-on.vm-themed.vm-gradient:not(.vm-glass, .vm-little-arc) { background-image: var(--vm-tint-image) !important; background-attachment: fixed !important; }
+/* While switching spaces the surface is painted from its color stops, which crossfade (see the switching rules above). */
+#browser.vm-on.vm-themed.vm-space-fading:not(.vm-glass, .vm-little-arc) {
+  background-image: linear-gradient(160deg, var(--vm-stop-1), var(--vm-stop-2), var(--vm-stop-3)) !important;
+  background-attachment: fixed !important;
+}
 #browser.vm-themed.vm-gradient.vm-little-arc:not(.vm-glass) #tabs-tabbar-container { background-image: var(--vm-tint-image) !important; background-attachment: fixed !important; }
 /* isolation makes the bar its own stacking context, painted under the page: lift it while the address bar or
    one of its popups (site permission requests) is open, or they are cut off at the sidebar's edge */

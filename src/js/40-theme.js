@@ -41,13 +41,20 @@
     if (!theme.on) {
       browser.classList.toggle("vm-gradient", false);
       browser.classList.toggle("vm-light-ink", false);
-      for (const k of ["--vm-tint", "--vm-tint-image", "--vm-fg", "--vm-fg-muted", "--vm-space-solid", "--vm-space-solid-fg", "--vm-grain", "--vm-noise", "--vm-fav-color", "--vm-fav-opacity", "--vm-fav-hover-opacity", "--vm-fav-active-opacity"]) style.removeProperty(k);
+      for (const k of ["--vm-tint", "--vm-tint-image", "--vm-fg", "--vm-fg-muted", "--vm-space-solid", "--vm-space-solid-fg", "--vm-grain", "--vm-noise", "--vm-fav-color", "--vm-fav-opacity", "--vm-fav-hover-opacity", "--vm-fav-active-opacity", "--vm-stop-1", "--vm-stop-2", "--vm-stop-3"]) style.removeProperty(k);
       return;
     }
     style.setProperty("--vm-tint", hsl(theme));
     const gradient = gradientOf(theme);
     if (gradient) style.setProperty("--vm-tint-image", gradient); else style.removeProperty("--vm-tint-image");
     browser.classList.toggle("vm-gradient", !!gradient);
+    // The same surface as three color stops (vivarc.css paints them while switching spaces): a solid space repeats
+    // its color, a two-color one adds the midpoint, so the colors can crossfade where a gradient image cannot.
+    const rgb = window.__vm.colors?.hslToRgb && colorsOf(theme).map(painted).map((c) => window.__vm.colors.hslToRgb(c.hue, c.sat, c.light));
+    if (rgb) {
+      const mid = rgb.length === 2 ? rgb[0].map((v, i) => (v + rgb[1][i]) / 2) : rgb[1] || rgb[0];
+      [rgb[0], mid, rgb.at(-1)].forEach((c, i) => style.setProperty(`--vm-stop-${i + 1}`, `rgb(${c.map(Math.round).join(" ")})`));
+    }
     const ink = window.__vm.colors?.inkFor(colorsOf(theme).map(painted).map((c) => window.__vm.colors.hslToRgb(c.hue, c.sat, c.light)));
     const fg = ink?.fg || fgFor(theme.light);
     style.setProperty("--vm-fg", fg);
@@ -65,6 +72,16 @@
     style.setProperty("--vm-fav-active-opacity", pale ? "64%" : theme.light >= 87 ? "30%" : "24%");
     style.setProperty("--vm-grain", String(theme.grain / 100 * 0.35));
     style.setProperty("--vm-noise", noise);
+  };
+
+  // Between spaces the color crossfades (vivarc.css); edits in the space editor stay instant.
+  let fading = 0;
+  const fade = () => {
+    const browser = document.querySelector("#browser");
+    if (!browser || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    browser.classList.toggle("vm-space-fading", true);
+    clearTimeout(fading);
+    fading = setTimeout(() => browser.classList.toggle("vm-space-fading", false), 500);
   };
 
   const save = () => {
@@ -322,11 +339,13 @@
   const selectSpace = (id) => {
     if (id === activeSpace) return;
     close();
+    const switching = activeSpace !== null && activeSpace !== id;
     activeSpace = id;
     const current = ++revision;
     pending = Promise.all([store.get(keyFor(id), null), store.get("theme", null)]).then(([saved, legacy]) => {
       if (current !== revision) return;
       theme = { ...DEFAULT, ...(saved || legacy || {}) };
+      if (switching) fade();
       apply();
     });
   };

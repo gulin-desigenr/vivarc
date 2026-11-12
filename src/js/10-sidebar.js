@@ -17,22 +17,46 @@
   const spacesOf = window.__vm.workspaces;
   let panel = null;
   let renderedSpace = null;
-  let spaceAnimations = [];
+  // Like Arc, switching spaces slides the space's content (its name, pinned and tabs) sideways while the
+  // favorites above stay put: the old page leaves on one side as the new one comes in from the other, in the
+  // order of the space bar. Only the sidebar moves; Vivaldi shows the new page at once.
+  const SPACE_SLIDE = { duration: 460, easing: "cubic-bezier(0.16, 1, 0.3, 1)" };
+  let slideIn = null;
+  let slideOut = null;
 
-  // Animate the existing surfaces, not the tabs themselves: Vivaldi changes the page immediately.
-  const animateSpaceChange = () => {
-    spaceAnimations.forEach((animation) => animation.cancel());
-    spaceAnimations = [];
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const page = document.querySelector("#webpage-stack");
-    if (panel?.animate) spaceAnimations.push(panel.animate(
-      [{ opacity: 0.72, transform: "translateY(4px)" }, { opacity: 1, transform: "translateY(0)" }],
-      { duration: 220, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
-    ));
-    if (page?.animate) spaceAnimations.push(page.animate(
-      [{ opacity: 0.9 }, { opacity: 1 }],
-      { duration: 180, easing: "ease-out" }
-    ));
+  const spaceOrder = (id) => spaceItems().findIndex((item) => item.id === id);
+
+  // `old` is the previous space's scroll body, already detached by the render that replaced it.
+  const animateSpaceChange = (from, to, old, oldBox, oldScroll) => {
+    slideOut?.effect?.target?.remove();
+    slideOut?.cancel();
+    slideOut = null;
+    const body = panel.querySelector(".vm-scroll");
+    if (!body?.animate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { slideIn = null; return; }
+    const a = spaceOrder(from);
+    const b = spaceOrder(to);
+    const sign = a < 0 || b < 0 || b > a ? 1 : -1;
+    const width = panel.clientWidth;
+    slideIn = body.animate([{ transform: `translateX(${sign * width}px)` }, { transform: "translateX(0)" }], SPACE_SLIDE);
+    if (!old || !oldBox) return;
+    Object.assign(old.style, {
+      position: "absolute", left: `${oldBox.left}px`, top: `${oldBox.top}px`, width: `${oldBox.width}px`,
+      height: `${oldBox.height}px`, pointerEvents: "none",
+    });
+    old.classList.add("vm-leaving");
+    old.inert = true;
+    panel.append(old);
+    old.scrollTop = oldScroll;
+    slideOut = old.animate([{ transform: "translateX(0)" }, { transform: `translateX(${-sign * width}px)` }], SPACE_SLIDE);
+    slideOut.finished.then(() => old.remove(), () => {});
+  };
+
+  // A render during the slide (tabs and bookmarks arrive in several steps) carries the slide on to its new body.
+  const keepSliding = (body) => {
+    if (!slideIn || slideIn.playState !== "running") { slideIn = null; return; }
+    const next = body.animate(slideIn.effect.getKeyframes(), SPACE_SLIDE);
+    next.startTime = slideIn.startTime;
+    slideIn = next;
   };
 
   const ICON_CLOSED =
@@ -1482,7 +1506,9 @@
 
   const render = () => {
     if (!panel) return;
-    const scroll = panel.querySelector(".vm-scroll")?.scrollTop ?? 0;
+    // While a switch is in flight Vivaldi first empties the old space; keep it on screen so it is what slides out.
+    if (window.__vm.switchingSpace && state.active === renderedSpace) return;
+    const scroll = panel.querySelector(".vm-scroll:not(.vm-leaving)")?.scrollTop ?? 0;
     const body = el("div", "vm-scroll");
     const favLeaves = state.favs ? state.favs.children.filter((c) => !c.children) : [];
     let grid = null;
@@ -1556,12 +1582,20 @@
     ];
     entries.sort((a, b) => b.index - a.index).forEach((entry) => body.append(entry.node()));
 
-    panel.replaceChildren(...(grid ? [grid] : []), body);
+    const switching = renderedSpace !== null && renderedSpace !== state.active;
+    const previous = switching ? panel.querySelector(".vm-scroll:not(.vm-leaving)") : null;
+    const box = previous && { left: previous.offsetLeft, top: previous.offsetTop, width: previous.offsetWidth, height: previous.offsetHeight };
+    const leaving = slideOut?.playState === "running" ? slideOut.effect.target : null;
+    const leavingScroll = leaving?.scrollTop ?? 0;
+    panel.replaceChildren(...(grid ? [grid] : []), body, ...(leaving ? [leaving] : []));
+    if (leaving) leaving.scrollTop = leavingScroll;
     fitFavs();
     placeSpaceBar(spaceBar());
-    body.scrollTop = scroll;
+    // Each space opens at its top, like Arc; a render within the same space keeps the scroll.
+    body.scrollTop = switching ? 0 : scroll;
     fitHeight();
-    if (renderedSpace !== null && renderedSpace !== state.active) animateSpaceChange();
+    if (switching) animateSpaceChange(renderedSpace, state.active, previous, box, scroll);
+    else keepSliding(body);
     renderedSpace = state.active;
   };
 
