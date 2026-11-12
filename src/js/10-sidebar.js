@@ -586,7 +586,7 @@
 
   const pinnedLink = (node, depth) => {
     const row = el("div", "vm-row vm-link");
-    row.style.paddingLeft = `${8 + depth * 20}px`;
+    row.style.paddingLeft = `calc(var(--vm-row-pad) + ${depth} * var(--vm-row-indent))`;
     const tab = boundTab(node);
     const away = isAway(tab, node);
     row.title = away ? `${node.title || node.url}\n${tab.url}` : node.url;
@@ -633,7 +633,7 @@
     if (!node.children) return pinnedLink(node, depth);
     const wrap = el("div", "vm-folder");
     const head = el("div", "vm-row vm-folder-head");
-    head.style.paddingLeft = `${8 + depth * 20}px`;
+    head.style.paddingLeft = `calc(var(--vm-row-pad) + ${depth} * var(--vm-row-indent))`;
     const glyph = el("span", "vm-glyph");
     const title = el("span", "vm-title", node.title || "Untitled");
     head.append(glyph, title);
@@ -981,7 +981,7 @@
   const tabRow = (tab) => {
     const row = el("div", "vm-row vm-tab");
     row.dataset.tabId = String(tab.id);
-    row.style.paddingLeft = "8px";
+    row.style.paddingLeft = "var(--vm-row-pad)";
     if (tab.active) row.classList.add("active");
     if (selected.has(tab.id)) row.classList.add("vm-selected");
     if (tab.discarded) row.classList.add("discarded");
@@ -1567,7 +1567,7 @@
     wireDrop(divider, { accept: isBookmark, onDrop: (_zone, data) => unpin(data) });
     body.append(divider);
     const fresh = el("div", "vm-row vm-newtab");
-    fresh.style.paddingLeft = "8px";
+    fresh.style.paddingLeft = "var(--vm-row-pad)";
     fresh.append(el("span", "vm-plus", "+"), el("span", "vm-title", "New Tab"));
     fresh.addEventListener("click", () => window.dispatchEvent(new CustomEvent("vm-open-command-bar")));
     // A stacked tab dropped on "New Tab" leaves its stack (a pinned link dropped there is unpinned, as before).

@@ -66,8 +66,9 @@
   width: calc(100% - 16px);
   min-width: 0;
   max-width: none;
-  height: 32px;
-  margin: 4px 8px 2px;
+  /* Arc's search field is 36px tall, like its rows' rhythm. */
+  height: 36px;
+  margin: 4px 8px 4px;
   border: 0;
   border-radius: var(--vm-r-md);
   background: var(--vm-tile);
@@ -160,7 +161,13 @@
   box-sizing: border-box;
   overflow: hidden;
   padding: 0 8px 6px;
-  /* Like Arc and Dia: 13px system text, antialiased, tabs and folders at the same weight, softened ink. */
+  /* Rows measured on Arc (1x display): 14px text in rows 41px apart (38px row and 3px between rows), the icon 10px
+     from the row's edge and 10px from the text, bold folders, 20px per nesting level. */
+  --vm-row-h: 38px;
+  --vm-row-gap: 3px;
+  --vm-row-pad: 10px;
+  --vm-row-indent: 20px;
+  --vm-row-fs: 14px;
   font-size: var(--vm-fs-3);
   user-select: none;
 }
@@ -275,18 +282,20 @@
 #browser.vm-on .vm-space-bar .vm-space-pill.vm-dragging::before { background-color: var(--vm-fg, var(--colorFg)); transform: scale(1.6); }
 #browser.vm-on .vm-space-bar .vm-space-pill.vm-dragging.vm-has-mark { opacity: 1; transform: scale(1.35) !important; }
 #vm-panel .vm-space {
-  padding: 10px 10px 4px;
-  font-size: var(--vm-fs-2);
-  font-weight: 500;
+  padding: 12px 10px 8px;
+  font-size: var(--vm-fs-3);
+  font-weight: 600;
   opacity: 0.5;
 }
 #vm-panel .vm-row {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 36px;
+  gap: 10px;
+  min-height: var(--vm-row-h);
+  margin-bottom: var(--vm-row-gap);
   padding-right: 6px;
+  font-size: var(--vm-row-fs);
   border-radius: var(--vm-r-lg);
   cursor: pointer;
   white-space: nowrap;
@@ -296,7 +305,7 @@
 #vm-panel .vm-row { color: color-mix(in srgb, var(--vm-ink) 88%, transparent); }
 #vm-panel .vm-row.active { background-color: var(--vm-pill); box-shadow: var(--vm-pill-shadow); color: var(--vm-ink); }
 #vm-panel .vm-row.discarded { opacity: 0.6; }
-#vm-panel .vm-folder-head { font-weight: 500; }
+#vm-panel .vm-folder-head { font-weight: 600; }
 /* Open tabs inside a closed folder: a small count at the end of the folder's row (hidden while it is open). */
 #vm-panel .vm-folder-open-count {
   flex: none;
@@ -319,13 +328,13 @@
 #browser.vm-on:is(.theme-dark:not(.vm-themed), .vm-themed.vm-light-ink) #vm-panel :is(.vm-row, .vm-fav).vm-ico-dark .vm-ico img { filter: invert(1); }
 /* Tab stacks: the stack's row is its title (it folds and unfolds, it is not a tab), with a stack glyph, the count
    and an arrow. Its tabs are all alike under it, indented along a guide line: none of them stands as the parent. */
-#vm-panel .vm-stack-head { padding-left: 8px; }
+#vm-panel .vm-stack-head { padding-left: var(--vm-row-pad); }
 #vm-panel .vm-stack-glyph svg { width: 16px; height: 16px; }
 #vm-panel .vm-stack-count { flex: none; margin-left: auto; font-size: var(--vm-fs-1); font-weight: 500; opacity: 0.5; font-variant-numeric: tabular-nums; }
 #vm-panel .vm-stack-chevron { flex: none; display: flex; margin: 0 4px 0 2px; opacity: 0.55; transition: transform 160ms; }
 #vm-panel .vm-tab-stack.open > .vm-stack-head .vm-stack-chevron { transform: rotate(90deg); }
 #vm-panel .vm-stack-content { position: relative; }
-#vm-panel .vm-stack-content > .vm-tab { padding-left: 30px !important; }
+#vm-panel .vm-stack-content > .vm-tab { padding-left: calc(var(--vm-row-pad) + var(--vm-row-indent)) !important; }
 #vm-panel .vm-tab-stack.open { margin: 2px 0; border-radius: var(--vm-r-lg); background-color: var(--vm-tile); box-shadow: inset 0 0 0 1px var(--vm-tile-line); }
 #vm-panel .vm-tab-stack.open > .vm-stack-head { font-weight: 600; }
 #vm-panel .vm-tab-stack.open > .vm-stack-head:hover { background-color: transparent; }
@@ -333,8 +342,11 @@
 /* Selected tabs (Cmd+click, Shift+click): an outlined, lightly filled row. */
 #vm-panel .vm-tab.vm-selected { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--colorHighlightBg, #5d7aee) 70%, transparent); background-color: color-mix(in srgb, var(--colorHighlightBg, #5d7aee) 14%, transparent); }
 
-#vm-panel .vm-glyph { display: flex; flex: none; opacity: 0.7; }
+#vm-panel .vm-glyph { display: flex; flex: none; opacity: 0.8; }
 #vm-panel .vm-glyph svg { width: 16px; height: 16px; }
+/* Arc's folder icon is a little larger than a favicon; the text still starts where the tabs' does. */
+#vm-panel .vm-folder-head > .vm-glyph { margin: 0 -1px; }
+#vm-panel .vm-folder-head > .vm-glyph svg { width: 18px; height: 18px; }
 #vm-panel .vm-title { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
 #vm-panel .vm-folder-body {
   display: grid;
@@ -389,8 +401,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 26px;
-  margin: 4px 10px 2px;
+  min-height: 22px;
+  margin: 0 10px var(--vm-row-gap);
   font-size: var(--vm-fs-2);
 }
 #vm-panel .vm-divider > :is(.vm-clear, .vm-tidy) { position: relative; z-index: 1; background-color: transparent; }
@@ -412,7 +424,7 @@
 #vm-panel .vm-tidy { order: 1; margin-right: -4px; }
 #vm-panel .vm-clear:hover { opacity: 1; background-color: var(--vm-press); }
 #vm-panel .vm-newtab { opacity: 0.55; }
-#vm-panel .vm-plus { display: flex; justify-content: center; width: 18px; font-size: var(--vm-fs-5); line-height: 1; }
+#vm-panel .vm-plus { display: flex; flex: none; justify-content: center; width: 16px; font-size: var(--vm-fs-5); line-height: 1; }
 
 .vm-menu {
   /* A macOS menu: the command bar's surface, compact rows, the accent colour under the pointer. */
