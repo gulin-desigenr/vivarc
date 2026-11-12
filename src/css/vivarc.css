@@ -147,8 +147,9 @@
   --LowlightColor: color-mix(in srgb, var(--vm-address-fg) 72%, transparent) !important;
 }
 
-/* Thin, Arc-like text in the whole browser UI (Vivaldi's own and Vivarc's); web pages render on their own. */
-#browser.vm-on, body:has(> #browser.vm-on) > :not(#browser) { -webkit-font-smoothing: antialiased; }
+/* Arc's text is drawn by macOS with font smoothing, which thickens the strokes a little; "antialiased" (used here
+   before) drew it about a tenth thinner and lighter than Arc's. Measured on the same title at the same size. */
+#browser.vm-on, body:has(> #browser.vm-on) > :not(#browser) { -webkit-font-smoothing: auto; }
 
 #vm-panel {
   position: relative;
@@ -302,9 +303,10 @@
   overflow: hidden;
 }
 #vm-panel .vm-row:hover { background-color: var(--vm-hover); }
-#vm-panel .vm-row { color: color-mix(in srgb, var(--vm-ink) 88%, transparent); }
+#vm-panel .vm-row { color: var(--vm-ink); }
 #vm-panel .vm-row.active { background-color: var(--vm-pill); box-shadow: var(--vm-pill-shadow); color: var(--vm-ink); }
-#vm-panel .vm-row.discarded { opacity: 0.6; }
+/* A sleeping (discarded) tab keeps its text like the others, as in Arc; only its icon fades. */
+#vm-panel .vm-row.discarded .vm-ico { opacity: 0.6; }
 #vm-panel .vm-folder-head { font-weight: 600; }
 /* Open tabs inside a closed folder: a small count at the end of the folder's row (hidden while it is open). */
 #vm-panel .vm-folder-open-count {
@@ -633,11 +635,9 @@
 #browser.vm-themed:not(.vm-glass) #tabs-tabbar-container { background-image: none !important; }
 /* Text on a space's tint uses the computed ink at full strength (--vm-fg, at least 7:1 where the tint allows) and
    --vm-fg-muted for secondary text (4.5:1), not opacity, which falls below readable contrast on mid tones. */
-#browser.vm-on.vm-themed #vm-panel .vm-row { color: color-mix(in srgb, var(--vm-fg) 88%, transparent); }
+#browser.vm-on.vm-themed #vm-panel .vm-row { color: var(--vm-fg); }
 #browser.vm-on.vm-themed #vm-panel .vm-row.active { color: var(--vm-fg); }
 #browser.vm-on.vm-themed #vm-panel :is(.vm-space, .vm-newtab, .vm-divider) { color: var(--vm-fg-muted); opacity: 1; }
-#browser.vm-on.vm-themed #vm-panel .vm-row.discarded { color: var(--vm-fg-muted); opacity: 1; }
-#browser.vm-on.vm-themed #vm-panel .vm-row.discarded .vm-ico { opacity: 0.6; }
 #browser.vm-on.vm-themed #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField .UrlFragment-Wrapper { --LowlightColor: var(--vm-fg-muted) !important; }
 #browser.vm-on.vm-themed #tabs-tabbar-container .UrlBar-AddressField input::placeholder { color: var(--vm-fg-muted); opacity: 1; }
 #browser.vm-on.vm-themed .toolbar-tabbar-after .vm-space-pill:not(.active, :hover)::before { background-color: var(--vm-fg-muted); opacity: 0.7; }
