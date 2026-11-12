@@ -469,10 +469,10 @@
   z-index: 100002;
   display: flex;
   justify-content: center;
-  /* Hung from a fixed line, like Arc's and Spotlight: the field stays where it opened and the results grow down.
-     (Centred, every change in the number of results moved the field up or down.) */
+  /* Hung from a fixed line: the field stays where it opened and the results grow down. */
   align-items: flex-start;
-  padding: max(16px, 18vh) 16px 16px;
+  /* Arc's card is centred in the window (with its five results); the field is held on that line while you type. */
+  padding: max(16px, calc(50vh - 163px)) 16px 16px;
 }
 #vm-cmd .vm-cmd-box {
   width: min(740px, 92vw);
@@ -1066,7 +1066,6 @@
 #browser.vm-on.vm-glass #vm-panel .vm-row.active { background: var(--vm-lozenge); box-shadow: var(--vm-lozenge-rim); }
 #browser.vm-on.vm-glass .vm-space-chip { box-shadow: var(--vm-lozenge-rim); }
 #browser.vm-on.vm-glass .vm-space-chip.active { box-shadow: var(--vm-lozenge-rim), 0 0 0 2px var(--colorHighlightBg, #7b8cff); }
-#browser.vm-on.vm-glass #vm-cmd .vm-cmd-row.sel { background: var(--vm-lozenge-strong), var(--vm-sel); box-shadow: var(--vm-lozenge-rim); }
 #browser.vm-on.vm-glass :is(.vm-menu-item:hover, .vm-theme-mode) { background: var(--vm-lozenge); box-shadow: var(--vm-lozenge-rim); }
 
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
@@ -1141,10 +1140,13 @@
   --cmd-selected: #344a64;
   --cmd-shadow: 0 20px 60px rgba(0, 0, 0, .55), 0 2px 8px rgba(0, 0, 0, .3);
 }
+/* Measured on Arc's command bar (1x display): a 764px card centred in the window, a 64px field with 18px text,
+   five results 50px apart (46px rows, 4px between), 13px medium titles, icons in a 24px column lined up with the
+   field's glyph, and the selected row in the space's color. Fixed sizes, as in Arc, whatever the window. */
 #browser.vm-on #vm-cmd .vm-cmd-box,
 #browser.vm-on.vm-glass #vm-cmd .vm-cmd-box {
-  width: min(clamp(640px, calc(320px + min(16.666vw, 29.63vh)), 768px), calc(100vw - 32px));
-  max-height: min(76vh, clamp(680px, calc(340px + min(17.709vw, 31.482vh)), 816px));
+  width: min(764px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
   display: flex;
   flex-direction: column;
   border-radius: var(--vm-r-xl);
@@ -1156,58 +1158,81 @@
 }
 #browser.vm-on #vm-cmd .vm-cmd-head {
   flex: none;
-  gap: clamp(10px, calc(5px + min(0.261vw, 0.463vh)), 12px);
-  padding: clamp(10px, calc(5px + min(0.261vw, 0.463vh)), 12px) clamp(14px, calc(7px + min(0.364vw, 0.648vh)), 16.8px);
+  height: 64px;
+  box-sizing: border-box;
+  gap: 8px;
+  padding: 0 18px 0 19px;
   border-bottom: 1px solid var(--cmd-line);
 }
-#browser.vm-on #vm-cmd .vm-cmd-head > .vm-cmd-glyph { color: var(--cmd-muted); }
-#browser.vm-on #vm-cmd .vm-cmd-head > .vm-cmd-glyph svg { width: clamp(20px, calc(10px + min(0.521vw, 0.926vh)), 24px); height: clamp(20px, calc(10px + min(0.521vw, 0.926vh)), 24px); }
+#browser.vm-on #vm-cmd .vm-cmd-head > .vm-cmd-glyph { display: flex; width: 24px; height: 24px; align-items: center; justify-content: center; color: var(--cmd-muted); opacity: 1; }
+#browser.vm-on #vm-cmd .vm-cmd-head > .vm-cmd-glyph svg { width: 16px; height: 16px; }
+#browser.vm-on #vm-cmd .vm-cmd-head > .vm-cmd-glyph :is(.vm-ico, img) { display: flex; width: 16px; height: 16px; object-fit: contain; }
+#browser.vm-on #vm-cmd .vm-cmd-head > .vm-cmd-glyph .vm-ico img { width: 100%; height: 100%; object-fit: contain; }
+#browser.vm-on #vm-cmd .vm-cmd-head > .vm-cmd-glyph .vm-letter { display: flex; width: 16px; height: 16px; align-items: center; justify-content: center; border-radius: var(--vm-r-xs); color: #fff; font-size: 10px; font-weight: 600; }
 #browser.vm-on #vm-cmd input {
-  height: clamp(32px, calc(16px + min(0.834vw, 1.482vh)), 38.4px);
-  padding: 0 9px;
-  border: 1px solid transparent;
-  border-radius: var(--vm-r-md);
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
   color: var(--cmd-text);
-  font-size: clamp(14px, calc(7px + min(0.364vw, 0.648vh)), 16.8px);
+  font-size: 18px;
   outline: none;
 }
 #browser.vm-on #vm-cmd input:focus { border-color: transparent; box-shadow: none; }
 #browser.vm-on #vm-cmd input::placeholder { color: var(--cmd-muted); opacity: 1; }
-#browser.vm-on #vm-cmd .vm-cmd-chip { padding: 4px 10px; font-size: clamp(12px, calc(6px + min(0.312vw, 0.555vh)), 14.4px); }
-#browser.vm-on #vm-cmd .vm-cmd-escape { color: var(--cmd-muted); font-size: clamp(11px, calc(5.5px + min(0.286vw, 0.509vh)), 13.2px); }
-#browser.vm-on #vm-cmd .vm-cmd-list { flex: 0 1 auto; min-height: 0; max-height: 58vh; box-sizing: border-box; overflow-y: auto; padding: 8px; scrollbar-width: thin; }
-#browser.vm-on #vm-cmd .vm-cmd-divider { height: 1px; margin: 6px 10px; background: var(--cmd-line); }
-#browser.vm-on #vm-cmd .vm-cmd-section { padding: 10px 10px 5px; color: var(--cmd-muted); font-size: clamp(10.5px, calc(5.25px + min(0.274vw, 0.486vh)), 12.6px); font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+#browser.vm-on #vm-cmd .vm-cmd-chip { padding: 4px 10px; font-size: 13px; }
+/* "Search YouTube  Tab" at the end of the field, like Arc's, when what is typed is a site you can search. */
+#browser.vm-on #vm-cmd .vm-cmd-site { display: none; flex: none; align-items: center; gap: 8px; color: var(--cmd-muted); font-size: 13px; font-weight: 500; white-space: nowrap; }
+#browser.vm-on #vm-cmd .vm-cmd-site.on { display: flex; }
+#browser.vm-on #vm-cmd .vm-cmd-escape { color: var(--cmd-muted); font-size: 12px; }
+#browser.vm-on #vm-cmd .vm-cmd-list { flex: 0 1 auto; min-height: 0; max-height: 58vh; box-sizing: border-box; overflow-y: auto; padding: 6px 9px 10px; scrollbar-width: thin; }
 #browser.vm-on #vm-cmd .vm-cmd-row {
-  min-height: clamp(38px, calc(19px + min(0.99vw, 1.76vh)), 45.6px);
-  height: auto;
-  gap: clamp(11px, calc(5.5px + min(0.286vw, 0.509vh)), 13.2px);
-  padding: clamp(6px, calc(3px + min(0.157vw, 0.278vh)), 7.2px) clamp(10px, calc(5px + min(0.261vw, 0.463vh)), 12px);
+  min-height: 46px;
+  height: 46px;
+  box-sizing: border-box;
+  gap: 8px;
+  margin-bottom: 4px;
+  padding: 0 12px 0 10px;
   border-radius: var(--vm-r-md);
   color: var(--cmd-text);
-  font-size: clamp(13px, calc(6.5px + min(0.339vw, 0.602vh)), 15.6px);
+  font-size: 13px;
 }
+#browser.vm-on #vm-cmd .vm-cmd-row:last-child { margin-bottom: 0; }
 #browser.vm-on #vm-cmd .vm-cmd-row.sel,
-#browser.vm-on.vm-glass #vm-cmd .vm-cmd-row.sel { background: var(--cmd-selected); box-shadow: none; }
-#browser.vm-on #vm-cmd .vm-cmd-ico { width: clamp(22px, calc(11px + min(0.573vw, 1.018vh)), 26.4px); height: clamp(22px, calc(11px + min(0.573vw, 1.018vh)), 26.4px); }
-#browser.vm-on #vm-cmd .vm-cmd-ico svg { width: 80%; height: 80%; }
-#browser.vm-on #vm-cmd .vm-cmd-letter { font-size: clamp(13px, calc(6.5px + min(0.339vw, 0.602vh)), 15.6px); }
-#browser.vm-on #vm-cmd .vm-cmd-content { display: flex; flex: 1 1 auto; min-width: 0; align-items: baseline; gap: 8px; }
+#browser.vm-on.vm-glass #vm-cmd .vm-cmd-row.sel {
+  background: var(--vm-space-select, var(--colorHighlightBg, #5d7aee));
+  color: #fff;
+  box-shadow: none;
+}
+#browser.vm-on #vm-cmd .vm-cmd-ico { width: 24px; height: 24px; border-radius: var(--vm-r-sm); }
+#browser.vm-on #vm-cmd .vm-cmd-ico :is(.vm-ico, img) { display: flex; width: 16px; height: 16px; align-items: center; justify-content: center; }
+#browser.vm-on #vm-cmd .vm-cmd-ico .vm-ico img { width: 100%; height: 100%; object-fit: contain; }
+#browser.vm-on #vm-cmd .vm-cmd-ico .vm-letter { display: flex; width: 16px; height: 16px; align-items: center; justify-content: center; border-radius: var(--vm-r-xs); color: #fff; font-weight: 600; font-size: 10px; }
+/* A command's icon sits on a small tile; a page's favicon stands alone. On the selected row every icon gets a white tile. */
+#browser.vm-on #vm-cmd .vm-cmd-ico.vm-cmd-glyph { background: color-mix(in srgb, var(--cmd-text) 6%, transparent); box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--cmd-text) 12%, transparent); color: var(--cmd-muted); }
+#browser.vm-on #vm-cmd .vm-cmd-ico.vm-cmd-glyph svg { width: 16px; height: 16px; }
+#browser.vm-on #vm-cmd .vm-cmd-ico.vm-cmd-plain { background: none; box-shadow: none; }
+#browser.vm-on #vm-cmd .vm-cmd-row.sel .vm-cmd-ico { background: #fff; box-shadow: 0 1px 1px rgb(0 0 0 / 0.08); color: #6b6b6b; }
+#browser.vm-on #vm-cmd .vm-cmd-row.sel .vm-cmd-ico.vm-cmd-plain { background: none; box-shadow: none; color: inherit; }
+#browser.vm-on #vm-cmd .vm-cmd-content { display: flex; flex: 1 1 auto; min-width: 0; align-items: baseline; gap: 0; }
 #browser.vm-on #vm-cmd .vm-cmd-content > .vm-cmd-title { flex: 0 1 auto; min-width: 0; white-space: nowrap; }
 #browser.vm-on #vm-cmd .vm-cmd-content > .vm-cmd-sub { flex: 0 100 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#browser.vm-on #vm-cmd .vm-cmd-ico .vm-ico { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; }
-#browser.vm-on #vm-cmd .vm-cmd-ico .vm-ico img { width: 100%; height: 100%; object-fit: contain; }
-#browser.vm-on #vm-cmd .vm-cmd-ico .vm-letter { display: flex; width: 100%; height: 100%; align-items: center; justify-content: center; border-radius: var(--vm-r-sm); color: #fff; font-weight: 600; font-size: clamp(12px, calc(6px + min(0.312vw, 0.555vh)), 14.4px); }
-#browser.vm-on #vm-cmd .vm-cmd-title { font-weight: 400; letter-spacing: -0.003em; }
+#browser.vm-on #vm-cmd .vm-cmd-title { font-weight: 500; letter-spacing: 0; }
 #browser.vm-on #vm-cmd .vm-cmd-row.sel .vm-cmd-title { font-weight: 500; }
-#browser.vm-on #vm-cmd .vm-cmd-sub { flex: none; color: var(--cmd-muted); font-size: clamp(12px, calc(6px + min(0.312vw, 0.555vh)), 14.4px); font-weight: 400; }
-#browser.vm-on #vm-cmd .vm-cmd-hint { display: none; flex: none; gap: 6px; color: var(--cmd-muted); font-size: clamp(11px, calc(5.5px + min(0.286vw, 0.509vh)), 13.2px); font-weight: 400; }
-#browser.vm-on #vm-cmd .vm-cmd-row.sel .vm-cmd-hint { display: flex; }
-#browser.vm-on #vm-cmd .vm-cmd-arrow { width: 24px; height: 24px; background: transparent; color: var(--cmd-muted); }
-#browser.vm-on #vm-cmd .vm-cmd-footer { display: flex; flex: none; gap: 16px; align-items: center; padding: 8px 16px; border-top: 1px solid var(--cmd-line); color: var(--cmd-muted); font-size: clamp(11px, calc(5.5px + min(0.286vw, 0.509vh)), 13.2px); }
-#browser.vm-on #vm-cmd .vm-cmd-empty { padding: 18px 12px; color: var(--cmd-muted); font-size: clamp(13px, calc(6.5px + min(0.339vw, 0.602vh)), 15.6px); }
+#browser.vm-on #vm-cmd .vm-cmd-sub { flex: none; color: var(--cmd-muted); font-size: 13px; font-weight: 500; opacity: 0.75; }
+#browser.vm-on #vm-cmd .vm-cmd-sub::before { content: "\00a0\2014\00a0"; }
+#browser.vm-on #vm-cmd .vm-cmd-row.sel .vm-cmd-sub { color: inherit; opacity: 0.7; }
+#browser.vm-on #vm-cmd .vm-cmd-hint { display: flex; flex: none; align-items: center; gap: 8px; margin-left: auto; color: var(--cmd-muted); font-size: 13px; font-weight: 500; opacity: 0.8; }
+#browser.vm-on #vm-cmd .vm-cmd-row.sel .vm-cmd-hint { color: inherit; opacity: 1; }
+#browser.vm-on #vm-cmd .vm-cmd-arrow { display: flex; width: 24px; height: 24px; align-items: center; justify-content: center; border-radius: var(--vm-r-sm); background: color-mix(in srgb, var(--cmd-text) 7%, transparent); color: var(--cmd-muted); }
+#browser.vm-on #vm-cmd .vm-cmd-arrow svg { width: 14px; height: 14px; }
+#browser.vm-on #vm-cmd .vm-cmd-row.sel .vm-cmd-arrow { background: #fff; color: #4a4a4a; }
+#browser.vm-on #vm-cmd .vm-cmd-footer { display: flex; flex: none; gap: 16px; align-items: center; padding: 8px 16px; border-top: 1px solid var(--cmd-line); color: var(--cmd-muted); font-size: 12px; }
+#browser.vm-on #vm-cmd .vm-cmd-empty { padding: 14px 12px; color: var(--cmd-muted); font-size: 13px; }
 #browser.vm-on #vm-cmd .vm-cmd-shortcut { display: flex; align-items: center; gap: 5px; }
-#browser.vm-on #vm-cmd kbd { padding: 1px 5px; border: 1px solid var(--cmd-line); border-radius: var(--vm-r-xs); color: var(--cmd-muted); font: inherit; }
+/* A command's shortcut, like Arc's: a small grey key cap (white on the selected row). */
+#browser.vm-on #vm-cmd kbd { display: inline-flex; align-items: center; gap: 3px; min-width: 14px; justify-content: center; padding: 2px 6px; border: 0; border-radius: var(--vm-r-xs); background: color-mix(in srgb, var(--cmd-text) 7%, transparent); color: var(--cmd-muted); font: 500 12px/16px -apple-system, system-ui, sans-serif; }
+#browser.vm-on #vm-cmd .vm-cmd-row.sel kbd { background: #fff; color: #4a4a4a; }
 
 /* Tab Cycler (Ctrl+Tab, js/16-tab-switcher.js): the command bar's card instead of Vivaldi's grey box. In the list
    layout, a rounded preview with the selected tab's title and site under it, and quiet rows with the command bar's
@@ -1222,13 +1247,9 @@
   animation: vm-ts-in 140ms cubic-bezier(.2, .8, .2, 1);
 }
 @keyframes vm-ts-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
-/* The command bar opens (Cmd+T, Cmd+L, a new tab) with a short drop and fade, like Arc's. */
-#browser.vm-on #vm-cmd .vm-cmd-box { animation: vm-cmd-in 190ms cubic-bezier(.2, .8, .2, 1); transform-origin: 50% 20%; }
+/* The command bar appears and goes at once, like Arc's (measured: no fade either way). The settings window keeps
+   this entrance. */
 @keyframes vm-cmd-in { from { opacity: 0; transform: translateY(-10px) scale(.97); } to { opacity: 1; transform: none; } }
-#browser.vm-on #vm-cmd.vm-closing { pointer-events: none; }
-#browser.vm-on #vm-cmd.vm-closing .vm-cmd-box { animation: vm-cmd-out 140ms cubic-bezier(.4, 0, 1, 1) forwards; }
-@keyframes vm-cmd-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-6px) scale(.98); } }
-@media (prefers-reduced-motion: reduce) { #browser.vm-on #vm-cmd .vm-cmd-box { animation: none; } }
 #browser.vm-on .tabswitcher { background: transparent; }
 #browser.vm-on .tabswitcher.list {
   grid-template-columns: 300px minmax(0, 1fr);

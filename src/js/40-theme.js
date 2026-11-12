@@ -41,7 +41,7 @@
     if (!theme.on) {
       browser.classList.toggle("vm-gradient", false);
       browser.classList.toggle("vm-light-ink", false);
-      for (const k of ["--vm-tint", "--vm-tint-image", "--vm-fg", "--vm-fg-muted", "--vm-space-solid", "--vm-space-solid-fg", "--vm-grain", "--vm-noise", "--vm-fav-color", "--vm-fav-opacity", "--vm-fav-hover-opacity", "--vm-fav-active-opacity", "--vm-stop-1", "--vm-stop-2", "--vm-stop-3"]) style.removeProperty(k);
+      for (const k of ["--vm-tint", "--vm-tint-image", "--vm-fg", "--vm-fg-muted", "--vm-space-solid", "--vm-space-solid-fg", "--vm-grain", "--vm-noise", "--vm-fav-color", "--vm-fav-opacity", "--vm-fav-hover-opacity", "--vm-fav-active-opacity", "--vm-stop-1", "--vm-stop-2", "--vm-stop-3", "--vm-space-select"]) style.removeProperty(k);
       return;
     }
     style.setProperty("--vm-tint", hsl(theme));
@@ -62,6 +62,9 @@
     const fgRgb = window.__vm.colors?.parse(fg);
     browser.classList.toggle("vm-light-ink", fgRgb ? window.__vm.colors.luminance(fgRgb) > 0.4 : theme.light <= 58);
     style.setProperty("--vm-fg-muted", ink?.muted || fgFor(theme.light));
+    // The command bar's selected row, like Arc's: the space's own color, as muted as the sidebar's, at mid lightness.
+    const base = painted(colorsOf(theme)[0]);
+    style.setProperty("--vm-space-select", `hsl(${base.hue} ${base.sat}% 62%)`);
     const solid = window.__vm.colors?.spaceSolid(theme);
     if (solid) { style.setProperty("--vm-space-solid", solid.bg); style.setProperty("--vm-space-solid-fg", solid.fg); }
     // Pale colored spaces get a lighter tile; near-white spaces need a dark tile for separation.

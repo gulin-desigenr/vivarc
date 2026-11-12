@@ -210,6 +210,80 @@
   ];
   const ACTION_SVG =
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg>';
+  // Each command has its own icon and, when Vivaldi has one, its keyboard shortcut (read from Vivaldi's own
+  // shortcut settings, so a shortcut you changed shows as you set it), like Arc's command bar.
+  const svg = (paths) => `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+  const GLYPHS = {
+    history: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+    bookmark: '<path d="M7 4h10v16l-5-4-5 4z"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M2.5 12h3M18.5 12h3M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/>',
+    plus: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/>',
+    puzzle: '<path d="M10 4a2 2 0 1 1 4 0v2h4v4h-2a2 2 0 1 0 0 4h2v4h-4v-2a2 2 0 1 0-4 0v2H6v-4h2a2 2 0 1 0 0-4H6V6h4z"/>',
+    pin: '<path d="M9 4h6l-1 5 3 3v2H7v-2l3-3zM12 14v6"/>',
+    star: '<path d="m12 4 2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z"/>',
+    link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+    splitV: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 5v14"/>',
+    splitH: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 12h18"/>',
+    unsplit: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m9 10 6 4M15 10l-6 4"/>',
+    duplicate: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+    speaker: '<path d="M4 10v4h4l5 4V6l-5 4z"/><path d="M16.5 9a4 4 0 0 1 0 6"/>',
+    close: '<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/>',
+    move: '<rect x="3" y="5" width="12" height="14" rx="2"/><path d="M15 12h6M18 9l3 3-3 3"/>',
+    spaces: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+    folder: '<path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.4a2 2 0 0 1 1.5.7L12 7.5h6.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/>',
+    pencil: '<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+    undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/>',
+    tidy: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6"/>',
+    archive: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10h14V9M10 13h4"/>',
+    reopen: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+    window: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18"/>',
+    little: '<rect x="6" y="7" width="12" height="10" rx="2"/><path d="M6 10.5h12"/>',
+    private: '<path d="M3 12s3-6 9-6 9 6 9 6-3 6-9 6-9-6-9-6z"/><path d="m4 4 16 16"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17h.01"/>',
+    collapse: '<path d="m7 20 5-5 5 5M7 4l5 5 5-5"/>',
+    expand: '<path d="m7 15 5 5 5-5M7 9l5-5 5 5"/>',
+    upload: '<path d="M12 16V4M7 9l5-5 5 5M5 20h14"/>',
+    save: '<path d="M5 4h11l3 3v13H5z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/>',
+    sliders: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+    palette: '<path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.5-.8 1.5-1.5 0-1.3-1-1.5-1-2.5 0-.8.7-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4-4-7.5-9-7.5z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7" r="1"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    search: '<circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/>',
+    arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  };
+  // label: [icon, Vivaldi command whose shortcut is shown]
+  const ACTION_LOOK = {
+    "View History": ["history", "COMMAND_SHOW_HISTORY"], "View Downloads": ["download", "COMMAND_SHOW_DOWNLOADS_PANEL"],
+    "View Bookmarks": ["bookmark", "COMMAND_SHOW_BOOKMARKS"], "Vivaldi Settings": ["gear", "COMMAND_SHOW_SETTINGS"],
+    "Create New Space": ["plus", "COMMAND_WORKSPACE_CREATE_NEW"], "Manage Extensions": ["puzzle", "COMMAND_SHOW_EXTENSIONS"],
+    "Pin This Tab": ["pin"], "Add This Tab to Favorites": ["star"], "Copy Current URL": ["link", "COMMAND_PAGE_COPY_URL"],
+    "Split View: Side by Side": ["splitV"], "Split View: Top and Bottom": ["splitH"], "Close Split View": ["unsplit", "COMMAND_DISBAND_TILE_GROUP"],
+    "Duplicate Tab": ["duplicate"], "Mute / Unmute Tab": ["speaker"], "Close Tab": ["close", "COMMAND_CLOSE_TAB"],
+    "Move Tab to Space…": ["move"], "Switch to Space…": ["spaces"], "Pin Tab to Folder…": ["folder"], "Rename Tab…": ["pencil"],
+    "Back to Pinned Page": ["undo"], "Tidy Tabs": ["tidy"], "Archive Tab": ["archive"], "View Archived Tabs": ["archive"],
+    "Reopen Closed Tab": ["reopen", "COMMAND_TAB_REOPEN_RECENTLY_CLOSED"], "New Window": ["window", "COMMAND_NEW_WINDOW"],
+    "New Little Vivarc": ["little"], "Open Page in Little Vivarc": ["little"], "New Private Window": ["private", "COMMAND_NEW_PRIVATE_WINDOW"],
+    "Vivarc Guide": ["help"], "Collapse All Folders": ["collapse"], "Expand All Folders": ["expand"],
+    "Export Vivarc Backup": ["upload"], "Back Up Vivarc Now": ["save"], "Restore Vivarc Backup…": ["reopen"],
+    "Vivarc Settings": ["sliders"], "Edit Space": ["palette"],
+  };
+  const glyphOf = (name) => svg(GLYPHS[name] || GLYPHS.tidy);
+  let shortcuts = {};
+  const loadShortcuts = async () => {
+    try { shortcuts = (await vivaldi.prefs.get("vivaldi.actions"))?.value?.[0] || {}; } catch (_) { shortcuts = {}; }
+  };
+  const KEY_NAMES = { meta: "⌘", shift: "⇧", alt: "⌥", ctrl: "⌃", left: "←", right: "→", up: "↑", down: "↓", backspace: "⌫",
+    enter: "↩", esc: "⎋", space: "Space", tab: "⇥", del: "⌦" };
+  // "shift+meta+t" → "⇧⌘T" (the modifiers in macOS order); a shortcut without a modifier is not shown.
+  const keysOf = (command) => {
+    const list = shortcuts[command]?.shortcuts || [];
+    const combo = list.find((k) => /(meta|ctrl|alt)\+/.test(k));
+    if (!combo) return "";
+    const parts = combo.endsWith("++") ? [...combo.slice(0, -2).split("+"), "+"] : combo.split("+");
+    const key = parts.pop();
+    const order = ["ctrl", "alt", "shift", "meta"].filter((m) => parts.includes(m)).map((m) => KEY_NAMES[m]);
+    return order.join("") + (KEY_NAMES[key] || key.toUpperCase());
+  };
 
   // Pickers: a mode where what is typed filters a list of choices (spaces, folders) or names something (rename).
   // pick(text) returns rows { label, sub, run }; Enter runs the selected one and closes the bar.
@@ -267,7 +341,7 @@
   // The command bar's archive view: what is typed searches the archive (11-archive.js); Enter restores.
   const ARCHIVE = { name: "Archived Tabs", archive: true };
   const archivedRow = (entry) => ({ type: "archived", entry, url: entry.url, favicon: entry.favicon, label: entry.title,
-    sub: window.__vm.archive.describe(entry) });
+    sub: String(entry.url || "").replace(/^[a-z][a-z0-9+.-]*:\/\//i, "").replace(/^www\./i, "").replace(/[?#].*$/, "").replace(/\/$/, "") });
 
   let bar = null;
   let input = null;
@@ -279,6 +353,16 @@
   let selected = 0;
   let seq = 0;
   let autoCompleted = false;
+  const LIMIT = 5; // Arc shows five results
+  let completion = null; // the address completed in the field: { typed, shown, url, title, favicon, tab }
+  let siteEngine = null; // the site whose search Tab opens ("Search YouTube  Tab")
+  let siteHint = null;
+  // What was typed, without the completion selected after it.
+  const typed = () => {
+    if (!input) return "";
+    const { value, selectionStart, selectionEnd } = input;
+    return selectionEnd === value.length && selectionStart < selectionEnd ? value.slice(0, selectionStart) : value;
+  };
   let rowsFor = null; // the text the rows on screen were found for: Enter on older rows acts on what is typed now
   let listFloor = 0; // the list never shrinks while you type (it only grows), so the bar keeps still
   const icons = new Map(); // icon nodes kept for the bar's lifetime: a row found again keeps its icon, no reload
@@ -317,20 +401,12 @@
     return span;
   };
 
-  // The bar leaves with a short fade (CSS .vm-closing); it stops taking clicks at once and is removed when the fade
-  // ends, so a bar opened meanwhile is never blocked by it.
-  const leave = (node) => {
-    if (!node) return;
-    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (still || !node.isConnected) { node.remove(); return; }
-    node.classList.add("vm-closing");
-    node.addEventListener("animationend", () => node.remove(), { once: true });
-    setTimeout(() => node.remove(), 250);
-  };
+  // Like Arc's, the bar goes at once.
+  const leave = (node) => node?.remove();
   const close = (removeBlank) => {
     const blank = editing ? null : targetTab; // editing: the target is the page you are on, never closed
     leave(bar);
-    bar = input = list = chipHolder = targetTab = mode = stackHere = null;
+    bar = input = list = chipHolder = targetTab = mode = stackHere = siteHint = completion = siteEngine = null;
     editing = false;
     rows = [];
     rowsFor = null;
@@ -425,43 +501,67 @@
     }
   };
 
+  // What a result shows after its title, in grey after a dash, as Arc does: the address without the scheme and
+  // "www." (and without its query), for a page from history or bookmarks; nothing for an open tab or a command.
+  const shownUrl = (url) => String(url || "").replace(/^[a-z][a-z0-9+.-]*:\/\//i, "").replace(/^www\./i, "").replace(/[?#].*$/, "").replace(/\/$/, "");
+  const glyphIcon = (name, plain = false) => {
+    const icon = el("span", `vm-cmd-ico vm-cmd-glyph${plain ? " vm-cmd-plain" : ""}`);
+    icon.innerHTML = name === "action" ? ACTION_SVG : glyphOf(name);
+    return icon;
+  };
+  // The field's own glyph follows the first result, like Arc's: the page's icon for a completed address, a globe for
+  // a typed address, the command's icon for a command, the magnifier otherwise.
+  const setFieldGlyph = () => {
+    const glyph = bar?.querySelector(".vm-cmd-head > .vm-cmd-glyph");
+    if (!glyph) return;
+    const top = rows[0];
+    const typedNow = typed().trim();
+    glyph.replaceChildren();
+    if (!mode && typedNow && top && (top.completed || (top.type === "tab" && completion?.tab?.id === top.tab.id))) {
+      glyph.append(iconFor(top.url, top.favicon, new Set(), "field").cloneNode(true));
+    } else if (!mode && typedNow && top?.type === "url" && top.globe) glyph.innerHTML = glyphOf("globe");
+    else if (!mode && typedNow && top?.type === "action") glyph.innerHTML = glyphOf(ACTION_LOOK[top.action.label]?.[0]);
+    else glyph.innerHTML = SEARCH_SVG;
+  };
+
   const render = () => {
     if (!list) return;
     const nodes = [];
     const used = new Set();
-    // One line per result and no section titles, like Arc: the title, the site in grey, and what Enter does on the
-    // selected row only.
-    let lastGroup = null;
+    // One line per result, no section titles or dividers, like Arc: the icon, the title, the address in grey, and on
+    // the right what Arc shows there: "Switch to Tab" for an open tab, the shortcut for a command.
     rows.forEach((row, i) => {
-      if (row.group && row.group !== lastGroup) nodes.push(el("div", "vm-cmd-section", row.group));
-      else if (!row.group && lastGroup) nodes.push(el("div", "vm-cmd-divider"));
-      lastGroup = row.group || null;
       const item = el("div", `vm-cmd-row${i === selected ? " sel" : ""}`);
       item.id = `vm-cmd-option-${i}`;
       item.setAttribute("role", "option");
       item.setAttribute("aria-selected", String(i === selected));
       let icon;
-      if (row.type === "action" || row.type === "engine" || row.type === "pick") {
-        icon = el("span", "vm-cmd-ico vm-cmd-glyph");
-        icon.innerHTML = ACTION_SVG;
-      } else if (row.type === "search" || row.type === "suggest") {
-        icon = el("span", "vm-cmd-ico vm-cmd-glyph");
-        icon.innerHTML = SEARCH_SVG;
-      } else {
-        icon = iconFor(row.url, row.favicon, used, row.tab?.id ?? "");
-      }
+      if (row.type === "action") icon = glyphIcon(ACTION_LOOK[row.action.label]?.[0] || "action");
+      else if (row.type === "engine" || row.type === "pick") icon = glyphIcon(row.icon || "action");
+      else if (row.type === "search" || row.type === "suggest") icon = glyphIcon("search", true);
+      else if (row.type === "url" && row.globe) icon = glyphIcon("globe", true);
+      else icon = iconFor(row.url, row.favicon, used, row.tab?.id ?? "");
       icon.setAttribute("aria-hidden", "true");
       const content = el("span", "vm-cmd-content");
       content.append(el("span", "vm-cmd-title", row.label));
-      const detail = row.type === "tab" ? hostOf(row.url) : row.type === "url" ? (row.sub === "Open" ? "" : row.sub) : row.sub || "";
+      const detail = row.type === "tab" || row.type === "action" || row.type === "search" || row.type === "suggest" ? "" : row.sub || "";
       if (detail && detail !== row.label) content.append(el("span", "vm-cmd-sub", detail));
       item.append(icon, content);
-      const does = { tab: "Switch to Tab", action: "Run", engine: "Tab to Search", archived: "Restore", pick: "Choose",
-        search: "Search", suggest: "Search", url: "Open", bookmark: "Open", history: "Open" }[row.type];
-      if (does) {
+      if (row.type === "tab") {
         const hint = el("span", "vm-cmd-hint");
-        hint.append(el("span", null, does), el("kbd", null, row.type === "engine" ? "⇥" : "↵"));
+        const arrow = el("span", "vm-cmd-arrow");
+        arrow.innerHTML = glyphOf("arrow");
+        hint.append(el("span", null, "Switch to Tab"), arrow);
         item.append(hint);
+      } else if (row.type === "action") {
+        const keys = keysOf(ACTION_LOOK[row.action.label]?.[1]);
+        if (keys) {
+          const hint = el("span", "vm-cmd-hint");
+          hint.append(el("kbd", null, keys));
+          item.append(hint);
+        }
+      } else if (row.type === "archived") {
+        item.append(el("span", "vm-cmd-hint", "Restore"));
       }
       item.addEventListener("mousemove", () => {
         if (selected === i) return;
@@ -478,6 +578,7 @@
     });
     list.replaceChildren(...nodes);
     holdHeight();
+    setFieldGlyph();
     if (rows.length) input.setAttribute("aria-activedescendant", `vm-cmd-option-${selected}`);
     else input.removeAttribute("aria-activedescendant");
     list.querySelector(`#vm-cmd-option-${selected}`)?.scrollIntoView({ block: "nearest" });
@@ -516,7 +617,7 @@
 
   const compute = async () => {
     const id = ++seq;
-    const text = input.value.trim();
+    const text = typed().trim();
     const out = [];
     if (mode?.pick) {
       const picked = await mode.pick(text);
@@ -558,67 +659,66 @@
       stackHere = null;
       const behind = editing ? null : await pageBehindBar();
       if (groupOf(behind)) stackHere = { group: groupOf(behind), memberId: behind.id };
+      const tabRow = (tab) => ({ type: "tab", tab, url: tab.url, favicon: tab.favIconUrl, label: window.__vm.titleOf(tab) });
+      const hit = completion && completion.typed.toLowerCase() === needle ? completion : null;
+      if (hit?.tab) seen.add(hit.tab.url.replace(/#.*$/, ""));
       tabsNow
         .filter((t) => `${t.title} ${t.url}`.toLowerCase().includes(needle))
         .slice(0, 3)
-        .forEach((tab) => add({ type: "tab", tab, url: tab.url, favicon: tab.favIconUrl, label: window.__vm.titleOf(tab) }));
+        .forEach((tab) => add(tabRow(tab)));
       // Spaces by name ("go to" a space, like Arc): only the ones that start with what is typed.
       const spaceHits = needle.length < 3 ? [] : (window.__vm.spaceList?.() || [])
         .filter((sp) => !sp.active && (sp.name.toLowerCase().startsWith(needle) || sp.name.toLowerCase().split(/\s+/).some((w) => w.startsWith(needle))))
         .slice(0, 2)
-        .map((space) => ({ type: "pick", url: `vivarc-space:${space.id}`, label: `Switch to ${space.name}`, sub: "Space", run: () => window.__vm.switchToSpace(space.id) }));
-      // Archived pages before bookmarks and history: restoring one brings it back to its space.
+        .map((space) => ({ type: "pick", icon: "spaces", url: `vivarc-space:${space.id}`, label: `Switch to ${space.name}`, sub: "Space", run: () => window.__vm.switchToSpace(space.id) }));
       try {
         window.__vm.archive.search(await window.__vm.archive.load(), text, 2).forEach((e) => add(archivedRow(e)));
       } catch (_) {}
       try {
         (await chrome.bookmarks.search(text)).filter((b) => b.url).slice(0, 2)
-          .forEach((b) => add({ type: "bookmark", url: b.url, label: b.title || b.url, sub: hostOf(b.url) }));
+          .forEach((b) => add({ type: "bookmark", url: b.url, label: b.title || b.url, sub: shownUrl(b.url) }));
       } catch (_) {}
       try {
-        (await chrome.history.search({ text, maxResults: 3 }))
-          .forEach((h) => add({ type: "history", url: h.url, favicon: null, label: h.title || h.url, sub: hostOf(h.url) }));
+        (await chrome.history.search({ text, maxResults: 4 }))
+          .forEach((h) => add({ type: "history", url: h.url, favicon: null, label: h.title || shownUrl(h.url), sub: shownUrl(h.url) }));
       } catch (_) {}
       if (id !== seq) return;
-      const prefix = matches.find((m) => hostOf(m.url).startsWith(needle));
       const searchRow = { type: "search", engine: DEFAULT, query: text, label: text };
-      // Opening comes first, even when the site is already open: the address in a new tab (inside the stack you are
-      // in, with a second row for outside it), then every open tab on that site under "Open Tabs".
-      const address = looksLikeUrl(text) ? text : prefix ? hostOf(prefix.url) : "";
-      const site = address ? siteOf(hostOf(toUrl(address))) : "";
-      const siteTabs = site ? tabsNow.filter((t) => siteOf(hostOf(t.url)) === site).slice(0, 6) : [];
-      const urlRow = address && { type: "url", url: toUrl(address), label: address,
-        sub: editing ? "Open" : siteTabs.length || stackHere ? "Open in New Tab" : "Open" };
-      const first = urlRow || searchRow;
-      out.push(first);
-      if (stackHere) out.push({ ...first, outside: true, sub: first.type === "url" ? "Open in New Tab, Outside Stack" : "Search Outside Stack" });
-      out.push(...siteTabs.map((tab) => ({ type: "tab", tab, url: tab.url, favicon: tab.favIconUrl, label: window.__vm.titleOf(tab), group: "Open Tabs" })));
-      if (urlRow && prefix && prefix.type !== "tab") out.push(prefix);
-      // An action named by what is typed ("archived", "split") comes before the web search, like Arc's commands.
       const actions = needle.length > 1 ? await matchingActions(needle) : [];
-      const named = needle.length >= 4 && !looksLikeUrl(text)
-        ? actions.filter((a) => a.label.toLowerCase().startsWith(needle) || a.label.toLowerCase().split(/[\s:/()]+/).some((w) => w.startsWith(needle)))
-        : [];
-      out.push(...named, ...spaceHits, ...(first === searchRow ? [] : [searchRow]), ...actions.filter((a) => !named.includes(a)));
-      const keyword = !/\s/.test(text) && engines.find((en) => en.keyword.toLowerCase() === needle);
-      if (keyword) out.unshift({ type: "engine", engine: keyword, label: `Search ${keyword.name}` });
-      const listed = new Set(siteTabs.map((t) => t.id));
-      out.push(...matches.filter((m) => m !== prefix && !(m.type === "tab" && listed.has(m.tab.id))));
+      if (id !== seq) return;
+      // Arc's first result is its best guess, with the web search second: the address it completed in the field (the
+      // open tab, if that page is open), else a typed address, else a command named by what is typed ("set" →
+      // Settings, "split" → Split View), else the search.
+      let top = null;
+      if (hit?.tab) top = tabRow(hit.tab);
+      else if (hit) top = { type: "url", url: hit.url, favicon: hit.favicon, label: hit.title || hit.shown, sub: hit.title ? hit.shown : "", completed: true };
+      else if (looksLikeUrl(text)) top = { type: "url", url: toUrl(text), label: text, globe: true };
+      else {
+        const named = actions.find((a) => a.label.toLowerCase().split(/[\s:/()…]+/).some((w) => w.startsWith(needle)));
+        if (named) top = named;
+      }
+      const first = top || searchRow;
+      out.push(first);
+      if (stackHere && (first.type === "url" || first.type === "search")) {
+        out.push({ ...first, outside: true, sub: first.type === "url" ? "Open in New Tab, Outside Stack" : "Search Outside Stack", label: first.label });
+      }
+      if (top) out.push(searchRow);
+      const openTabs = matches.filter((m) => m.type === "tab" && m.tab.id !== top?.tab?.id);
+      const pages = matches.filter((m) => m.type !== "tab" && m.url !== top?.url);
+      out.push(...openTabs, ...actions.filter((a) => a !== top).slice(0, 2), ...pages, ...spaceHits);
       if (window.__vm.settings.get("searchSuggestions") && !looksLikeUrl(text) && text.length > 1) {
-        // What is on this computer shows at once; the web's suggestions join below it when they arrive, without
-        // moving the rows above or the selection.
+        // What is on this computer shows at once; the web's suggestions fill the list's free places when they arrive,
+        // without moving the rows above or the selection.
         show(id, text, out);
         try {
           const reply = await fetch(DEFAULT.suggest.replace("{searchTerms}", encodeURIComponent(text)));
           const data = await reply.json();
           const phrases = Array.isArray(data[1]) ? data[1] : data.map((d) => d.phrase);
-          if (id !== seq) return;
-          const more = phrases.filter((p) => p && p.toLowerCase() !== needle).slice(0, 3)
+          if (id !== seq || rows.length >= LIMIT) return;
+          const more = phrases.filter((p) => p && p.toLowerCase() !== needle)
             .map((p) => ({ type: "suggest", engine: DEFAULT, query: p, label: p }));
           if (!more.length) return;
-          const keep = selected;
-          rows = [...rows.slice(0, 10 - Math.min(more.length, 3)), ...more].slice(0, 10);
-          selected = Math.min(keep, rows.length - 1);
+          rows = [...rows, ...more].slice(0, LIMIT);
           render();
         } catch (_) {}
         return;
@@ -628,10 +728,11 @@
   };
   const show = (id, text, out) => {
     if (id !== seq) return;
-    rows = mode ? out : out.slice(0, 10); // a short list; pickers and the archive show all they find
+    rows = mode ? out : out.slice(0, LIMIT); // five results, like Arc; pickers and the archive show all they find
     rowsFor = text;
     selected = 0;
     render();
+    showSite();
   };
 
   const setMode = (engine) => {
@@ -648,19 +749,57 @@
     compute();
   };
 
+  // Arc completes the address in the field as you type, from the pages you have open, saved and visited: an open
+  // tab's own address (so Enter goes back to it), a bookmark's, or for a page from history the site itself.
   const autocomplete = async () => {
+    completion = null;
     const text = input.value;
     if (mode || !text || /\s/.test(text) || !autoCompleted) return;
     const needle = text.toLowerCase();
-    const hosts = [
-      ...(await chrome.tabs.query({ currentWindow: true })).map((t) => hostOf(t.url)),
-      ...((await chrome.bookmarks.search(text).catch(() => [])).map((b) => hostOf(b.url))),
-    ];
-    const host = hosts.find((h) => h && h.startsWith(needle) && h.length > needle.length);
-    if (host && input.value === text) {
-      input.value = host;
-      input.setSelectionRange(text.length, host.length);
+    const tabs = (await chrome.tabs.query({ currentWindow: true })).filter((t) => /^https?:/.test(t.url || ""))
+      .sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0));
+    const marks = (await chrome.bookmarks.search(text).catch(() => [])).filter((b) => /^https?:/.test(b.url || ""));
+    const visited = (await chrome.history.search({ text, maxResults: 40, startTime: 0 }).catch(() => []))
+      .filter((h) => /^https?:/.test(h.url || ""))
+      .sort((a, b) => (b.typedCount || 0) - (a.typedCount || 0) || (b.visitCount || 0) - (a.visitCount || 0));
+    const fits = (shown) => shown.toLowerCase().startsWith(needle) && shown.length > needle.length;
+    let found = null;
+    for (const tab of tabs) {
+      const shown = shownUrl(tab.url);
+      const host = shownUrl(`https://${hostOf(tab.url)}`);
+      if (fits(shown)) { found = { shown, url: tab.url, title: window.__vm.titleOf(tab), favicon: tab.favIconUrl, tab }; break; }
+      if (fits(host)) { found = { shown: host, url: tab.url, title: window.__vm.titleOf(tab), favicon: tab.favIconUrl, tab }; break; }
     }
+    if (!found) {
+      const mark = marks.find((b) => fits(shownUrl(b.url)));
+      if (mark) found = { shown: shownUrl(mark.url), url: mark.url, title: mark.title };
+    }
+    if (!found) {
+      const page = visited.find((h) => fits(hostOf(h.url)));
+      if (page) {
+        const root = visited.find((h) => shownUrl(h.url) === hostOf(page.url));
+        found = { shown: hostOf(page.url), url: `https://${hostOf(page.url)}/`, title: root?.title || "" };
+      }
+    }
+    if (!found || input.value !== text) return;
+    input.value = text + found.shown.slice(text.length);
+    input.setSelectionRange(text.length, input.value.length);
+    completion = { typed: text, ...found };
+  };
+
+  // "Search YouTube  Tab" at the end of the field when what is typed is a search engine's keyword or the address of
+  // a site with a search engine (Vivaldi's engines, then Vivarc's own list).
+  const showSite = () => {
+    if (!siteHint) return;
+    const text = typed().trim().toLowerCase();
+    siteEngine = null;
+    if (!mode && text && !/\s/.test(text)) {
+      const host = completion ? hostOf(completion.url) : looksLikeUrl(text) ? hostOf(toUrl(text)) : "";
+      siteEngine = engines.find((en) => en.keyword.toLowerCase() === text)
+        || (host ? engines.find((en) => siteOf(hostOf(en.url.replace("{searchTerms}", ""))) === siteOf(host)) : null) || null;
+    }
+    siteHint.classList.toggle("on", !!siteEngine);
+    if (siteEngine) siteHint.replaceChildren(el("span", null, `Search ${siteEngine.name}`), el("kbd", null, "Tab"));
   };
 
   const onKey = (e) => {
@@ -675,9 +814,10 @@
     if (e.key === "Enter") {
       e.preventDefault();
       // Typed faster than the rows came: the first row is still for an earlier text. Act on what is in the field.
-      const now = input.value.trim();
+      const now = typed().trim();
       if (!mode && selected === 0 && now && now !== rowsFor) {
-        run(looksLikeUrl(now) ? { type: "url", url: toUrl(now), label: now } : { type: "search", engine: DEFAULT, query: now, label: now });
+        const full = input.value.trim();
+        run(looksLikeUrl(full) ? { type: "url", url: toUrl(full), label: full } : { type: "search", engine: DEFAULT, query: now, label: now });
         return;
       }
       run(rows[selected]);
@@ -691,9 +831,8 @@
     }
     if (e.key === "Tab") {
       e.preventDefault();
-      const keyword = input.value.trim().toLowerCase();
-      const engine = !mode && keyword && engines.find((en) => en.keyword.toLowerCase() === keyword);
-      if (engine) setMode(engine);
+      showSite();
+      if (!mode && siteEngine) setMode(siteEngine);
       return;
     }
     if (e.key === "Backspace" && mode && !input.value) { e.preventDefault(); setMode(null); return; }
@@ -707,6 +846,8 @@
     targetTab = tabId;
     editing = edit != null;
     mode = null;
+    completion = siteEngine = null;
+    loadShortcuts().then(() => { if (bar) render(); });
     bar = el("div");
     bar.id = "vm-cmd";
     const box = el("div", "vm-cmd-box");
@@ -722,7 +863,8 @@
     input.setAttribute("aria-controls", "vm-cmd-results");
     input.setAttribute("role", "combobox");
     input.setAttribute("aria-expanded", "true");
-    head.append(glyph, chipHolder, input);
+    siteHint = el("span", "vm-cmd-site");
+    head.append(glyph, chipHolder, input, siteHint);
     list = el("div", "vm-cmd-list");
     list.id = "vm-cmd-results";
     list.setAttribute("role", "listbox");
