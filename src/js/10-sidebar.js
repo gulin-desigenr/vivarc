@@ -59,10 +59,11 @@
     slideIn = next;
   };
 
+  // Folders as in Arc: a filled body in a light wash of the folder's color with a firmer outline and a front flap.
   const ICON_CLOSED =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2.5h7A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z"/></svg>';
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.4a2 2 0 0 1 1.5.68L12 7.5h6.5A2.5 2.5 0 0 1 21 10v7.5a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5z" fill="currentColor" fill-opacity=".22"/><path d="M3 10h18" stroke-opacity=".6"/></svg>';
   const ICON_OPEN =
-    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 17.5V7.5A2.5 2.5 0 0 1 5.5 5h4l2 2.5h7A2.5 2.5 0 0 1 21 10v1.5"/><path d="M3.3 18.6 5.2 12a2 2 0 0 1 1.9-1.5H21a1 1 0 0 1 1 1.3l-1.8 6.4A2 2 0 0 1 18.3 20H5.5a2.2 2.2 0 0 1-2.2-1.4z"/></svg>';
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M3 17.5V7.5A2.5 2.5 0 0 1 5.5 5h3.4a2 2 0 0 1 1.5.68L12 7.5h6.5A2.5 2.5 0 0 1 21 10v1.5" fill="currentColor" fill-opacity=".14"/><path d="M3.3 18.6 5.2 12a2 2 0 0 1 1.9-1.5H21a1 1 0 0 1 1 1.3l-1.8 6.4A2 2 0 0 1 18.3 20H5.5a2.2 2.2 0 0 1-2.2-1.4z" fill="currentColor" fill-opacity=".26"/></svg>';
 
   const el = (tag, cls, text) => {
     const e = document.createElement(tag);
@@ -1499,7 +1500,7 @@
 
   const fitFavs = () => {
     const grid = panel?.querySelector(".vm-favs");
-    const cols = grid && window.__vm.layout.favColumns(grid.querySelectorAll(":scope > .vm-fav").length, grid.clientWidth);
+    const cols = grid && window.__vm.layout.favColumns(grid.querySelectorAll(":scope > .vm-fav").length, grid.clientWidth, 60, 8);
     if (cols) grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
   };
   const favResize = typeof ResizeObserver === "function" ? new ResizeObserver(() => fitFavs()) : null;

@@ -131,6 +131,13 @@
         await window.__vm.store.set("littleOpenShortcut", true);
       }
     }
+    // Like Arc, the extensions sit behind one button (on the sidebar's first row) instead of a row of icons. Done
+    // once: changing it back in Vivaldi's settings (Address Bar > Extensions) is kept.
+    if (!(await window.__vm.store.get("extensionsMenu", false))) {
+      await set("vivaldi.address_bar.extensions.show_all_toggle", true);
+      await set("vivaldi.address_bar.extensions.render_in_dropdown", true);
+      await window.__vm.store.set("extensionsMenu", true);
+    }
     if ((await window.__vm.store.get("bootstrap", 0)) >= VERSION) return;
     await bindShortcuts();
     await tidyToolbars();

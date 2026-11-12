@@ -29,7 +29,7 @@
   --vm-press: color-mix(in srgb, var(--vm-ink) 10%, transparent);
   --vm-pill: rgb(255 255 255 / 0.8);
   --vm-pill-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.05), 0 1px 2px rgb(0 0 0 / 0.08), 0 1px 1px rgb(0 0 0 / 0.03);
-  --vm-tile: color-mix(in srgb, var(--vm-ink) 6%, transparent);
+  --vm-tile: color-mix(in srgb, var(--vm-ink) 5%, transparent);
   --vm-tile-line: color-mix(in srgb, var(--vm-ink) 8%, transparent);
   --vm-shadow-pop: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 10px 32px rgb(0 0 0 / 0.18);
   --vm-accent: var(--colorHighlightBg, #0a6cff);
@@ -62,17 +62,17 @@
 /* Keep Vivaldi's real address field on its own line above the favorites. */
 #browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField {
   --colorFg: var(--vm-address-fg);
-  flex: 1 0 calc(100% - 16px);
-  width: calc(100% - 16px);
+  /* Like Arc's: as wide as the favorites under it, 36px tall, a faint well with no outline. */
+  flex: 1 0 calc(100% - 4px);
+  width: calc(100% - 4px);
   min-width: 0;
   max-width: none;
-  /* Arc's search field is 36px tall, like its rows' rhythm. */
   height: 36px;
-  margin: 4px 8px 4px;
+  margin: 4px 2px 4px;
   border: 0;
-  border-radius: var(--vm-r-md);
+  border-radius: var(--vm-r-lg);
   background: var(--vm-tile);
-  box-shadow: inset 0 0 0 1px var(--vm-tile-line);
+  box-shadow: none;
   color: var(--vm-address-fg);
 }
 /* Vivaldi 8.3 wraps the top toolbar's buttons in .tabbar-nested-buttons and stacks the toolbar in a column of fixed
@@ -199,7 +199,7 @@
   display: grid;
   /* Like Dia's: the tiles share the whole row (four or five to a row in a default-width sidebar) */
   grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
-  gap: 6px;
+  gap: 8px;
   margin: 0;
   padding: 0 0 8px;
 }
@@ -207,7 +207,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
+  height: 46px;
   border-radius: var(--vm-r-lg);
   cursor: pointer;
   background-color: var(--vm-tile);
@@ -273,10 +273,11 @@
 #browser.vm-on .vm-space-bar .vm-space-mark.vm-mark-icon { width: 12px; height: 12px; }
 /* An icon is Vivaldi's SVG used as a mask over the text color. */
 .vm-mark-icon { display: inline-block; flex: none; background-color: currentColor; -webkit-mask: var(--vm-icon) center / contain no-repeat; mask: var(--vm-icon) center / contain no-repeat; }
-#vm-panel .vm-space-name { display: inline-flex; align-items: center; gap: 5px; }
-#vm-panel .vm-space-label-mark.vm-mark-icon { width: 12px; height: 12px; }
+/* Like Arc: the space's mark in the icon column, its name lined up with the tab titles. */
+#vm-panel .vm-space-name { display: inline-flex; align-items: center; gap: 10px; }
+#vm-panel .vm-space-label-mark.vm-mark-icon { width: 16px; height: 16px; }
 .vm-little-menu-icon { width: 12px; height: 12px; }
-#vm-panel .vm-space-label-mark.vm-mark-emoji { font-size: var(--vm-fs-2); line-height: 1; }
+#vm-panel .vm-space-label-mark.vm-mark-emoji { display: inline-flex; justify-content: center; width: 16px; font-size: 14px; line-height: 1; }
 /* While reordering, the dot being moved is drawn larger and the others make room. */
 #browser.vm-on .vm-space-bar.vm-reordering, #browser.vm-on .vm-space-bar.vm-reordering .vm-space-pill { cursor: grabbing; }
 #browser.vm-on .vm-space-bar .vm-space-pill.vm-dragging { position: relative; z-index: 1; }
@@ -305,6 +306,11 @@
 #vm-panel .vm-row:hover { background-color: var(--vm-hover); }
 #vm-panel .vm-row { color: var(--vm-ink); }
 #vm-panel .vm-row.active { background-color: var(--vm-pill); box-shadow: var(--vm-pill-shadow); color: var(--vm-ink); }
+/* Like Arc, the selected tab and favorite fade almost into the sidebar while the window is in the background. */
+#browser.vm-on.isblurred #vm-panel :is(.vm-row, .vm-fav).active {
+  background-color: color-mix(in srgb, var(--vm-pill) 30%, transparent);
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.04);
+}
 /* A sleeping (discarded) tab keeps its text like the others, as in Arc; only its icon fades. */
 #vm-panel .vm-row.discarded .vm-ico { opacity: 0.6; }
 #vm-panel .vm-folder-head { font-weight: 600; }
@@ -347,8 +353,10 @@
 #vm-panel .vm-glyph { display: flex; flex: none; opacity: 0.8; }
 #vm-panel .vm-glyph svg { width: 16px; height: 16px; }
 /* Arc's folder icon is a little larger than a favicon; the text still starts where the tabs' does. */
-#vm-panel .vm-folder-head > .vm-glyph { margin: 0 -1px; }
+#vm-panel .vm-folder-head > .vm-glyph { margin: 0 -1px; opacity: 0.9; }
 #vm-panel .vm-folder-head > .vm-glyph svg { width: 18px; height: 18px; }
+/* Arc's folders take the space's color: a darker shade of it on a colored space. */
+#browser.vm-on.vm-themed #vm-panel .vm-folder-head > .vm-glyph { color: color-mix(in srgb, var(--vm-space-solid, var(--vm-fg)) 45%, var(--vm-fg)); opacity: 1; }
 #vm-panel .vm-title { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
 #vm-panel .vm-folder-body {
   display: grid;
@@ -412,7 +420,7 @@
 #vm-panel .vm-divider:hover::before { right: var(--vm-divider-gap, 96px); }
 #vm-panel .vm-divider { justify-content: flex-end; }
 /* The line between pinned links and open tabs: a hairline, as quiet as the tiles. */
-#vm-panel .vm-divider::before { content: ""; flex: 1; height: 1px; background-color: var(--vm-tile-line); }
+#vm-panel .vm-divider::before { content: ""; flex: 1; height: 1px; background-color: color-mix(in srgb, var(--vm-ink) 15%, transparent); }
 #vm-panel .vm-clear {
   order: 2;
   padding: 2px 8px;
@@ -425,7 +433,8 @@
 #vm-panel .vm-divider:hover .vm-clear { opacity: 0.7; }
 #vm-panel .vm-tidy { order: 1; margin-right: -4px; }
 #vm-panel .vm-clear:hover { opacity: 1; background-color: var(--vm-press); }
-#vm-panel .vm-newtab { opacity: 0.55; }
+/* Arc's "New Tab" is the quietest row (about a third of the text's ink). */
+#vm-panel .vm-newtab { opacity: 0.4; }
 #vm-panel .vm-plus { display: flex; flex: none; justify-content: center; width: 16px; font-size: var(--vm-fs-5); line-height: 1; }
 
 .vm-menu {
@@ -637,7 +646,8 @@
    --vm-fg-muted for secondary text (4.5:1), not opacity, which falls below readable contrast on mid tones. */
 #browser.vm-on.vm-themed #vm-panel .vm-row { color: var(--vm-fg); }
 #browser.vm-on.vm-themed #vm-panel .vm-row.active { color: var(--vm-fg); }
-#browser.vm-on.vm-themed #vm-panel :is(.vm-space, .vm-newtab, .vm-divider) { color: var(--vm-fg-muted); opacity: 1; }
+#browser.vm-on.vm-themed #vm-panel :is(.vm-space, .vm-divider) { color: var(--vm-fg-muted); opacity: 1; }
+#browser.vm-on.vm-themed #vm-panel .vm-newtab { color: var(--vm-fg); opacity: 0.4; }
 #browser.vm-on.vm-themed #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField .UrlFragment-Wrapper { --LowlightColor: var(--vm-fg-muted) !important; }
 #browser.vm-on.vm-themed #tabs-tabbar-container .UrlBar-AddressField input::placeholder { color: var(--vm-fg-muted); opacity: 1; }
 #browser.vm-on.vm-themed .toolbar-tabbar-after .vm-space-pill:not(.active, :hover)::before { background-color: var(--vm-fg-muted); opacity: 0.7; }
@@ -1083,19 +1093,23 @@
 #browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #tabs-tabbar-container::before { display: none; }
 
 /* The page's corners: rounder than Vivaldi's 8 px, like Arc. Vivaldi clips the page itself with --radius, read here. */
-#browser.vm-on:not(.fullscreen) #webpage-stack { --radius: 12px; border-radius: var(--vm-r-xl); }
+#browser.vm-on:not(.fullscreen) #webpage-stack { --radius: 10px; border-radius: var(--vm-r-lg); }
+/* Arc leaves 10px around the page (Vivaldi 6px): the extra 4px sit around the page alone, so the sidebar's first
+   row stays level with the window's traffic lights. */
+#browser.vm-on:not(.fullscreen, .vm-little-arc) #webview-container { margin: 4px 4px 4px 0; }
 /* The page floats a little above the window in every space, on a space color or on the theme's wallpaper alike. */
+/* Arc's page edge: a hairline and a short shadow, darker just under the page. */
 #browser.vm-on:not(.fullscreen):not(.is-settingspage) #webpage-stack {
-  box-shadow: 0 2px 14px rgba(29, 26, 50, 0.10);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.04), 0 1px 4px rgb(0 0 0 / 0.10);
 }
 /* On a dark space the same shadow would vanish; it is deepened there. */
 #browser.vm-on:is(.theme-dark:not(.vm-themed), .vm-themed.vm-light-ink):not(.fullscreen):not(.is-settingspage) #webpage-stack {
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.32);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.3), 0 1px 4px rgb(0 0 0 / 0.35);
 }
 
 /* Give pinned favorites a legible surface against light or dark theme wallpapers. */
 #browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #vm-panel .vm-fav {
-  background: color-mix(in srgb, var(--vm-fg, var(--colorImageFg, var(--colorFg))) 8%, transparent);
+  background: color-mix(in srgb, var(--vm-fg, var(--colorImageFg, var(--colorFg))) 6%, transparent);
   outline: 0;
   outline-offset: -1px;
 }
@@ -1536,7 +1550,7 @@
   > .button-toolbar:has(> [data-name="Forward"]) { order: 3; }
   > .button-toolbar:has(> [data-name="Reload"]) { order: 4; }
   > .UrlBar-AddressField { order: 5; }
-  > .toolbar-extensions { order: 6; flex: 1 0 100%; display: flex; flex-wrap: wrap; justify-content: flex-start; padding: 0 4px; }
+  > .toolbar-extensions { order: 1; flex: none; display: flex; padding: 0; }
   > .toolbar-extensions:empty { display: none; }
 }
 /* The same rows on Vivaldi 8.3, where these buttons sit inside .tabbar-nested-buttons. */
@@ -1548,7 +1562,7 @@
   > .button-toolbar:has(> [data-name="Back"]) { order: 2; }
   > .button-toolbar:has(> [data-name="Forward"]) { order: 3; }
   > .button-toolbar:has(> [data-name="Reload"]) { order: 4; }
-  > .toolbar-extensions { order: 6; flex: 1 0 100%; display: flex; flex-wrap: wrap; justify-content: flex-start; padding: 0 4px; }
+  > .toolbar-extensions { order: 1; flex: none; display: flex; padding: 0; }
   > .toolbar-extensions:empty { display: none; }
 }
 #browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-before { -webkit-app-region: drag; }
