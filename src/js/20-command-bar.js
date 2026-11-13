@@ -92,6 +92,12 @@
     if (button) press(button);
     else chrome.downloads?.showDefaultFolder?.();
   };
+  const openPanel = (name) => { if (!window.__vm.panels?.open(name)) toast("That panel is not in Vivaldi's panel bar."); };
+  const togglePanels = () => {
+    const button = document.querySelector('[data-name="PanelToggle"]');
+    if (button) press(button);
+    else toast("Vivaldi's Toggle Panel button is missing. Use ⌥⌘P.");
+  };
   const setExtData = async (tab, patch) => {
     const fresh = await chrome.tabs.get(tab.id);
     let ext = {};
@@ -150,6 +156,12 @@
     { label: "View History", words: "history visited", run: () => openPage("vivaldi://history") },
     { label: "View Downloads", words: "downloads files", run: openDownloads },
     { label: "View Bookmarks", words: "bookmarks saved", run: () => openPage("vivaldi://bookmarks") },
+    // Vivaldi's panels, beside the page (18-panels.js); run again on the open one, it hides the panels.
+    { label: "Bookmarks Panel", words: "bookmarks panel sidebar", run: () => openPanel("PanelBookmarks") },
+    { label: "History Panel", words: "history panel visited", run: () => openPanel("PanelHistory") },
+    { label: "Notes Panel", words: "notes panel write", run: () => openPanel("PanelNotes") },
+    { label: "Window Panel", words: "window panel tabs all", run: () => openPanel("PanelWindow") },
+    { label: "Show / Hide Panels", words: "panels toggle panel bar right", run: () => togglePanels() },
     { label: "Vivaldi Settings", words: "open settings preferences options browser", run: () => openPage("vivaldi://settings") },
     { label: "Create New Space", words: "space workspace new create add", run: () => (window.__vm.promptNewSpace ? window.__vm.promptNewSpace() : toast(window.__vm.workspaces.CREATE_HINT)) },
     { label: "Manage Extensions", words: "extensions addons", run: () => openPage("vivaldi://extensions") },
@@ -218,6 +230,8 @@
     history: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
     download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
     bookmark: '<path d="M7 4h10v16l-5-4-5 4z"/>',
+    notes: '<rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M8.5 9h7M8.5 12.5h7M8.5 16h4"/>',
+    panel: '<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M15 5v14"/>',
     gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M2.5 12h3M18.5 12h3M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/>',
     plus: '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/>',
     puzzle: '<path d="M10 4a2 2 0 1 1 4 0v2h4v4h-2a2 2 0 1 0 0 4h2v4h-4v-2a2 2 0 1 0-4 0v2H6v-4h2a2 2 0 1 0 0-4H6V6h4z"/>',
@@ -255,7 +269,9 @@
   // label: [icon, Vivaldi command whose shortcut is shown]
   const ACTION_LOOK = {
     "View History": ["history", "COMMAND_SHOW_HISTORY"], "View Downloads": ["download", "COMMAND_SHOW_DOWNLOADS_PANEL"],
-    "View Bookmarks": ["bookmark", "COMMAND_SHOW_BOOKMARKS"], "Vivaldi Settings": ["gear", "COMMAND_SHOW_SETTINGS"],
+    "View Bookmarks": ["bookmark", "COMMAND_SHOW_BOOKMARKS"], "Bookmarks Panel": ["bookmark", "COMMAND_SHOW_BOOKMARK_PANEL"],
+    "History Panel": ["history", "COMMAND_SHOW_HISTORY_PANEL"], "Notes Panel": ["notes", "COMMAND_SHOW_NOTES_PANEL"],
+    "Window Panel": ["window"], "Show / Hide Panels": ["panel", "COMMAND_TOGGLE_PANEL"], "Vivaldi Settings": ["gear", "COMMAND_SHOW_SETTINGS"],
     "Create New Space": ["plus", "COMMAND_WORKSPACE_CREATE_NEW"], "Manage Extensions": ["puzzle", "COMMAND_SHOW_EXTENSIONS"],
     "Pin This Tab": ["pin"], "Add This Tab to Favorites": ["star"], "Copy Current URL": ["link", "COMMAND_PAGE_COPY_URL"],
     "Split View: Side by Side": ["splitV"], "Split View: Top and Bottom": ["splitH"], "Close Split View": ["unsplit", "COMMAND_DISBAND_TILE_GROUP"],

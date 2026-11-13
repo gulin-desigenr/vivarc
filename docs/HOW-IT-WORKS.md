@@ -49,7 +49,7 @@ What Vivarc uses is read from its own source (`tools/doctor.py`), so the lists n
 ## What the installer changes
 
 Per Vivaldi profile (`Preferences`): the tab bar goes left; `Cmd+T` is freed from "New Tab" and "Quick Commands" (the command bar listens for it itself);
-`Cmd+Shift+C` copies the page URL; `Cmd+S` toggles the sidebar instead of saving the page; the `Spacer` and Workspaces items are removed from the tab bar toolbar and the VPN button becomes the Downloads button; the address bar and back/forward/reload move into the sidebar toolbar (the top bar is hidden); the panel icon bar moves to the right and auto-hides (Vivaldi's auto-hide switch is on so Cmd+S can hide the sidebar, which starts visible); the bottom status bar only overlays on hover; the sidebar width starts at 323 unless you set one.
+`Cmd+Shift+C` copies the page URL; `Cmd+S` toggles the sidebar instead of saving the page; the `Spacer` and Workspaces items are removed from the tab bar toolbar and the VPN button becomes the Downloads button; the address bar and back/forward/reload move into the sidebar toolbar (the top bar is hidden); the panels move to the right, docked and hidden, and open from the Toggle Panel button added before Downloads at the sidebar's bottom (or `⌥⌘P`, or a panel from the command bar), never from the window's edge, where the Dock can be (Vivaldi's auto-hide switch is on so Cmd+S can hide the sidebar, which starts visible); the bottom status bar only overlays on hover; the sidebar width starts at 323 unless you set one.
 Existing shortcuts are kept. Nothing else in Vivaldi's settings, flags or `Local State` is touched. `uninstall` restores the original values.
 
 ## Profiles created later

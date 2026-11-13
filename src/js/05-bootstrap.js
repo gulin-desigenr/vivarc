@@ -11,7 +11,7 @@
   const LITTLE_OPEN = "meta+o"; // Little Vivarc's "Open in <space>"
 
   // Bump when the steps change: profiles already set up then run the (idempotent) steps once more.
-  const VERSION = 12;
+  const VERSION = 15; // 13 and 14 skipped: upstream used 14, and a profile that ran it would skip our steps
   const TOGGLE = "meta+s";
   const PROFILE_KEYS = ["ctrl+meta+left", "ctrl+meta+right"]; // the profile switcher's previous/next, handled in 06-spaces.js
   const SPACE_NUMBER_KEYS = Array.from({ length: 9 }, (_, i) => `ctrl+${i + 1}`);
@@ -21,7 +21,8 @@
   // The address bar and navigation buttons live inside the sidebar; the top bar is hidden.
   const SIDEBAR_TOOLBAR = ["TabButton", "Extensions", "FlexibleSpacer", "Back", "Reload", "Forward", "AddressField"];
 
-  const SIDEBAR_BOTTOM = ["NewTab", "FlexibleSpacer", "AccountButton", "FlexibleSpacer", "PanelDownloads", "UpdateButton"];
+  // PanelToggle shows and hides Vivaldi's panels, which no longer open from the window's edge (18-panels.js).
+  const SIDEBAR_BOTTOM = ["NewTab", "FlexibleSpacer", "AccountButton", "FlexibleSpacer", "PanelToggle", "PanelDownloads", "UpdateButton"];
 
   const tidyToolbar = (list, remove, swap) => {
     const out = [];
@@ -44,6 +45,10 @@
       if (!Array.isArray(list)) continue;
       let next = tidyToolbar(list, remove, swap);
       if (!next.includes(marker)) next = [...fallback];
+      if (name === "tabbar_after" && !next.includes("PanelToggle")) {
+        const at = next.indexOf("PanelDownloads");
+        next.splice(at < 0 ? next.length : at, 0, "PanelToggle");
+      }
       if (next.join() !== list.join()) await set(`vivaldi.toolbars.${name}`, next);
     }
   };
@@ -137,7 +142,8 @@
     await set("vivaldi.address_bar.visible", false);
     await set("vivaldi.panels.position", "right");
     await set("vivaldi.auto_hide.enabled", true);
-    for (const [key, value] of [["panel", true], ["tab_bar", false], ["address_bar", false], ["status_bar", false],
+    // The panels stay docked and open on request: an auto-hidden bar opened from the window's edge, where the Dock can be.
+    for (const [key, value] of [["panel", false], ["tab_bar", false], ["address_bar", false], ["status_bar", false],
       ["bookmarks_bar", false], ["show_introduction", false]]) await set(`vivaldi.auto_hide.${key}`, value);
     await set("vivaldi.status_bar.display", "overlay");
     if (!(await window.__vm.store.get("bootstrap", 0))) await set("vivaldi.tabs.bar.width", 323);

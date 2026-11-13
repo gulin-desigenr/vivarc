@@ -60,7 +60,8 @@ SPACE_KEYS = {"COMMAND_WORKSPACE_SWITCH_BACK_ORDER": "alt+meta+left", "COMMAND_W
               "COMMAND_WORKSPACE_CREATE_NEW": "ctrl+meta+n"}  # like Arc's spaces; Ctrl+Cmd+N opens Vivaldi's own Create Workspace dialog
 TOGGLE_SIDEBAR_KEY = "meta+s"
 SIDEBAR_WIDTH = 323
-SIDEBAR_BOTTOM = ["NewTab", "FlexibleSpacer", "AccountButton", "FlexibleSpacer", "PanelDownloads", "UpdateButton"]
+# PanelToggle shows and hides Vivaldi's panels, which stay docked instead of opening from the window's edge.
+SIDEBAR_BOTTOM = ["NewTab", "FlexibleSpacer", "AccountButton", "FlexibleSpacer", "PanelToggle", "PanelDownloads", "UpdateButton"]
 SIDEBAR_TOOLBAR = ["TabButton", "Extensions", "FlexibleSpacer", "Back", "Reload", "Forward", "AddressField"]
 
 # Peek is community code (GPL-3.0, PaRr0tBoY/Awesome-Vivaldi). It is downloaded at install time from a
@@ -180,10 +181,13 @@ def patch_preferences(prefs, default_actions, reapply=False):
     _set(new, ("vivaldi", "address_bar", "visible"), False)
     after = _get(new, ("vivaldi", "toolbars", "tabbar_after"))
     after = swap_vpn_for_downloads([] if after is _MISSING else after)
-    _set(new, ("vivaldi", "toolbars", "tabbar_after"), after if "AccountButton" in after else list(SIDEBAR_BOTTOM))
+    after = after if "AccountButton" in after else list(SIDEBAR_BOTTOM)
+    if not reapply and "PanelToggle" not in after:
+        after.insert(after.index("PanelDownloads") if "PanelDownloads" in after else len(after), "PanelToggle")
+    _set(new, ("vivaldi", "toolbars", "tabbar_after"), after)
     _set(new, ("vivaldi", "panels", "position"), 1)
     _set(new, ("vivaldi", "auto_hide", "enabled"), True)
-    for key, value in (("panel", True), ("tab_bar", False), ("address_bar", False), ("status_bar", False),
+    for key, value in (("panel", False), ("tab_bar", False), ("address_bar", False), ("status_bar", False),
                        ("bookmarks_bar", False), ("show_introduction", False)):
         if not (reapply and _get(new, ("vivaldi", "auto_hide", key)) is not _MISSING):
             _set(new, ("vivaldi", "auto_hide", key), value)

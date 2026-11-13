@@ -100,7 +100,7 @@ class PatchPreferences(unittest.TestCase):
             "tabbar_after": ["NewTab", "AccountButton", "VPNButton", "UpdateButton"]}})
         new, _ = vivarc.patch_preferences(p, [DEFAULTS])
         self.assertEqual(new["vivaldi"]["toolbars"]["tabbar_before"], ["TabButton", "AddressField"])
-        self.assertEqual(new["vivaldi"]["toolbars"]["tabbar_after"], ["NewTab", "AccountButton", "PanelDownloads", "UpdateButton"])
+        self.assertEqual(new["vivaldi"]["toolbars"]["tabbar_after"], ["NewTab", "AccountButton", "PanelToggle", "PanelDownloads", "UpdateButton"])
 
     def test_a_fresh_profile_gets_the_address_bar_inside_the_sidebar_and_none_on_top(self):
         new, _ = vivarc.patch_preferences({}, [DEFAULTS])
@@ -121,7 +121,20 @@ class PatchPreferences(unittest.TestCase):
         new, _ = vivarc.patch_preferences({}, [DEFAULTS])
         self.assertEqual(new["vivaldi"]["panels"]["position"], 1)
         self.assertIs(new["vivaldi"]["auto_hide"]["enabled"], True)
-        self.assertIs(new["vivaldi"]["auto_hide"]["panel"], True)
+        # The panels stay docked, opened from the sidebar's Toggle Panel button, not from the window's edge (the Dock's).
+        self.assertIs(new["vivaldi"]["auto_hide"]["panel"], False)
+
+    def test_a_first_install_adds_the_toggle_panel_button_before_downloads(self):
+        mine = {"vivaldi": {"toolbars": {"tabbar_after": ["AccountButton", "FlexibleSpacer", "PanelDownloads"]}}}
+        new, _ = vivarc.patch_preferences(mine, [DEFAULTS])
+        self.assertEqual(new["vivaldi"]["toolbars"]["tabbar_after"], ["AccountButton", "FlexibleSpacer", "PanelToggle", "PanelDownloads"])
+        fresh, _ = vivarc.patch_preferences({}, [DEFAULTS])
+        self.assertIn("PanelToggle", fresh["vivaldi"]["toolbars"]["tabbar_after"])
+
+    def test_an_update_does_not_bring_back_a_toggle_panel_button_the_user_removed(self):
+        mine = {"vivaldi": {"toolbars": {"tabbar_after": ["AccountButton", "PanelDownloads"]}}}
+        new, _ = vivarc.patch_preferences(mine, [DEFAULTS], reapply=True)
+        self.assertNotIn("PanelToggle", new["vivaldi"]["toolbars"]["tabbar_after"])
 
     def test_auto_hide_starts_with_the_sidebar_visible_and_no_introduction_popup(self):
         new, _ = vivarc.patch_preferences({}, [DEFAULTS])
@@ -137,7 +150,7 @@ class PatchPreferences(unittest.TestCase):
         self.assertIs(hide["tab_bar"], True)
         self.assertIs(hide["address_bar"], True)
         self.assertIs(hide["enabled"], True)
-        self.assertIs(hide["panel"], True)
+        self.assertIs(hide["panel"], False)
 
     def test_an_update_still_fills_in_auto_hide_settings_the_profile_does_not_have(self):
         new, _ = vivarc.patch_preferences({}, [DEFAULTS], reapply=True)
@@ -162,7 +175,7 @@ class PatchPreferences(unittest.TestCase):
     def test_does_not_add_a_second_downloads_button(self):
         p = prefs(vivaldi={"toolbars": {"tabbar_after": ["AccountButton", "PanelDownloads", "VPNButton"]}})
         new, _ = vivarc.patch_preferences(p, [DEFAULTS])
-        self.assertEqual(new["vivaldi"]["toolbars"]["tabbar_after"], ["AccountButton", "PanelDownloads"])
+        self.assertEqual(new["vivaldi"]["toolbars"]["tabbar_after"], ["AccountButton", "PanelToggle", "PanelDownloads"])
 
     def test_restore_brings_back_both_toolbars(self):
         p = prefs(vivaldi={"toolbars": {

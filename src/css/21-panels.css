@@ -2,7 +2,7 @@
    the web panels) in Vivarc's look. The bar sits on the window's surface like the sidebar's bottom toolbar: quiet
    icons, the open panel's a lifted pill. The panel is a card like the page, on the command bar's neutral surface,
    with borderless wells for fields and buttons, rows that light up like the sidebar's, and the selected row in the
-   space's color. While one is open it pushes the page aside (18-panels.js sets --vm-panels-push). Vivaldi's lists
+   space's color. Docked, an open panel takes its room beside the page (18-panels.js opens and hides them). Vivaldi's lists
    are virtual (their row heights are set by its code), so only colours, corners and spacing change, never heights. */
 #browser.vm-on #panels-container {
   --pn-surface: #fafbfc;
@@ -328,12 +328,6 @@
 #browser.vm-on #panels-container .panel .tree-item.group:has(.window-entry) { background: transparent !important; box-shadow: none !important; border: 0 !important; }
 #browser.vm-on #panels-container .panel .window-entry .close { opacity: 0; }
 #browser.vm-on #panels-container .panel .tree-row:hover .window-entry .close { opacity: 0.6; }
-
-/* The page steps aside for an open panel instead of lying under it, sliding over with the panel. */
-#browser.vm-on:not(.fullscreen, .vm-little-arc) #webview-container {
-  margin-right: calc(4px + var(--vm-panels-push, 0px));
-  transition: margin-right 200ms cubic-bezier(0.2, 0.9, 0.3, 1);
-}
 
 /* "+" (Customize the panel bar): a popover like Vivarc's menus, its fields wells; the switches keep the accent the
    Vivarc settings use. */
