@@ -48,7 +48,7 @@ Requires macOS and Vivaldi 8.x. If your Mac has never had developer tools, macOS
 
 ```sh
 git clone https://github.com/gulin-desigenr/vivarc.git && cd vivarc
-./vivarc.py install       # also: apply, status, uninstall, import-arc
+./vivarc.py install       # also: apply, status, doctor, uninstall, import-arc
 ```
 
 ## Update, uninstall or start fresh
@@ -71,6 +71,7 @@ Both tools are small apps that the installer leaves in the `Applications` folder
 python3 ~/.vivarc/app/vivarc.py update      # same as Update Vivarc
 python3 ~/.vivarc/app/vivarc.py uninstall   # same as Uninstall Vivarc (add --purge to also delete ~/.vivarc)
 python3 ~/.vivarc/app/vivarc.py status      # what is installed
+python3 ~/.vivarc/app/vivarc.py doctor      # whether this Vivaldi still has everything Vivarc relies on
 ```
 
 **Update reminder (optional).** The installer offers it. When a Vivaldi update removes Vivarc, or a new Vivarc release is out, a small dialog asks whether to update. Switch it on or off with `python3 ~/.vivarc/app/vivarc.py reminder on` (or `off`). With `reminder auto` it does not ask: after a Vivaldi update it puts Vivarc back by itself (from a Terminal window, since macOS only lets apps with the App Management permission change Vivaldi) and then offers to restart Vivaldi.

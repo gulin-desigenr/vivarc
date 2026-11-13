@@ -1,0 +1,42 @@
+/* Switching spaces (10-sidebar.js, 40-theme.js): the old space's content slides out over the new one, and the
+   space's color crossfades instead of jumping, like Arc. A registered color is what lets the variable transition. */
+@property --vm-tint { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --vm-stop-1 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --vm-stop-2 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+@property --vm-stop-3 { syntax: "<color>"; inherits: true; initial-value: transparent; }
+#browser.vm-on.vm-space-fading {
+  transition: --vm-tint 420ms, --vm-stop-1 420ms, --vm-stop-2 420ms, --vm-stop-3 420ms;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+#vm-panel .vm-scroll.vm-leaving { box-sizing: border-box; }
+#vm-panel .vm-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+#vm-panel .vm-favs {
+  flex: none;
+  display: grid;
+  /* Like Dia's: the tiles share the whole row (four or five to a row in a default-width sidebar) */
+  grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0 0 8px;
+}
+#vm-panel .vm-fav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 46px;
+  border-radius: var(--vm-r-lg);
+  cursor: pointer;
+  background-color: var(--vm-tile);
+  transition: background-color 120ms, box-shadow 120ms, transform 120ms;
+}
+#vm-panel .vm-fav:hover { background-color: var(--vm-press); }
+#vm-panel .vm-fav:active { transform: scale(0.97); }
+#vm-panel .vm-fav.active { background-color: var(--vm-pill); box-shadow: var(--vm-pill-shadow); }
+#vm-panel .vm-fav .vm-ico { width: 16px; height: 16px; border-radius: var(--vm-r-xs); }
+

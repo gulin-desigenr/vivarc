@@ -1,0 +1,39 @@
+/* Keep the page surface intact and let Vivaldi's own theme wallpaper fill the sidebar. */
+#browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #tabs-tabbar-container {
+  background-color: var(--browserBackgroundColor, var(--colorBg)) !important;
+  background-image: var(--browserBackgroundImage, none) !important;
+  background-position: var(--browserBackgroundPosition, center) !important;
+  background-repeat: var(--browserBackgroundRepeat, no-repeat) !important;
+  background-size: var(--browserBackgroundSize, cover) !important;
+  background-attachment: fixed;
+  backdrop-filter: none !important;
+  color: var(--colorImageFg, var(--vm-fg, var(--colorFg)));
+}
+#browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #tabs-tabbar-container::before { display: none; }
+
+/* The page's corners: rounder than Vivaldi's 8 px, like Arc. Vivaldi clips the page itself with --radius, read here. */
+#browser.vm-on:not(.fullscreen) #webpage-stack { --radius: 10px; border-radius: var(--vm-r-lg); }
+/* Arc leaves 10px around the page (Vivaldi 6px): the extra 4px sit around the page alone, so the sidebar's first
+   row stays level with the window's traffic lights. */
+#browser.vm-on:not(.fullscreen, .vm-little-arc) #webview-container { margin: 4px 4px 4px 0; }
+/* The page floats a little above the window in every space, on a space color or on the theme's wallpaper alike. */
+/* Arc's page edge: a hairline and a short shadow, darker just under the page. */
+#browser.vm-on:not(.fullscreen):not(.is-settingspage) #webpage-stack {
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.04), 0 1px 4px rgb(0 0 0 / 0.10);
+}
+/* On a dark space the same shadow would vanish; it is deepened there. */
+#browser.vm-on:is(.theme-dark:not(.vm-themed), .vm-themed.vm-light-ink):not(.fullscreen):not(.is-settingspage) #webpage-stack {
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.3), 0 1px 4px rgb(0 0 0 / 0.35);
+}
+
+/* Give pinned favorites a legible surface against light or dark theme wallpapers. */
+#browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #vm-panel .vm-fav {
+  background: color-mix(in srgb, var(--vm-fg, var(--colorImageFg, var(--colorFg))) 6%, transparent);
+  outline: 0;
+  outline-offset: -1px;
+}
+#browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #vm-panel .vm-fav:hover {
+  background: color-mix(in srgb, var(--vm-fg, var(--colorImageFg, var(--colorFg))) 12%, transparent);
+}
+#browser.vm-on.vm-sidebar-wallpaper:not(.vm-themed) #vm-panel .vm-fav.active { background: var(--vm-pill); box-shadow: var(--vm-pill-shadow); outline-color: transparent; }
+

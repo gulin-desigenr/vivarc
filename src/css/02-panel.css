@@ -1,0 +1,29 @@
+/* Arc's text is drawn by macOS with font smoothing, which thickens the strokes a little; "antialiased" (used here
+   before) drew it about a tenth thinner and lighter than Arc's. Measured on the same title at the same size. */
+#browser.vm-on, body:has(> #browser.vm-on) > :not(#browser) { -webkit-font-smoothing: auto; }
+
+#vm-panel {
+  position: relative;
+  flex: 0 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  contain: inline-size;
+  box-sizing: border-box;
+  overflow: hidden;
+  padding: 0 8px 6px;
+  /* Rows measured on Arc (1x display): 14px text in rows 41px apart (38px row and 3px between rows), the icon 10px
+     from the row's edge and 10px from the text, bold folders, 20px per nesting level. */
+  --vm-row-h: 38px;
+  --vm-row-gap: 3px;
+  --vm-row-pad: 10px;
+  --vm-row-indent: 20px;
+  --vm-row-fs: 14px;
+  font-size: var(--vm-fs-3);
+  user-select: none;
+}
+/* With the sidebar auto-hidden (Cmd+S), Vivaldi makes the revealed bar a window drag region, which
+   swallows every click. Vivarc's own UI opts out, including the menus and popovers that float over it. */
+#vm-panel, .vm-menu, .vm-theme-pop, #vm-cmd, .vm-rename-float { app-region: no-drag; }
+.vm-menu-shield { position: fixed; inset: 0; z-index: 100000; background: transparent; app-region: no-drag; }

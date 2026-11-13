@@ -1,0 +1,179 @@
+#vm-panel .vm-space {
+  padding: 12px 10px 8px;
+  font-size: var(--vm-fs-3);
+  font-weight: 600;
+  opacity: 0.5;
+}
+#vm-panel .vm-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--vm-row-h);
+  margin-bottom: var(--vm-row-gap);
+  padding-right: 6px;
+  font-size: var(--vm-row-fs);
+  border-radius: var(--vm-r-lg);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+}
+#vm-panel .vm-row:hover { background-color: var(--vm-hover); }
+#vm-panel .vm-row { color: var(--vm-ink); }
+#vm-panel .vm-row.active { background-color: var(--vm-pill); box-shadow: var(--vm-pill-shadow); color: var(--vm-ink); }
+/* Like Arc, the selected tab and favorite fade almost into the sidebar while the window is in the background. */
+#browser.vm-on.isblurred #vm-panel :is(.vm-row, .vm-fav).active {
+  background-color: color-mix(in srgb, var(--vm-pill) 30%, transparent);
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.04);
+}
+/* A sleeping (discarded) tab keeps its text like the others, as in Arc; only its icon fades. */
+#vm-panel .vm-row.discarded .vm-ico { opacity: 0.6; }
+#vm-panel .vm-folder-head { font-weight: 600; }
+/* Open tabs inside a closed folder: a small count at the end of the folder's row (hidden while it is open). */
+#vm-panel .vm-folder-open-count {
+  flex: none;
+  margin-left: auto;
+  margin-right: 4px;
+  min-width: 16px;
+  font-size: var(--vm-fs-1);
+  font-weight: 500;
+  opacity: 0.5;
+  line-height: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+#vm-panel .vm-folder.open > .vm-folder-head > .vm-folder-open-count { display: none; }
+/* Like Dia, a tab keeps the sidebar's ink when hovered or active: no page colour, no space colour on the folder
+   around it. (10-sidebar.js still learns the page colours; nothing here paints with them.) */
+#vm-panel .vm-row { transition: background-color 120ms, box-shadow 120ms, color 120ms; }
+#vm-panel .vm-glyph svg { stroke-width: 1.5; }
+/* A black mark (GitHub, MDN) on a dark sidebar is shown in white (10-sidebar.js marks it vm-ico-dark). */
+#browser.vm-on:is(.theme-dark:not(.vm-themed), .vm-themed.vm-light-ink) #vm-panel :is(.vm-row, .vm-fav).vm-ico-dark .vm-ico img { filter: invert(1); }
+/* Tab stacks: the stack's row is its title (it folds and unfolds, it is not a tab), with a stack glyph, the count
+   and an arrow. Its tabs are all alike under it, indented along a guide line: none of them stands as the parent. */
+#vm-panel .vm-stack-head { padding-left: var(--vm-row-pad); }
+#vm-panel .vm-stack-glyph svg { width: 16px; height: 16px; }
+#vm-panel .vm-stack-count { flex: none; margin-left: auto; font-size: var(--vm-fs-1); font-weight: 500; opacity: 0.5; font-variant-numeric: tabular-nums; }
+#vm-panel .vm-stack-chevron { flex: none; display: flex; margin: 0 4px 0 2px; opacity: 0.55; transition: transform 160ms; }
+#vm-panel .vm-tab-stack.open > .vm-stack-head .vm-stack-chevron { transform: rotate(90deg); }
+#vm-panel .vm-stack-content { position: relative; }
+#vm-panel .vm-stack-content > .vm-tab { padding-left: calc(var(--vm-row-pad) + var(--vm-row-indent)) !important; }
+#vm-panel .vm-tab-stack.open { margin: 2px 0; border-radius: var(--vm-r-lg); background-color: var(--vm-tile); box-shadow: inset 0 0 0 1px var(--vm-tile-line); }
+#vm-panel .vm-tab-stack.open > .vm-stack-head { font-weight: 600; }
+#vm-panel .vm-tab-stack.open > .vm-stack-head:hover { background-color: transparent; }
+@media (prefers-reduced-motion: reduce) { #vm-panel .vm-stack-chevron { transition: none; } }
+/* Selected tabs (Cmd+click, Shift+click): an outlined, lightly filled row. */
+#vm-panel .vm-tab.vm-selected { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--colorHighlightBg, #5d7aee) 70%, transparent); background-color: color-mix(in srgb, var(--colorHighlightBg, #5d7aee) 14%, transparent); }
+
+#vm-panel .vm-glyph { display: flex; flex: none; opacity: 0.8; }
+#vm-panel .vm-glyph svg { width: 16px; height: 16px; }
+/* Arc's folder icon is a little larger than a favicon; the text still starts where the tabs' does. */
+#vm-panel .vm-folder-head > .vm-glyph { margin: 0 -1px; opacity: 0.9; }
+#vm-panel .vm-folder-head > .vm-glyph svg { width: 18px; height: 18px; }
+/* Arc's folders take the space's color: a darker shade of it on a colored space. */
+#browser.vm-on.vm-themed #vm-panel .vm-folder-head > .vm-glyph { color: color-mix(in srgb, var(--vm-space-solid, var(--vm-fg)) 45%, var(--vm-fg)); opacity: 1; }
+#vm-panel .vm-title { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; }
+/* Folders open and close as Arc's do (measured on a recording of Arc): the contents hang from the bottom of the
+   opening, so they slide down out from under the folder as it opens (the last item shows first) and slide back up
+   into it as it closes. Opening takes 200ms easing out; closing 240ms with a slower start, and the titles inside
+   vanish at once, so only the icons slide back in. */
+#vm-panel .vm-folder-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 240ms ease;
+}
+#vm-panel .vm-folder.open > .vm-folder-body { grid-template-rows: 1fr; transition: grid-template-rows 200ms ease-out; }
+#vm-panel .vm-folder-content { min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; }
+#vm-panel .vm-folder-content > * { flex: none; }
+#vm-panel .vm-folder:not(.open) > .vm-folder-body .vm-row > :not(.vm-ico, .vm-glyph) { opacity: 0; transition: opacity 40ms linear; }
+@media (prefers-reduced-motion: reduce) {
+  #vm-panel .vm-folder-body, #vm-panel .vm-folder.open > .vm-folder-body { transition: none; }
+}
+
+#vm-panel .vm-ico {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--vm-r-xs);
+  overflow: hidden;
+}
+#vm-panel .vm-ico img { width: 100%; height: 100%; object-fit: contain; }
+#vm-panel .vm-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: var(--vm-fs-1);
+  font-weight: 600;
+  color: #fff;
+}
+
+#vm-panel .vm-act {
+  display: none;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--vm-r-sm);
+  font-size: var(--vm-fs-4);
+  line-height: 1;
+  opacity: 0.75;
+}
+#vm-panel .vm-row:hover .vm-act { display: flex; }
+#vm-panel .vm-act:hover { opacity: 1; background-color: color-mix(in srgb, currentColor 18%, transparent); }
+
+#vm-panel .vm-divider {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 22px;
+  margin: 0 10px var(--vm-row-gap);
+  font-size: var(--vm-fs-2);
+}
+#vm-panel .vm-divider > :is(.vm-clear, .vm-tidy) { position: relative; z-index: 1; background-color: transparent; }
+#vm-panel .vm-divider::before { position: absolute; left: 0; right: 0; top: 50%; }
+#vm-panel .vm-divider:hover::before { right: var(--vm-divider-gap, 96px); }
+#vm-panel .vm-divider { justify-content: flex-end; }
+/* The line between pinned links and open tabs: a hairline, as quiet as the tiles. */
+#vm-panel .vm-divider::before { content: ""; flex: 1; height: 1px; background-color: color-mix(in srgb, var(--vm-ink) 15%, transparent); }
+#vm-panel .vm-clear {
+  order: 2;
+  padding: 2px 8px;
+  border-radius: var(--vm-r-sm);
+  font-weight: 500;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms;
+}
+#vm-panel .vm-divider:hover .vm-clear { opacity: 0.7; }
+#vm-panel .vm-tidy { order: 1; margin-right: -4px; }
+#vm-panel .vm-clear:hover { opacity: 1; background-color: var(--vm-press); }
+/* Arc's "New Tab" is the quietest row (about a third of the text's ink). */
+#vm-panel .vm-newtab { opacity: 0.4; }
+#vm-panel .vm-plus { display: flex; flex: none; justify-content: center; width: 16px; font-size: var(--vm-fs-5); line-height: 1; }
+
+.vm-menu {
+  /* A macOS menu: the command bar's surface, compact rows, the accent colour under the pointer. */
+  position: fixed;
+  z-index: 100000;
+  min-width: 200px;
+  padding: 5px;
+  border-radius: var(--vm-r-lg);
+  font-size: var(--vm-fs-3);
+  line-height: 16px;
+  color: var(--cmd-text);
+  background: var(--cmd-surface);
+  box-shadow: var(--vm-shadow-pop);
+}
+.vm-menu-item { padding: 4px 10px; border-radius: var(--vm-r-sm); cursor: default; }
+.vm-menu-item:hover { background-color: var(--vm-accent); color: var(--vm-accent-fg); }
+.vm-menu-item.danger { color: var(--vm-danger); }
+.vm-menu-item.danger:hover { background-color: var(--vm-danger); color: #fff; }
+.vm-menu-sep { height: 1px; margin: 4px 10px; background-color: var(--cmd-line); }
+

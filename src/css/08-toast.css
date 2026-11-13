@@ -1,0 +1,46 @@
+/* Copied-URL toast (js/40-copy-toast.js) */
+#vm-copied {
+  position: fixed;
+  z-index: 100003;
+  top: 12px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  border-radius: var(--vm-r-xl);
+  font-size: var(--vm-fs-3);
+  font-weight: 500;
+  color: var(--cmd-text);
+  background: var(--cmd-surface);
+  box-shadow: var(--vm-shadow-pop);
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 180ms, transform 180ms;
+  pointer-events: none;
+}
+#vm-copied.in { opacity: 1; transform: none; }
+#vm-copied.has-action { pointer-events: auto; padding-right: 6px; }
+#vm-copied .vm-toast-action {
+  height: 28px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--vm-r-md);
+  background: color-mix(in srgb, var(--vm-accent) 14%, transparent);
+  color: var(--vm-accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+#vm-copied .vm-toast-action:hover { background: color-mix(in srgb, var(--vm-accent) 24%, transparent); }
+#vm-copied .vm-copied-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 30px;
+  border-radius: var(--vm-r-md);
+  background: color-mix(in srgb, var(--cmd-text) 6%, transparent);
+}
+#vm-copied .vm-copied-icon svg { width: 18px; height: 18px; }
+

@@ -1,0 +1,137 @@
+/* The space editor: a macOS popover on the command bar's surface, like the menus. Fields and buttons are quiet wells
+   of the text colour (--pop-well), no borders; the focused field gets the accent ring. */
+.vm-theme-pop {
+  --pop-well: color-mix(in srgb, var(--cmd-text) 6%, transparent);
+  --pop-hover: color-mix(in srgb, var(--cmd-text) 10%, transparent);
+  position: fixed;
+  z-index: 100001;
+  left: 10px;
+  bottom: 46px;
+  width: 280px;
+  padding: 12px;
+  border-radius: var(--vm-r-xl);
+  color: var(--cmd-text);
+  background: var(--cmd-surface);
+  box-shadow: var(--vm-shadow-pop);
+  font-size: var(--vm-fs-3);
+}
+.vm-theme-pop button { font: inherit; color: inherit; cursor: default; }
+.vm-theme-heading { font-weight: 500; margin-bottom: 10px; }
+.vm-theme-head { display: flex; gap: 6px; margin-bottom: 10px; }
+.vm-theme-head input, .vm-theme-emoji-field {
+  height: 32px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--vm-r-md);
+  outline: 0;
+  background: var(--pop-well);
+  color: inherit;
+  font: inherit;
+  box-shadow: none;
+}
+.vm-theme-head input:focus, .vm-theme-emoji-field:focus { box-shadow: 0 0 0 2px color-mix(in srgb, var(--vm-accent) 55%, transparent); }
+.vm-theme-mark {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--vm-r-md);
+  background: var(--pop-well);
+}
+.vm-theme-mark:hover { background: var(--pop-hover); }
+.vm-theme-mark .vm-mark-emoji { font-size: var(--vm-fs-4); line-height: 1; }
+.vm-theme-mark .vm-mark-icon { width: 16px; height: 16px; }
+.vm-theme-mark-letter { font-size: var(--vm-fs-3); font-weight: 600; color: var(--cmd-muted); }
+.vm-theme-name { flex: 1; min-width: 0; padding: 0 10px; font-size: var(--vm-fs-3) !important; font-weight: 500 !important; }
+.vm-theme-picker { display: none; margin: -4px 0 10px; padding: 8px; border-radius: var(--vm-r-lg); background: var(--pop-well); }
+.vm-theme-picker.open { display: block; }
+.vm-theme-emoji-field { width: 100%; height: 28px; padding: 0 9px; background: var(--cmd-surface); }
+.vm-theme-hint { margin: 5px 2px 8px; font-size: var(--vm-fs-1); color: var(--cmd-muted); }
+.vm-theme-label { margin: 8px 2px 4px; font-size: var(--vm-fs-1); font-weight: 600; color: var(--cmd-muted); }
+.vm-theme-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
+.vm-theme-pick { display: flex; align-items: center; justify-content: center; height: 28px; padding: 0; border: 0; border-radius: var(--vm-r-sm); background: transparent; font-size: var(--vm-fs-4) !important; }
+.vm-theme-pick:hover { background: var(--pop-hover); }
+.vm-theme-pick-icon { width: 16px; height: 16px; }
+.vm-theme-none { width: 100%; margin-top: 6px; padding: 5px; border: 0; border-radius: var(--vm-r-sm); background: transparent; font-size: var(--vm-fs-2) !important; color: var(--cmd-muted) !important; }
+.vm-theme-none:hover { background: var(--pop-hover); color: var(--cmd-text) !important; }
+/* Dark and Light set every color's lightness at once: two buttons in one segmented well. */
+.vm-theme-modes { display: flex; gap: 2px; margin-bottom: 10px; padding: 2px; border-radius: var(--vm-r-md); background: var(--pop-well); }
+.vm-theme-mode { flex: 1; height: 24px; padding: 0; border: 0; border-radius: var(--vm-r-sm); background: transparent; font-weight: 500 !important; }
+.vm-theme-mode:hover { background: var(--cmd-surface); box-shadow: var(--vm-pill-shadow); }
+.vm-theme-pad { position: relative; height: 130px; border-radius: var(--vm-r-lg); box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.12); cursor: crosshair; touch-action: none; }
+/* The color dots sit on any color of the pad: white rings with a dark hairline. */
+.vm-theme-dot {
+  position: absolute;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid rgb(255 255 255 / 0.85);
+  border-radius: 50%;
+  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.35), 0 1px 3px rgb(0 0 0 / 0.25);
+  pointer-events: none;
+}
+.vm-theme-dot.selected { z-index: 1; width: 20px; height: 20px; margin: -10px 0 0 -10px; border: 3px solid #fff; }
+.vm-theme-colors { display: flex; align-items: center; gap: 8px; margin: 12px 2px 0; }
+.vm-theme-chip {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.15);
+}
+.vm-theme-chip.selected { outline: 2px solid var(--cmd-text); outline-offset: 2px; }
+.vm-theme-add { background: transparent; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cmd-text) 25%, transparent); color: var(--cmd-muted) !important; font-size: var(--vm-fs-4) !important; line-height: 1; }
+.vm-theme-add:hover { background: var(--pop-hover); color: var(--cmd-text) !important; }
+.vm-theme-remove { margin-left: auto; height: 24px; padding: 0 8px; border: 0; border-radius: var(--vm-r-sm); background: transparent; color: var(--cmd-muted) !important; font-size: var(--vm-fs-2) !important; }
+.vm-theme-remove:hover { background: var(--pop-hover); color: var(--cmd-text) !important; }
+.vm-theme-swatches { display: flex; justify-content: space-between; margin: 12px 2px; }
+.vm-theme-swatch { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; box-shadow: inset 0 0 0 0.5px rgb(0 0 0 / 0.15); transition: transform 120ms; }
+.vm-theme-swatch:hover { transform: scale(1.12); }
+/* Sliders like Dia's: a thin track filled in graphite (the text colour) up to the thumb (--fill, set by the editor). */
+.vm-theme-slider { display: flex; align-items: center; gap: 12px; margin: 10px 2px; }
+.vm-theme-slider span { width: 60px; color: var(--cmd-muted); }
+#browser .vm-theme-slider input {
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  margin: 0;
+  border-radius: 2px;
+  background: linear-gradient(to right, color-mix(in srgb, var(--cmd-text) 72%, transparent) var(--fill, 50%), color-mix(in srgb, var(--cmd-text) 12%, transparent) var(--fill, 50%));
+}
+#browser .vm-theme-slider input::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 1px 3px rgb(0 0 0 / 0.3); }
+.vm-theme-reset {
+  width: 100%;
+  height: 28px;
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--vm-r-md);
+  background: transparent;
+  color: var(--cmd-muted) !important;
+}
+.vm-theme-reset:hover { background: var(--pop-hover); color: var(--cmd-text) !important; }
+
+#vm-panel .vm-space { display: flex; align-items: center; justify-content: space-between; }
+#vm-panel .vm-space .vm-act { display: flex; visibility: hidden; }
+#vm-panel .vm-space:hover .vm-act { visibility: visible; }
+#vm-panel .vm-away-mark { flex: none; opacity: 0.5; margin: 0 -2px 0 -4px; }
+#vm-panel .vm-fav { position: relative; }
+#vm-panel .vm-fav.away::after {
+  content: "";
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--colorHighlightBg, #7b8cff);
+}
+#vm-panel .vm-split-mark { flex: none; opacity: 0.55; font-size: var(--vm-fs-3); }
+
+#browser.vm-on .vm-spaces { flex: none; display: flex; align-items: center; gap: 7px; margin-right: 8px; }

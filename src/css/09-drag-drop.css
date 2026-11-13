@@ -1,0 +1,22 @@
+/* Drag and drop */
+#vm-panel .dragging { opacity: 0.4; }
+#vm-panel .drop-before { box-shadow: inset 0 2px 0 0 var(--colorHighlightBg, #7b8cff); }
+#vm-panel .drop-after { box-shadow: inset 0 -2px 0 0 var(--colorHighlightBg, #7b8cff); }
+#vm-panel .vm-fav.drop-before { box-shadow: inset 2px 0 0 0 var(--colorHighlightBg, #7b8cff); }
+#vm-panel .vm-fav.drop-after { box-shadow: inset -2px 0 0 0 var(--colorHighlightBg, #7b8cff); }
+#vm-panel .drop-into { background-color: color-mix(in srgb, var(--colorHighlightBg, #7b8cff) 35%, transparent); }
+#vm-panel .vm-favs:empty { display: none; }
+#browser.vm-dragging #vm-panel .vm-favs:empty {
+  display: grid;
+  min-height: 38px;
+  margin-bottom: 8px;
+  border: 1px dashed color-mix(in srgb, var(--colorFg) 30%, transparent);
+  border-radius: var(--vm-r-lg);
+}
+#vm-panel .vm-favs.drop-before, #vm-panel .vm-favs.drop-after {
+  box-shadow: none;
+  outline: 2px dashed var(--colorHighlightBg, #7b8cff);
+  outline-offset: -2px;
+  border-radius: var(--vm-r-lg);
+}
+

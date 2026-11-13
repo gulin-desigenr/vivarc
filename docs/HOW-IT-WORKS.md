@@ -4,8 +4,8 @@ Vivaldi's UI is a web page (`window.html`). Vivarc adds one script and one style
 
 | Piece | Where it lives | What it does |
 |---|---|---|
-| CSS | Embedded in `vivarc.js` and added to the UI as a `<style>` element (source: `src/css/vivarc.css`) | Styles. Every rule is scoped to `#browser.vm-on`, a class the JS adds. No CSS-mods folder or browser flag is needed, and it never conflicts with your own CSS mods. |
-| JS | `<Vivaldi.app>/.../vivaldi/vivarc.js`, referenced from `window.html` by one marked block | The sidebar, command bar, toast and theme editor. Rebuilt from `src/js/` by `vivarc.py apply`. |
+| CSS | Embedded in `vivarc.js` and added to the UI as a `<style>` element (source: the files of `src/css/`, joined in name order, so the cascade is that of one stylesheet) | Styles. Every rule is scoped to `#browser.vm-on`, a class the JS adds. No CSS-mods folder or browser flag is needed, and it never conflicts with your own CSS mods. |
+| JS | `<Vivaldi.app>/.../vivaldi/vivarc.js`, referenced from `window.html` by one marked block | The sidebar, command bar, toast and theme editor. Rebuilt from `src/js/` by `vivarc.py apply`: each file is a module, and a folder (`src/js/10-sidebar/`) is one module whose files share one scope. A module that throws while loading is recorded and the next ones still load. |
 | Data | A bookmarks folder with `Favorites` and `Pinned` subfolders (created on first run) | Your favorites and pinned folders. Plain bookmarks: they sync, export and back up like any others. |
 | Settings | `~/.vivarc/config.json` | See below. |
 | State | `~/.vivarc/state.json`, `~/.vivarc/backup/` | What the installer changed and the original values, used by `uninstall`. |
@@ -14,6 +14,15 @@ Vivaldi's UI is a web page (`window.html`). Vivarc adds one script and one style
 
 An update replaces `Vivaldi.app`, including `window.html`. Run `./vivarc.py update` after updating: it pulls (git checkout) or downloads the latest release when there is one, then re-runs `install`. The installer leaves `~/Applications/Update Vivarc.app`, which opens `~/.vivarc/Update Vivarc.command` in Terminal; that script runs `update` (it quits Vivaldi) and reopens Vivaldi. `~/Applications/Uninstall Vivarc.app` does the same for `~/.vivarc/Uninstall Vivarc.command`, which runs `uninstall`. They are generated locally (the app by `osacompile`, ad-hoc signed), so macOS does not quarantine them, the app can sit in the Dock, and `uninstall` removes them all. The optional reminder (`vivarc.py reminder on`) is a LaunchAgent, `~/Library/LaunchAgents/com.vivarc.reminder.plist`, that runs `vivarc.py remind` at login, every hour and when Vivaldi's `Info.plist` changes. `remind` only reads: if `window.html` has lost the Vivarc block (or `vivarc.js` is missing) it shows one dialog, at most every 12 hours, and on yes opens the update script in Terminal. When Vivarc is in place it also asks GitHub for the latest release tag (a redirect, nothing is downloaded) and, if that is newer than the installed version, shows one dialog per release (remembered in `~/.vivarc/offered`) with the same yes path. A background job cannot do the update itself: macOS only lets a terminal you have granted App Management edit `Vivaldi.app`.
 `./vivarc.py status` tells you whether the JS is in place. Until you re-apply, Vivaldi simply looks like normal Vivaldi.
+
+## Checking Vivarc after a Vivaldi update
+
+Vivarc relies on parts of Vivaldi that are not a public interface: private APIs (`vivaldi.tabsPrivate`, `vivaldi.prefs`...), preference paths, command names, the class and id names of its UI, toolbar button names and Vivaldi's own webpack modules (the workspace manager). A Vivaldi release can change any of them. The doctor says which are gone:
+
+- `./vivarc.py doctor` checks the app's files: that Vivarc is injected and `vivarc.js` is what the checkout builds, that every preference exists in `prefs_definitions.json`, and that every command, class and id name, toolbar button and webpack marker still occurs in Vivaldi's UI code. It exits 1 when something is missing. With `--port` it also asks a Vivaldi with DevTools open (`tools/dev-vivaldi.sh doctor` does both on the development copy).
+- Inside Vivaldi (`src/js/02-doctor.js`), the same lists are checked live: each API exists, each preference can be read, each command is known, the page elements the layout expects are there, the webpack lookups find their modules, and every module loaded. It runs a few seconds after start-up and shows a toast (with **Copy Report**) only when something new is missing; **Check Vivarc** in the command bar runs it on demand.
+
+What Vivarc uses is read from its own source (`tools/doctor.py`), so the lists never need updating by hand. Only the page elements (`ELEMENTS` in `02-doctor.js`) and the webpack markers (`INTERNALS` in `tools/doctor.py`) are listed by hand.
 
 ## Configuration
 

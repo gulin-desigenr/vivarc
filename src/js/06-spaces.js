@@ -61,15 +61,9 @@
     const read = async (path) => (await vivaldi.prefs.get(path))?.value;
     const path = "vivaldi.toolbars.tabbar_after";
     const list = await read(path);
-    if (Array.isArray(list)) {
-      const next = withDownloads(withAccountButton(list, wantAccount));
-      if (next.join() !== list.join()) await vivaldi.prefs.set({ path, value: next });
-      return;
-    }
-    const whole = await read("vivaldi.toolbars");
-    if (!Array.isArray(whole?.tabbar_after)) return;
-    const next = withDownloads(withAccountButton(whole.tabbar_after, wantAccount));
-    if (next.join() !== whole.tabbar_after.join()) await vivaldi.prefs.set({ path: "vivaldi.toolbars", value: { ...whole, tabbar_after: next } });
+    if (!Array.isArray(list)) return;
+    const next = withDownloads(withAccountButton(list, wantAccount));
+    if (next.join() !== list.join()) await vivaldi.prefs.set({ path, value: next });
   };
 
   window.__vm.spaces = { profileChips, pathForShortcut, wantsAccountButton, withAccountButton, withDownloads, syncBottomBar };

@@ -1,0 +1,75 @@
+/* Theme editor (40-theme.js) */
+#browser.vm-themed #tabs-tabbar-container {
+  background-color: var(--vm-tint) !important;
+  --colorFg: var(--vm-fg);
+  color: var(--vm-fg);
+  position: relative;
+  isolation: isolate;
+}
+#browser.vm-themed:not(.vm-glass) #tabs-tabbar-container { background-image: none !important; }
+/* Text on a space's tint uses the computed ink at full strength (--vm-fg, at least 7:1 where the tint allows) and
+   --vm-fg-muted for secondary text (4.5:1), not opacity, which falls below readable contrast on mid tones. */
+#browser.vm-on.vm-themed #vm-panel .vm-row { color: var(--vm-fg); }
+#browser.vm-on.vm-themed #vm-panel .vm-row.active { color: var(--vm-fg); }
+#browser.vm-on.vm-themed #vm-panel :is(.vm-space, .vm-divider) { color: var(--vm-fg-muted); opacity: 1; }
+#browser.vm-on.vm-themed #vm-panel .vm-newtab { color: var(--vm-fg); opacity: 0.4; }
+#browser.vm-on.vm-themed #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField .UrlFragment-Wrapper { --LowlightColor: var(--vm-fg-muted) !important; }
+#browser.vm-on.vm-themed #tabs-tabbar-container .UrlBar-AddressField input::placeholder { color: var(--vm-fg-muted); opacity: 1; }
+#browser.vm-on.vm-themed .toolbar-tabbar-after .vm-space-pill:not(.active, :hover)::before { background-color: var(--vm-fg-muted); opacity: 0.7; }
+/* The window frame around the sidebar and the page (the strip under the sidebar, the rounded corners) takes the
+   space color too, like Arc, instead of Vivaldi's theme background. */
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) { background-color: var(--vm-tint) !important; background-image: none !important; }
+/* One surface, like Arc: in a themed space (not glass) the sidebar is see-through and the window behind it carries the
+   tint and the grain, so the strip above the page and the corners around it match the sidebar with no seam. */
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) { isolation: isolate; }
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) #tabs-tabbar-container { background-color: transparent !important; background-image: none !important; }
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) #tabs-tabbar-container::before { display: none; }
+/* A hidden sidebar (auto-hide) slides in over the page inside Vivaldi's own wrapper, away from the window surface:
+   there it carries the tint, gradient and grain itself, as before. */
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) .auto-hide-wrapper #tabs-tabbar-container {
+  background-color: var(--vm-tint) !important;
+  background-image: var(--vm-tint-image, none) !important;
+  background-attachment: fixed !important;
+}
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) .auto-hide-wrapper #tabs-tabbar-container::before { display: block; }
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc) .auto-hide-wrapper.has-tabbar { background-color: var(--vm-tint) !important; }
+#browser.vm-on.vm-themed:not(.vm-glass, .vm-little-arc)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  app-region: none;
+  background-image: var(--vm-noise);
+  background-size: var(--vm-noise-size, 128px);
+  image-rendering: pixelated;
+  opacity: var(--vm-grain, 0.1);
+  mix-blend-mode: overlay;
+}
+/* A gradient tint (two or three colors) runs through the sidebar and the window frame as one, fixed to the window. */
+#browser.vm-on.vm-themed.vm-gradient:not(.vm-glass, .vm-little-arc) { background-image: var(--vm-tint-image) !important; background-attachment: fixed !important; }
+/* While switching spaces the surface is painted from its color stops, which crossfade (see the switching rules above). */
+#browser.vm-on.vm-themed.vm-space-fading:not(.vm-glass, .vm-little-arc) {
+  background-image: linear-gradient(160deg, var(--vm-stop-1), var(--vm-stop-2), var(--vm-stop-3)) !important;
+  background-attachment: fixed !important;
+}
+#browser.vm-themed.vm-gradient.vm-little-arc:not(.vm-glass) #tabs-tabbar-container { background-image: var(--vm-tint-image) !important; background-attachment: fixed !important; }
+/* isolation makes the bar its own stacking context, painted under the page: lift it while the address bar or
+   one of its popups (site permission requests) is open, or they are cut off at the sidebar's edge */
+#browser.vm-themed #tabs-tabbar-container:is(:focus-within, :has(.addressfield-popup-container)) { z-index: 1; }
+/* The grain is a ::before, the bar's first box: Chromium lays draggable regions out in box order, later boxes
+   winning, so an overlay that is the bar's last box (::after) covered every drag region of the sidebar and the
+   window could not be moved in a themed space. First in order, it changes none of them. */
+#browser.vm-themed #tabs-tabbar-container::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  app-region: none;
+  background-image: var(--vm-noise);
+  background-size: var(--vm-noise-size, 128px);
+  image-rendering: pixelated;
+  opacity: var(--vm-grain, 0.1);
+  mix-blend-mode: overlay;
+}

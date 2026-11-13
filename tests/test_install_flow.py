@@ -125,8 +125,7 @@ class InstallFlow(unittest.TestCase):
         res = os.path.join(self.app, vivarc.RESOURCES)
         with open(os.path.join(res, "vivarc.js")) as f:
             bundle = f.read()
-        with open(os.path.join(vivarc.HERE, "src", "css", "vivarc.css")) as f:
-            self.assertIn(json.dumps(f.read()), bundle)
+        self.assertIn(json.dumps(vivarc.stylesheet(os.path.join(vivarc.HERE, "src", "css"))), bundle)
 
     def test_install_puts_the_guide_page_in_place_and_tells_the_js_its_url(self):
         self.run_cli("install", "--no-peek")

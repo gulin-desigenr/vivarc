@@ -1,0 +1,44 @@
+/* Arc-style window controls (09-window-controls.js): no title bar revealed at the top edge, and room for the
+   native traffic lights at the start of the sidebar's first row. Row 1: traffic lights, tab menu, back, forward,
+   reload; row 2: the address; row 3: extensions. */
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #header { display: none !important; }
+/* Auto-hide reveals a second copy of the title bar at the top edge, outside #header. */
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) .auto-hide-wrapper.top #titlebar { display: none !important; }
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) .auto-hide-wrapper.top:not(:has(> :not(#titlebar))) { display: none !important; }
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc, .fullscreen) #tabs-tabbar-container.left .toolbar-tabbar-before > :first-child {
+  margin-left: var(--vm-traffic-lights, 76px);
+}
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-before {
+  > .toolbar-spacer-flexible { order: 1; }
+  > .button-toolbar:has(> [data-name="Back"]) { order: 2; }
+  > .button-toolbar:has(> [data-name="Forward"]) { order: 3; }
+  > .button-toolbar:has(> [data-name="Reload"]) { order: 4; }
+  > .UrlBar-AddressField { order: 5; }
+  > .toolbar-extensions { order: 1; flex: none; display: flex; padding: 0; }
+  > .toolbar-extensions:empty { display: none; }
+}
+/* The same rows on Vivaldi 8.3, where these buttons sit inside .tabbar-nested-buttons. */
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc, .fullscreen) #tabs-tabbar-container.left .toolbar-tabbar-before > .tabbar-nested-buttons > :first-child {
+  margin-left: var(--vm-traffic-lights, 76px);
+}
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-before > .tabbar-nested-buttons {
+  > .toolbar-spacer-flexible { order: 1; }
+  > .button-toolbar:has(> [data-name="Back"]) { order: 2; }
+  > .button-toolbar:has(> [data-name="Forward"]) { order: 3; }
+  > .button-toolbar:has(> [data-name="Reload"]) { order: 4; }
+  > .toolbar-extensions { order: 1; flex: none; display: flex; padding: 0; }
+  > .toolbar-extensions:empty { display: none; }
+}
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-before { -webkit-app-region: drag; }
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-before :is(button, input, .UrlBar-AddressField, .button-toolbar) { -webkit-app-region: no-drag; }
+/* Without a title bar the window moves by its sidebar, like Arc: the empty space of the top row and the empty
+   sidebar under the list (the bottom toolbar's flexible spacer, which stretches up to the list) are drag regions,
+   so dragging there moves the window and double-clicking zooms it (or minimises, per System Settings). Vivaldi
+   fills each flexible spacer with a disabled button that is no-drag, so the button is made draggable too. The
+   window's top edge keeps its native resize, and double-clicking it stretches the window up to the screen top. */
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left :is(.toolbar-tabbar-before, .toolbar-tabbar-after) :is(.toolbar-spacer-flexible, .toolbar-spacer-flexible *) {
+  -webkit-app-region: drag !important;
+  app-region: drag !important;
+}
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-after { -webkit-app-region: drag; }
+#browser.vm-on.vm-arc-controls:not(.vm-little-arc) #tabs-tabbar-container.left .toolbar-tabbar-after :is(button, .button-toolbar:not(.toolbar-spacer-flexible), .vm-space-bar, .vm-spaces) { -webkit-app-region: no-drag; }

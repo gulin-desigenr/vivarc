@@ -206,7 +206,8 @@
       .then(() => toast("Saved a Vivarc backup in ~/.vivarc/backups"), () => toast("Could not save the backup")) },
     { label: "Restore Vivarc Backup…", words: "backup restore import settings themes", stay: true, run: async () => setMode(await backupPicker()) },
     { label: "Vivarc Settings", words: "preferences options configure features toggle glass", run: () => window.dispatchEvent(new CustomEvent("vm-open-settings")) },
-    { label: "Edit Space", words: "theme color gradient appearance sidebar rename name emoji icon", run: () => window.dispatchEvent(new CustomEvent("vm-open-theme")) },
+    { label: "Check Vivarc", words: "doctor diagnose health broken vivaldi update compatibility problems", run: () => window.__vm.doctor?.show() },
+    { label: "Edit Space",words: "theme color gradient appearance sidebar rename name emoji icon", run: () => window.dispatchEvent(new CustomEvent("vm-open-theme")) },
   ];
   const ACTION_SVG =
     '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3 5 13.5h6L10 21l8-10.5h-6z"/></svg>';
@@ -458,19 +459,16 @@
     else chrome.tabs.create({ url }).then((tab) => place(tab.id, outside, stack));
   };
 
-  // Plain searches use the engine chosen in Vivaldi; DuckDuckGo is only the fallback.
+  // Plain searches use the engine chosen in Vivaldi; DuckDuckGo is only the fallback. (chrome.search, which would
+  // run the search itself, is not available to Vivaldi's UI.)
   const defaultSearch = async (query, outside = false) => {
     const id = targetTab;
     const stack = stackHere;
     close(false);
     place(id, outside, stack);
-    try {
-      await chrome.search.query(id != null ? { text: query, tabId: id } : { text: query, disposition: "NEW_TAB" });
-    } catch (_) {
-      const url = (await window.__vm.defaultSearchUrl?.(query)) || engineUrl(DEFAULT, query);
-      if (id != null) chrome.tabs.update(id, { url, active: true });
-      else chrome.tabs.create({ url });
-    }
+    const url = (await window.__vm.defaultSearchUrl?.(query)) || engineUrl(DEFAULT, query);
+    if (id != null) chrome.tabs.update(id, { url, active: true });
+    else chrome.tabs.create({ url });
   };
 
   const run = (row) => {

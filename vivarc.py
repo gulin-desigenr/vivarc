@@ -5,6 +5,7 @@
     ./vivarc.py update         fetch the latest Vivarc and re-apply it (also after a Vivaldi update)
     ./vivarc.py apply          re-inject the JS only
     ./vivarc.py status         show what is installed
+    ./vivarc.py doctor         check that the parts of Vivaldi Vivarc relies on are still there
     ./vivarc.py import-arc     export your Arc spaces for import into Vivaldi
     ./vivarc.py uninstall      put everything back
 
@@ -240,17 +241,52 @@ def find_profiles(local_state):
     return [(key, cache[key].get("name", key)) for key in sorted(cache)]
 
 
+def js_modules(js_dir):
+    return [name for name in sorted(os.listdir(js_dir)) if name.endswith(".js") or os.path.isdir(os.path.join(js_dir, name))]
+
+
+def js_source(js_dir):
+    """All of Vivarc's JavaScript, as the bundle has it."""
+    return "".join(module_source(os.path.join(js_dir, name)) for name in js_modules(js_dir))
+
+
+def tools_module(name):
+    sys.path.insert(0, os.path.join(HERE, "tools"))
+    return __import__(name)
+
+
+def module_source(path):
+    """A module is a .js file, or a folder of .js files that share one scope: joined in name order inside one function."""
+    if not os.path.isdir(path):
+        return read_text(path)
+    name = os.path.basename(path)
+    parts = [f"// ---- {name}/{part}\n" + read_text(os.path.join(path, part))
+             for part in sorted(os.listdir(path)) if part.endswith(".js")]
+    return "(() => {\n" + "".join(parts) + "})();\n"
+
+
+def guarded(name, source):
+    """A module that throws while loading is recorded (the doctor reports it) and the modules after it still load."""
+    return (f"try {{\n{source}}} catch (error) {{\n"
+            f"  (window.__vmLoadErrors ||= []).push({{ module: {json.dumps(name)}, error: String(error?.stack || error) }});\n"
+            f"  console.error(\"[vivarc] {name} failed to load:\", error);\n}}\n")
+
+
 def build_bundle(js_dir, config, extras=(), pre=()):
     """Config first, then `pre` scripts (globals the modules read at load), the modules, then `extras`."""
     parts = ["window.__vmConfig = " + json.dumps(config) + ";\n"]
     for name, source in pre:
         parts.append(f"\n// ---- {name}\n{source}")
-    for name in sorted(os.listdir(js_dir)):
-        if name.endswith(".js"):
-            parts.append(f"\n// ---- {name}\n" + read_text(os.path.join(js_dir, name)))
+    for name in js_modules(js_dir):
+        parts.append(f"\n// ---- {name}\n" + guarded(name, module_source(os.path.join(js_dir, name))))
     for name, source in extras:
         parts.append(f"\n// ---- {name}\n{source}")
     return "".join(parts)
+
+
+def stylesheet(css_dir):
+    """The stylesheet is the .css files of src/css joined in name order: later files win ties, as in one file."""
+    return "".join(read_text(os.path.join(css_dir, name)) for name in sorted(os.listdir(css_dir)) if name.endswith(".css"))
 
 
 # ---------------------------------------------------------------- io helpers
@@ -430,8 +466,12 @@ def sync_guide():
     shutil.copy2(os.path.join(HERE, "src/start/index.html"), start_dir)
 
 
-def write_bundle(resources, with_peek):
-    extras, pre = [], [("vivarc.css", style_script("vivarc-css", read_text(os.path.join(HERE, "src/css/vivarc.css"))))]
+def bundle_text(with_peek):
+    """The vivarc.js that apply writes, from this checkout and ~/.vivarc."""
+    js_dir = os.path.join(HERE, "src/js")
+    deps = tools_module("doctor").js_dependencies(js_source(js_dir))
+    extras, pre = [], [("vivarc.css", style_script("vivarc-css", stylesheet(os.path.join(HERE, "src/css")))),
+                       ("deps", f"window.__vmDeps = {json.dumps(deps)};\n")]
     icons = os.path.join(HOME_DIR, "icons.js")
     if os.path.exists(icons):
         pre.append(("icons.js", read_text(icons)))
@@ -444,8 +484,15 @@ def write_bundle(resources, with_peek):
         extras.append(("peek-groups.js", read_text(os.path.join(HERE, "src/optional/peek-groups.js"))))
     start_page = pathlib.Path(HOME_DIR, "start", "index.html").as_uri()
     config = {**load_config(), "startUrl": start_page}
-    bundle = build_bundle(os.path.join(HERE, "src/js"), config, extras, pre)
-    write_atomic(os.path.join(resources, "vivarc.js"), bundle)
+    return build_bundle(js_dir, config, extras, pre)
+
+
+def with_peek_installed():
+    return os.path.exists(os.path.join(HOME_DIR, "peek", "VividPeek.js"))
+
+
+def write_bundle(resources, with_peek):
+    write_atomic(os.path.join(resources, "vivarc.js"), bundle_text(with_peek))
 
 
 def install_pointer_helper(home_dir=None, python=sys.executable):
@@ -654,7 +701,7 @@ def reapply_quietly(app):
     try:
         sync_guide()
         install_pointer_helper()
-        apply_js(app, resources, os.path.exists(os.path.join(HOME_DIR, "peek", "VividPeek.js")))
+        apply_js(app, resources, with_peek_installed())
     except PermissionError:
         return False
     return True
@@ -737,7 +784,7 @@ def cmd_apply(args):
     sync_guide()
     install_pointer_helper()
     try:
-        apply_js(args.app, resources, os.path.exists(os.path.join(HOME_DIR, "peek", "VividPeek.js")))
+        apply_js(args.app, resources, with_peek_installed())
     except PermissionError as error:
         permission_hint(error)
     say(f"Re-applied to Vivaldi {app_version(args.app)}" + (". Restart Vivaldi to see it." if vivaldi_running() else ""))
@@ -884,6 +931,67 @@ def cmd_status(args):
         say(f"  {name} ({directory}): {'configured' if ours else 'not configured yet (set up when opened)'}")
 
 
+def cmd_doctor(args):
+    """Static checks on the app's files, and the live check from inside a Vivaldi with DevTools open (--port)."""
+    doctor = tools_module("doctor")
+    resources = os.path.join(args.app, RESOURCES)
+    if not os.path.isdir(resources):
+        die(f"Vivaldi not found at {args.app}")
+    say(f"Vivarc {VERSION} · Vivaldi {app_version(args.app)} ({args.app})")
+    problems = 0
+
+    def line(ok, text, fix=""):
+        nonlocal problems
+        problems += 0 if ok else 1
+        say(f"  {'✓' if ok else '✗'} {text}" + ("" if ok or not fix else f"  -> {fix}"))
+
+    say("Installed")
+    html_path = os.path.join(resources, "window.html")
+    html = read_text(html_path) if os.path.exists(html_path) else ""
+    line(BEGIN in html, "Vivarc is loaded by window.html", "run ./vivarc.py apply" if "</body>" in html else
+         "window.html has no </body> any more, where Vivarc is added: Vivaldi changed it")
+    bundle_path = os.path.join(resources, "vivarc.js")
+    installed = read_text(bundle_path) if os.path.exists(bundle_path) else None
+    line(installed is not None and installed == bundle_text(with_peek_installed()),
+         "vivarc.js is what this checkout builds", "run ./vivarc.py apply (then restart Vivaldi)")
+    saved = os.path.join(HOME_DIR, "backup", f"window.html.{app_version(args.app)}.orig")
+    line(os.path.exists(saved), "the original window.html of this Vivaldi is saved (uninstall puts it back)", "run ./vivarc.py apply")
+
+    say("Vivaldi's files")
+    for group in doctor.static_checks(resources, js_source(os.path.join(HERE, "src/js")), stylesheet(os.path.join(HERE, "src/css"))):
+        problems += len(group["missing"])
+        for text in doctor.format_group(group):
+            say(text)
+
+    if not args.port:
+        say("Running Vivaldi: not checked here. In Vivaldi, run \u201cCheck Vivarc\u201d from the command bar (Cmd+T);\n"
+            "  for a Vivaldi with DevTools open, pass --port (tools/dev-vivaldi.sh doctor does).")
+    else:
+        try:
+            report = doctor.live_report(args.port)
+        except (OSError, ValueError) as error:
+            report = None
+            problems += 1
+            say(f"Running Vivaldi (DevTools on 127.0.0.1:{args.port})\n  ✗ could not check: {error}")
+        else:
+            say(f"Running Vivaldi {report['vivaldi'] if report else ''} (DevTools on 127.0.0.1:{args.port})")
+            if report is None:
+                problems += 1
+                say("  ✗ this Vivaldi runs a Vivarc without the doctor  -> apply and restart it")
+            else:
+                for group in report["groups"]:
+                    problems += len(group["missing"])
+                    for text in doctor.format_group(group):
+                        say(text)
+                if report["errors"]:
+                    say(f"  ! {len(report['errors'])} errors thrown by Vivarc since start-up (not counted as problems):")
+                    for error in report["errors"]:
+                        say("      " + error["message"].split("\n")[0])
+    say("All good." if not problems else f"{problems} {'problem' if problems == 1 else 'problems'} found.")
+    if problems:
+        sys.exit(1)
+
+
 def cmd_import_arc(args):
     sys.path.insert(0, os.path.join(HERE, "tools"))
     import arc_import
@@ -910,6 +1018,8 @@ def main(argv=None):
     uninstall = sub.add_parser("uninstall")
     uninstall.add_argument("--purge", action="store_true", help="also delete ~/.vivarc")
     sub.add_parser("status")
+    doctor = sub.add_parser("doctor", help="check that the parts of Vivaldi Vivarc relies on are still there")
+    doctor.add_argument("--port", type=int, help="also check a running Vivaldi through its DevTools port")
     imp = sub.add_parser("import-arc")
     imp.add_argument("--arc-dir", default=os.path.join(HOME, "Library", "Application Support", "Arc"))
     args = parser.parse_args(argv)
@@ -917,7 +1027,7 @@ def main(argv=None):
         die("Vivarc currently supports macOS only")
     check_not_root()
     {"install": cmd_install, "apply": cmd_apply, "update": cmd_update, "remind": cmd_remind, "reminder": cmd_reminder, "uninstall": cmd_uninstall,
-     "status": cmd_status, "import-arc": cmd_import_arc}[args.command](args)
+     "status": cmd_status, "doctor": cmd_doctor, "import-arc": cmd_import_arc}[args.command](args)
 
 
 if __name__ == "__main__":

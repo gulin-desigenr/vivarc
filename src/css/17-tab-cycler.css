@@ -1,0 +1,103 @@
+/* Tab Cycler (Ctrl+Tab, js/16-tab-switcher.js): the command bar's card instead of Vivaldi's grey box. In the list
+   layout, a rounded preview with the selected tab's title and site under it, and quiet rows with the command bar's
+   selection; a dot marks the tab you started from. */
+#browser.vm-on .modal-tabswitcher .modal-wrapper {
+  overflow: hidden;
+  border: 1px solid var(--cmd-line);
+  border-radius: var(--vm-r-xl);
+  background: var(--cmd-surface);
+  color: var(--cmd-text);
+  box-shadow: var(--cmd-shadow);
+  animation: vm-ts-in 140ms cubic-bezier(.2, .8, .2, 1);
+}
+@keyframes vm-ts-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+/* The command bar appears and goes at once, like Arc's (measured: no fade either way). The settings window keeps
+   this entrance. */
+@keyframes vm-cmd-in { from { opacity: 0; transform: translateY(-10px) scale(.97); } to { opacity: 1; transform: none; } }
+#browser.vm-on .tabswitcher { background: transparent; }
+#browser.vm-on .tabswitcher.list {
+  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  gap: 0 8px;
+  width: min(820px, 90vw);
+  height: min(430px, 80vh);
+  max-height: none;
+  padding: 8px;
+  box-sizing: border-box;
+}
+#browser.vm-on .tabswitcher.list img.visual-list-preview {
+  grid-column: 1;
+  grid-row: 1;
+  box-sizing: border-box;
+  width: 300px;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  object-position: top center;
+  border: 1px solid var(--cmd-line);
+  border-radius: var(--vm-r-md);
+  background: color-mix(in srgb, var(--cmd-text) 5%, transparent);
+  opacity: 1;
+}
+#browser.vm-on .tabswitcher.list img.visual-list-preview.active-page { opacity: 1; }
+#browser.vm-on .tabswitcher.list .vm-ts-caption { grid-column: 1; grid-row: 2; min-width: 0; padding: 12px 4px 0; }
+#browser.vm-on .tabswitcher.list .vm-ts-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  color: var(--cmd-text);
+  font-size: var(--vm-fs-3);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+#browser.vm-on .tabswitcher.list .vm-ts-host { margin-top: 4px; overflow: hidden; color: var(--cmd-muted); font-size: var(--vm-fs-2); white-space: nowrap; text-overflow: ellipsis; }
+#browser.vm-on .tabswitcher.list ul.listed-tabs {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  min-height: 0;
+  margin: 0;
+  padding: 0 0 16px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  scroll-padding: 12px 0 20px;
+  mask-image: linear-gradient(to bottom, transparent, #000 8px, #000 calc(100% - 20px), transparent);
+}
+#browser.vm-on .tabswitcher.list li {
+  display: block;
+  position: relative;
+  height: 34px;
+  margin: 0 0 1px;
+  padding: 0 28px 0 36px;
+  border-radius: var(--vm-r-md);
+  overflow: hidden;
+  color: var(--cmd-text);
+  background: none;
+  font-size: var(--vm-fs-3);
+  font-weight: 400;
+  line-height: 34px;
+  letter-spacing: -0.003em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+#browser.vm-on .tabswitcher.list li.active-page { color: var(--cmd-muted); background: none; }
+#browser.vm-on .tabswitcher.list li.active-page::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .6;
+}
+#browser.vm-on .tabswitcher.list li.selected { color: var(--cmd-text); background: var(--cmd-selected); font-weight: 500; }
+#browser.vm-on .tabswitcher.list .visual-tab-list-favicon,
+#browser.vm-on .tabswitcher.list li > .tab-audio { position: absolute; top: 9px; left: 10px; width: 16px; height: 16px; margin: 0; }
+#browser.vm-on .tabswitcher.list li > .tab-audio { left: auto; right: 26px; }
+

@@ -64,6 +64,12 @@ Atualizado em 11/11/2026 (Vivaldi 8.3.4191.35).
 
 O Vivarc é desenvolvido no **Vivaldi Dev** (`~/Applications/Vivaldi Dev.app`), criado por `tools/dev-vivaldi.sh setup` como clone APFS do Vivaldi. Ele tem outro bundle id (`com.vivaldi.Vivaldi.vivarcdev`), então links externos, o navegador padrão e o ⌥⌘N continuam no Vivaldi principal. O perfil fica em `~/Library/Application Support/Vivaldi Dev`, com chaveiro simulado (`--use-mock-keychain`): a cópia tem assinatura ad hoc e não pode pedir o item "Vivaldi Safe Storage" do Vivaldi real. Não faça login em contas nela. `restart` aplica o checkout e reabre só a cópia, com DevTools da UI em `127.0.0.1:9555`. Depois de atualizar o Vivaldi, rode `setup` de novo. Para levar uma mudança ao Vivaldi de trabalho: `python3 vivarc.py apply` e reiniciar o Vivaldi, quando o usuário pedir.
 
+## Estrutura do código
+
+- `src/js/`: um arquivo por módulo, carregados em ordem de nome. A sidebar é a pasta `src/js/10-sidebar/` (estado, cores das abas, bookmarks, menu, arrastar, linhas, pilhas, abas, perfis, troca e edição de spaces, render, ícones, dados, início): os arquivos dela compartilham um só escopo, como se fossem um arquivo.
+- `src/css/`: a folha de estilo dividida por assunto, juntada em ordem de nome; a ordem é a da cascata, então uma regra nova vai no arquivo do assunto, e não em outro que venha antes.
+- `tools/doctor.py` + `src/js/02-doctor.js`: o doctor.
+
 ## Verificação
 
-`python3 vivarc.py status` verifica a injeção e o perfil. Os testes automatizados são executados com `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests`; testes de interface devem cobrir pastas, Cmd+T e troca de spaces.
+`python3 vivarc.py status` verifica a injeção e o perfil. `python3 vivarc.py doctor` verifica se o Vivaldi ainda tem tudo de que o Vivarc depende (preferências, comandos, nomes de classe e id, botões, módulos internos) e se o `vivarc.js` instalado é o que o checkout gera; depois de uma atualização do Vivaldi, rode `tools/dev-vivaldi.sh setup`, `restart` e `doctor`, que também confere a interface em execução pela porta 9555. Dentro do Vivaldi, o comando "Check Vivarc" da command bar faz a checagem ao vivo, e ela roda sozinha após a abertura, com um aviso só quando algo novo some. Os testes automatizados são executados com `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests`; testes de interface devem cobrir pastas, Cmd+T e troca de spaces.

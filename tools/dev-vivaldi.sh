@@ -6,6 +6,7 @@
 #   tools/dev-vivaldi.sh apply     inject this checkout's Vivarc into the copy only
 #   tools/dev-vivaldi.sh restart   apply, then quit and reopen the copy only
 #   tools/dev-vivaldi.sh quit      quit the copy
+#   tools/dev-vivaldi.sh doctor    check the copy's files and, while it runs, its UI (vivarc.py doctor --port)
 #
 # The copy has its own bundle id (com.vivaldi.Vivaldi.vivarcdev), so links, the default browser and the
 # Option+Command+N shortcut keep going to the real Vivaldi. Its profile lives in
@@ -55,8 +56,15 @@ case "${1:-}" in
   quit)
     quit_dev
     ;;
+  doctor)
+    if running; then
+      python3 "$HERE/vivarc.py" --app "$DEV_APP" doctor --port "$DEBUG_PORT"
+    else
+      python3 "$HERE/vivarc.py" --app "$DEV_APP" doctor
+    fi
+    ;;
   *)
-    sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
     exit 2
     ;;
 esac

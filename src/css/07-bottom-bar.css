@@ -1,0 +1,9 @@
+/* Bottom toolbar (profile button): shorter, content centred so it sits lower */
+#browser.vm-on.vm-compact-bottom #tabs-tabbar-container .toolbar-tabbar-after {
+  height: 21px !important;
+  min-height: 0 !important;
+  padding-bottom: 0 !important;
+  align-items: center !important;
+}
+#browser.vm-on.vm-compact-bottom #tabs-tabbar-container .toolbar-tabbar-after .button-toolbar { padding-bottom: 0 !important; }
+

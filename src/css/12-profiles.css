@@ -1,0 +1,46 @@
+/* Vivaldi 8.3 made this toolbar a column filling the space under the tabs: keep the profile chips in one row at
+   the bottom left and Downloads at the right (from upstream 0.1.17, 0316bad). */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-after:has(> .vm-spaces) {
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: flex-end !important;
+  justify-content: flex-start !important;
+}
+#browser.vm-on .toolbar-tabbar-after:has(> .vm-spaces) > .tabbar-nested-buttons { width: auto !important; flex: none; }
+#browser.vm-on .toolbar-tabbar-after:has(> .vm-spaces) > .toolbar-spacer-flexible {
+  display: flex !important;
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+#browser.vm-on .toolbar-tabbar-after > .vm-spaces { margin-bottom: 6px; }
+#browser.vm-on .vm-space-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: opacity 120ms, transform 120ms;
+}
+#browser.vm-on .vm-space-chip:hover { opacity: 1; transform: scale(1.08); }
+#browser.vm-on .vm-space-chip.active { opacity: 1; cursor: default; box-shadow: 0 0 0 2px var(--colorHighlightBg, #7b8cff); transform: none; }
+#browser.vm-on .vm-space-chip img { width: 100%; height: 100%; object-fit: cover; }
+#browser.vm-on .vm-space-letter { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #fff; font-weight: 600; font-size: var(--vm-fs-2); }
+#browser.vm-on .vm-space-plus { background-color: color-mix(in srgb, var(--colorFg) 14%, transparent); font-size: var(--vm-fs-4); line-height: 1; }
+#browser.vm-on .vm-space-input {
+  width: 120px;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--vm-r-xl);
+  outline: 0;
+  background: color-mix(in srgb, var(--colorFg) 14%, transparent);
+  color: inherit;
+  font: inherit;
+  font-size: var(--vm-fs-2);
+}
+

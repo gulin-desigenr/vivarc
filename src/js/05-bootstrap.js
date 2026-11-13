@@ -38,21 +38,14 @@
       ["tabbar_before", ["Spacer", "WorkspaceButton"], {}, "AddressField", SIDEBAR_TOOLBAR],
       ["tabbar_after", [], { VPNButton: "PanelDownloads" }, "AccountButton", SIDEBAR_BOTTOM],
     ];
-    let whole = null;
+    // Each toolbar is its own preference (Vivaldi's pref API refuses the whole "vivaldi.toolbars").
     for (const [name, remove, swap, marker, fallback] of edits) {
-      let list = await get(`vivaldi.toolbars.${name}`);
-      if (!Array.isArray(list)) {
-        whole ||= (await get("vivaldi.toolbars")) || {};
-        list = whole[name];
-      }
+      const list = await get(`vivaldi.toolbars.${name}`);
       if (!Array.isArray(list)) continue;
       let next = tidyToolbar(list, remove, swap);
       if (!next.includes(marker)) next = [...fallback];
-      if (next.join() === list.join()) continue;
-      if (whole && whole[name] === list) whole[name] = next;
-      else await set(`vivaldi.toolbars.${name}`, next);
+      if (next.join() !== list.join()) await set(`vivaldi.toolbars.${name}`, next);
     }
-    if (whole) await set("vivaldi.toolbars", whole);
   };
 
   const bindShortcuts = async () => {

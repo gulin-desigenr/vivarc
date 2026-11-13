@@ -1,0 +1,139 @@
+/* Little Vivarc: its own bar in the title bar (back, forward, reload, address, "Open in <space>"); Vivaldi's page
+   title and its read-only address row are hidden. From the Figma design (GULIN.CO APPs, node 32:2): a 44px bar, the
+   traffic lights in its middle (15-little-arc.js asks Vivaldi for that placement; they end at 73px), thin icons, a
+   pill address field and a raised white pill to open the page in a space. */
+.mac#browser.vm-on.vm-little-arc:is(.popup, .tabs-off) :is(#header, #titlebar) { height: 44px; min-height: 44px; line-height: 44px; }
+#browser.vm-on.vm-little-arc #header #pagetitle { visibility: hidden; }
+#browser.vm-on.vm-little-arc .mainbar { display: none; }
+#browser.vm-on .vm-little-toolbar {
+  position: absolute;
+  top: 7px;
+  left: 85px;
+  right: 12px;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 28px;
+  color: var(--colorFg);
+  font: var(--vm-fs-2)/1 var(--vm-font);
+  app-region: no-drag;
+}
+#browser.vm-on .vm-little-toolbar button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 24px;
+  min-width: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--vm-r-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  cursor: default;
+}
+#browser.vm-on .vm-little-toolbar .vm-little-button:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+#browser.vm-on .vm-little-toolbar button:disabled { opacity: .5; }
+#browser.vm-on .vm-little-toolbar .vm-little-address {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 26px;
+  margin: 0 6px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, currentColor 6%, transparent);
+  border-radius: 999px;
+  outline: none;
+  background: color-mix(in srgb, currentColor 2%, transparent);
+  color: inherit;
+  font: inherit;
+  text-overflow: ellipsis;
+}
+#browser.vm-on .vm-little-toolbar .vm-little-address:focus {
+  border-color: color-mix(in srgb, var(--vm-accent) 60%, transparent);
+  background: var(--colorBg);
+}
+/* "Open in <space>" pill; with spaces, a chevron after a hairline opens the list. */
+#browser.vm-on .vm-little-toolbar .vm-little-pill {
+  --pill-bg: #fff;
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 28px;
+  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  border-radius: 999px;
+  background: var(--pill-bg);
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, .12));
+  box-sizing: border-box;
+}
+#browser.vm-on.theme-dark .vm-little-toolbar .vm-little-pill { --pill-bg: color-mix(in srgb, var(--colorFg) 12%, var(--colorBg)); }
+#browser.vm-on .vm-little-toolbar .vm-little-pill button { height: 26px; border-radius: 999px; }
+#browser.vm-on .vm-little-toolbar .vm-little-promote { padding: 0 10px; }
+/* Like Little Arc: "Open in" quiet, the space's name in its colour, then the shortcut. */
+#browser.vm-on .vm-little-toolbar .vm-little-promote-label { color: color-mix(in srgb, currentColor 60%, transparent); }
+#browser.vm-on .vm-little-toolbar .vm-little-promote-space { color: var(--colorFg); font-weight: 600; }
+#browser.vm-on .vm-little-toolbar .vm-little-promote-space.tinted { color: hsl(var(--space-h) var(--space-s) 34%); }
+#browser.vm-on.theme-dark .vm-little-toolbar .vm-little-promote-space.tinted { color: hsl(var(--space-h) var(--space-s) 74%); }
+#browser.vm-on .vm-little-toolbar .vm-little-kbd {
+  padding: 2px 5px;
+  border-radius: var(--vm-r-sm);
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  color: color-mix(in srgb, currentColor 60%, transparent);
+  font: 500 var(--vm-fs-1)/1 var(--vm-font);
+}
+#browser.vm-on .vm-little-toolbar .vm-little-pick { display: none; min-width: 0; width: 26px; padding: 0 2px 0 0; color: color-mix(in srgb, currentColor 70%, transparent); }
+#browser.vm-on .vm-little-toolbar .vm-little-pill.has-spaces .vm-little-promote { padding-right: 8px; }
+#browser.vm-on .vm-little-toolbar .vm-little-pill.has-spaces .vm-little-pick { display: inline-flex; position: relative; }
+#browser.vm-on .vm-little-toolbar .vm-little-pill.has-spaces .vm-little-pick::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 7px;
+  bottom: 7px;
+  width: 1px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
+#browser.vm-on .vm-little-toolbar .vm-little-pill button:hover:not(:disabled) { background: color-mix(in srgb, currentColor 6%, transparent); }
+/* The list of spaces, under the pill. */
+#browser.vm-on .vm-little-toolbar .vm-little-menu {
+  position: absolute;
+  top: 34px;
+  right: 0;
+  min-width: 200px;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--vm-r-lg);
+  color: var(--cmd-text);
+  background: var(--cmd-surface);
+  box-shadow: var(--vm-shadow-pop);
+  animation: vm-ts-in 120ms cubic-bezier(.2, .8, .2, 1);
+}
+#browser.vm-on .vm-little-toolbar .vm-little-menu-head { padding: 6px 8px 4px; color: color-mix(in srgb, currentColor 55%, transparent); font-size: var(--vm-fs-1); font-weight: 600; }
+#browser.vm-on .vm-little-toolbar .vm-little-menu-item {
+  display: flex;
+  width: 100%;
+  height: 30px;
+  gap: 8px;
+  justify-content: flex-start;
+  padding: 0 8px;
+  border-radius: var(--vm-r-md);
+}
+#browser.vm-on .vm-little-toolbar .vm-little-menu-item:hover { background: color-mix(in srgb, currentColor 7%, transparent); }
+#browser.vm-on .vm-little-toolbar .vm-little-menu-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--vm-r-sm);
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  font-size: var(--vm-fs-1);
+  font-weight: 600;
+}
+#browser.vm-on .vm-little-toolbar .vm-little-menu-name { flex: 1; overflow: hidden; text-align: left; text-overflow: ellipsis; }
+#browser.vm-on .vm-little-toolbar .vm-little-menu-check { display: inline-flex; flex: none; width: 12px; color: color-mix(in srgb, currentColor 70%, transparent); }
+

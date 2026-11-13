@@ -1,0 +1,53 @@
+/* Vivarc: every rule is scoped to #browser.vm-on (added by the JS), so nothing applies without it. */
+#browser.vm-on {
+  --vm-surface: color-mix(in srgb, var(--colorBg, #1c1c20) 90%, black);
+  --vm-css: 1; /* read by the JS to confirm this stylesheet is loaded */
+  --vm-text: var(--colorFg, #f2f2f5);
+  --vm-native-fg: var(--colorFg, #f2f2f5);
+  --vm-address-fg: var(--vm-fg, var(--colorImageFg, var(--colorFg, #f2f2f5)));
+  --vm-sel: color-mix(in srgb, var(--colorHighlightBg, #6b63a0) 40%, var(--vm-surface));
+  /* The interface font: the system's (SF Pro), like Dia and macOS itself. */
+  --vm-font: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  /* The scale every rule draws from: nothing in between. */
+  --vm-fs-1: 11px;  /* labels, counts, hints */
+  --vm-fs-2: 12px;  /* secondary text */
+  --vm-fs-3: 13px;  /* the interface: tabs, menus, lists */
+  --vm-fs-4: 15px;  /* inputs and small titles */
+  --vm-fs-5: 17px;  /* titles */
+  --vm-fs-6: 24px;
+  --vm-r-xs: 4px;   /* icons */
+  --vm-r-sm: 6px;   /* small buttons */
+  --vm-r-md: 8px;   /* rows, fields, menu items */
+  --vm-r-lg: 10px;  /* tiles, popovers */
+  --vm-r-xl: 12px;  /* menus, cards */
+  --vm-r-2xl: 16px; /* windows: command bar, settings, dialogs */
+  /* Surfaces on the sidebar, after Dia: a hover is a faint wash of the ink; the active tab and favorite are a lifted
+     pill (near-white on a light sidebar, a lighter grey on a dark one) with a hairline shadow; tiles a faint well. */
+  --vm-ink: var(--vm-fg, var(--colorFg, #1b1b1f));
+  --vm-hover: color-mix(in srgb, var(--vm-ink) 6%, transparent);
+  --vm-press: color-mix(in srgb, var(--vm-ink) 10%, transparent);
+  --vm-pill: rgb(255 255 255 / 0.8);
+  --vm-pill-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.05), 0 1px 2px rgb(0 0 0 / 0.08), 0 1px 1px rgb(0 0 0 / 0.03);
+  --vm-tile: color-mix(in srgb, var(--vm-ink) 5%, transparent);
+  --vm-tile-line: color-mix(in srgb, var(--vm-ink) 8%, transparent);
+  --vm-shadow-pop: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 10px 32px rgb(0 0 0 / 0.18);
+  --vm-accent: var(--colorHighlightBg, #0a6cff);
+  --vm-accent-fg: var(--colorHighlightFg, #fff);
+  --vm-danger: #e5484d;
+  --vm-shadow-window: 0 0 0 0.5px rgb(0 0 0 / 0.1), 0 24px 64px rgb(0 0 0 / 0.28);
+}
+/* Popovers follow Vivaldi's light or dark theme, like the command bar's surfaces. */
+#browser.vm-on.theme-dark {
+  --vm-shadow-pop: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 10px 32px rgb(0 0 0 / 0.5);
+  --vm-shadow-window: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 24px 64px rgb(0 0 0 / 0.55);
+}
+#browser.vm-on.theme-dark:not(.vm-themed), #browser.vm-on.vm-themed.vm-light-ink {
+  --vm-pill: rgb(255 255 255 / 0.13);
+  --vm-pill-shadow: 0 0 0 0.5px rgb(255 255 255 / 0.05), 0 1px 2px rgb(0 0 0 / 0.3);
+  --vm-tile: rgb(255 255 255 / 0.07);
+  --vm-tile-line: rgb(255 255 255 / 0.06);
+}
+/* The whole window uses it, Vivaldi's own controls included; pages keep their fonts. */
+#browser.vm-on, #browser.vm-on :is(button, input, textarea, select, kbd) { font-family: var(--vm-font); font-optical-sizing: auto; }
+

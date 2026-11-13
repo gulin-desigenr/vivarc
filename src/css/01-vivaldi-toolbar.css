@@ -1,0 +1,96 @@
+#browser.vm-hide-workspaces #tabs-tabbar-container .button-toolbar.workspace-popup { display: none; }
+#browser.vm-no-space-bar .vm-space-bar { display: none; }
+#browser.vm-on #tabs-container > .vm-strip-hidden { display: none !important; }
+/* The custom sidebar renders native stacks; suppress Vivaldi’s second strip. */
+#browser.vm-on #tabs-subcontainer { display: none !important; }
+#browser.vm-on #tabs-tabbar-container .button-toolbar.newtab { display: none !important; }
+/* Vivaldi lets the side tab bar shrink to a few pixels; the sidebar is unusable below this width */
+#browser.vm-on #tabs-tabbar-container:is(.left, .right) { min-width: 220px; }
+/* Keep Vivaldi's real address field on its own line above the favorites. */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField {
+  --colorFg: var(--vm-address-fg);
+  /* Like Arc's: as wide as the favorites under it, 36px tall, a faint well with no outline. */
+  flex: 1 0 calc(100% - 4px);
+  width: calc(100% - 4px);
+  min-width: 0;
+  max-width: none;
+  height: 36px;
+  margin: 4px 2px 4px;
+  border: 0;
+  border-radius: var(--vm-r-lg);
+  background: var(--vm-tile);
+  box-shadow: none;
+  color: var(--vm-address-fg);
+}
+/* Vivaldi 8.3 wraps the top toolbar's buttons in .tabbar-nested-buttons and stacks the toolbar in a column of fixed
+   height, so the address field overlapped the favorites. Flatten the wrapper and wrap the toolbar again in rows. */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before:has(> .tabbar-nested-buttons) { flex-direction: row; flex-wrap: wrap; align-items: center; height: auto; }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before > .tabbar-nested-buttons { display: contents; }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField:focus-within {
+  background: var(--vm-pill);
+  box-shadow: var(--vm-pill-shadow);
+}
+/* Vivaldi's Tabs button draws its chevron inside a box: just the chevron, like the other toolbar glyphs. */
+/* Back and Forward get Dia's chevrons instead of Vivaldi's long arrows. Reload keeps Vivaldi's icon: the same button
+   turns into Stop while a page loads, with nothing but its icon and title to tell. */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before :is([data-name="TabButton"], [data-name="Back"], [data-name="Forward"]) .button-icon svg { display: none; }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before :is([data-name="TabButton"], [data-name="Back"], [data-name="Forward"]) .button-icon::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  -webkit-mask: var(--vm-glyph) center / contain no-repeat;
+  opacity: 0.8;
+}
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before [data-name="TabButton"] { --vm-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M4.5 6.25 8 9.75l3.5-3.5' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>"); }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before [data-name="Back"] { --vm-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M9.75 3.5 5.25 8l4.5 4.5' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>"); }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before [data-name="Forward"] { --vm-glyph: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path d='M6.25 3.5 10.75 8l-4.5 4.5' fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>"); }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before :is([data-name="Back"], [data-name="Forward"]):disabled .button-icon::before { opacity: 0.35; }
+/* Vivaldi spaces the buttons of a vertical toolbar with a padding under every button but the last one in the page's
+   order. Vivarc reorders them (Tabs, Back, Forward, Reload), so the last one in the page's order sat 1.5px lower than
+   the others: no padding at all, and the row centres every button on one line. */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .button-toolbar { padding-bottom: 0; height: auto; }
+/* While a page loads Vivaldi fills the whole field with its highlight colour: a thin line along the bottom of the
+   field instead, in the sidebar's ink. */
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .pageload-indicator {
+  top: auto !important;
+  bottom: 0 !important;
+  left: 6px !important;
+  width: calc(100% - 12px) !important;
+  height: 2px !important;
+  border-radius: 1px;
+  background: transparent !important;
+}
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .pageload-indicator::-webkit-progress-bar { background: transparent; }
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .pageload-ticker { display: none; }
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .pageload-indicator::-webkit-progress-value {
+  border-radius: 1px;
+  background: color-mix(in srgb, var(--vm-address-fg) 45%, transparent) !important;
+}
+/* The address, like Arc's: only the site's domain while the field is not being edited (the subdomain and the path
+   are Vivaldi's "lowlight" fragments; the full address comes back on focus). Vivaldi's page buttons in the field
+   (reader view, translate, bookmark) show on hover or while editing, in the field's ink. */
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .UrlFragment-Wrapper .UrlFragment--Lowlight { display: none; }
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .button-toolbar:not(.button-addressfield) { opacity: 0; transition: opacity 120ms; }
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField:is(:hover, :focus-within) .button-toolbar { opacity: 1; }
+#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .BookmarkButton-Button svg { filter: grayscale(1); }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before [data-name="Reload"] .button-icon { opacity: 0.8; }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-after .button-toolbar > button { opacity: 0.7; transition: opacity 120ms; }
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-after .button-toolbar > button:hover { opacity: 1; }
+/* Vivaldi's update button writes its state ("Update failed", "Restart to update") next to its icon, over the space
+   dots in the middle of the bottom bar: the icon is enough there, the state stays in its tooltip. */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-after [data-name="UpdateButton"] .button-title { display: none; }
+/* Vivaldi draws the suggestion list behind the input; use its own foreground on that surface. */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField:has(.OmniDropdown) {
+  --colorFg: var(--vm-native-fg);
+  color: var(--vm-native-fg);
+}
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField :is(.button-popup, .addressfield-popup-container) {
+  --colorFg: var(--vm-native-fg);
+  color: var(--vm-native-fg);
+}
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before .UrlBar-AddressField .UrlFragment-Wrapper {
+  --HighlightColor: var(--vm-address-fg) !important;
+  --LowlightColor: color-mix(in srgb, var(--vm-address-fg) 72%, transparent) !important;
+}
+
