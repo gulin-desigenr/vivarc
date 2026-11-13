@@ -31,6 +31,9 @@
 
 /* ---- the bar ---- */
 #browser.vm-on #panels-container #switch { color: var(--vm-ink); }
+/* Docked (beside the page, not in the auto-hide wrapper), Vivaldi colours the bar's toolbar with the theme's own
+   foreground (or --colorFg in an unfocused window), which is dark in a light theme over a dark space. */
+#browser.vm-on #panels-container #switch .toolbar { color: var(--vm-ink) !important; }
 #browser.vm-on #switch .button-toolbar > button { background: transparent; color: inherit; border-radius: var(--vm-r-md); }
 #browser.vm-on #switch .button-toolbar > button :is(.button-icon, svg) { opacity: 0.7; transition: opacity 120ms; }
 #browser.vm-on #switch .button-toolbar > button:hover { background: var(--vm-hover); }
