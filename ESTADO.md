@@ -69,6 +69,7 @@ O Vivarc é desenvolvido no **Vivaldi Dev** (`~/Applications/Vivaldi Dev.app`), 
 - `src/js/`: um arquivo por módulo, carregados em ordem de nome. A sidebar é a pasta `src/js/10-sidebar/` (estado, cores das abas, bookmarks, menu, arrastar, linhas, pilhas, abas, perfis, troca e edição de spaces, render, ícones, dados, início): os arquivos dela compartilham um só escopo, como se fossem um arquivo.
 - `src/css/`: a folha de estilo dividida por assunto, juntada em ordem de nome; a ordem é a da cascata, então uma regra nova vai no arquivo do assunto, e não em outro que venha antes.
 - `tools/doctor.py` + `src/js/02-doctor.js`: o doctor.
+- Painéis do Vivaldi (barra da direita: Favoritos, Downloads, Histórico, Notas, Traduzir, Janela, Lista de leitura, painéis web): `src/css/21-panels.css` dá a eles o visual do Vivarc (barra sobre a superfície da janela, painel como cartão ao lado da página, campos e botões em poços sem borda, linha selecionada na cor do space). Com a barra em auto-hide, o painel aberto empurra a página com uma transição (`src/js/18-panels.js`, `--vm-panels-push`); a barra sozinha continua por cima. As listas do Vivaldi são virtuais: só cores, cantos e espaçamentos mudam, nunca a altura das linhas.
 
 ## Verificação
 

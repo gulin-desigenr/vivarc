@@ -1,0 +1,262 @@
+/* Vivaldi's panels (the bar on the right: Bookmarks, Downloads, History, Notes, Translate, Window, Reading list and
+   the web panels) in Vivarc's look. The bar sits on the window's surface like the sidebar's bottom toolbar: quiet
+   icons, the open panel's a lifted pill. The panel is a card like the page, on the command bar's neutral surface,
+   with borderless wells for fields and buttons, rows that light up like the sidebar's, and the selected row in the
+   space's color. While one is open it pushes the page aside (18-panels.js sets --vm-panels-push). Vivaldi's lists
+   are virtual (their row heights are set by its code), so only colours, corners and spacing change, never heights. */
+#browser.vm-on #panels-container {
+  --pn-surface: #fafbfc;
+  --pn-text: #20242b;
+  --pn-muted: #6b717c;
+  --pn-line: rgb(0 0 0 / 0.07);
+  --pn-well: rgb(0 0 0 / 0.045);
+  --pn-hover: rgb(0 0 0 / 0.05);
+  --pn-press: rgb(0 0 0 / 0.08);
+  --pn-field: #fff;
+  --pn-select: color-mix(in srgb, var(--vm-space-select, var(--vm-accent)) 18%, transparent);
+  --pn-shadow: 0 0 0 1px rgb(0 0 0 / 0.04), 0 1px 4px rgb(0 0 0 / 0.10);
+}
+#browser.vm-on.theme-dark #panels-container {
+  --pn-surface: #24262d;
+  --pn-text: #f1f2f4;
+  --pn-muted: #a9afb9;
+  --pn-line: rgb(255 255 255 / 0.08);
+  --pn-well: rgb(255 255 255 / 0.07);
+  --pn-hover: rgb(255 255 255 / 0.06);
+  --pn-press: rgb(255 255 255 / 0.1);
+  --pn-field: #2e3038;
+  --pn-select: color-mix(in srgb, var(--vm-space-select, var(--vm-accent)) 30%, transparent);
+  --pn-shadow: 0 0 0 1px rgb(0 0 0 / 0.3), 0 1px 4px rgb(0 0 0 / 0.35);
+}
+
+/* ---- the bar ---- */
+#browser.vm-on #panels-container #switch { color: var(--vm-ink); }
+#browser.vm-on #switch .button-toolbar > button { background: transparent; color: inherit; border-radius: var(--vm-r-md); }
+#browser.vm-on #switch .button-toolbar > button :is(.button-icon, svg) { opacity: 0.7; transition: opacity 120ms; }
+#browser.vm-on #switch .button-toolbar > button:hover { background: var(--vm-hover); }
+#browser.vm-on #switch .button-toolbar > button:hover :is(.button-icon, svg) { opacity: 1; }
+#browser.vm-on #switch .button-toolbar.active > button { background: var(--vm-pill); box-shadow: var(--vm-pill-shadow); color: inherit; }
+#browser.vm-on #switch .button-toolbar.active > button :is(.button-icon, svg) { opacity: 1; }
+/* Web panels show their sites' own icons: full colour, as favicons are in the sidebar. */
+#browser.vm-on #switch .button-toolbar-webpanel > button .button-icon { opacity: 1; border-radius: var(--vm-r-xs); }
+#browser.vm-on #switch .toolbar-divider .button-icon { opacity: 1; }
+#browser.vm-on #switch .toolbar-divider .button-icon::before,
+#browser.vm-on #switch .toolbar-divider .button-icon svg { opacity: 0; }
+#browser.vm-on #switch .toolbar-divider > button { position: relative; }
+#browser.vm-on #switch .toolbar-divider > button::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  top: 50%;
+  border-top: 1px solid var(--vm-tile-line);
+}
+
+/* Hidden at the window's edge (auto-hide), the bar slides in on the window's own surface: the space's color with its
+   gradient and grain, or the theme's wallpaper, so it reads as part of the frame, not a grey strip over the page. */
+#browser.vm-on .auto-hide-wrapper.right {
+  background-color: var(--browserBackgroundColor, var(--colorBg)) !important;
+  background-image: var(--browserBackgroundImage, none) !important;
+  background-position: var(--browserBackgroundPosition, center) !important;
+  background-size: var(--browserBackgroundSize, cover) !important;
+  background-attachment: fixed !important;
+  backdrop-filter: none !important;
+  border-radius: var(--vm-r-lg) 0 0 var(--vm-r-lg);
+  isolation: isolate;
+}
+#browser.vm-on.vm-themed:not(.vm-glass) .auto-hide-wrapper.right {
+  background-color: var(--vm-tint) !important;
+  background-image: var(--vm-tint-image, none) !important;
+}
+#browser.vm-on.vm-themed:not(.vm-glass) .auto-hide-wrapper.right::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image: var(--vm-noise);
+  background-size: var(--vm-noise-size, 128px);
+  image-rendering: pixelated;
+  opacity: var(--vm-grain, 0.1);
+  mix-blend-mode: overlay;
+}
+/* Over the page (no panel open, so nothing pushed it aside) the bar casts a soft shadow on it. */
+#browser.vm-on .auto-hide-wrapper.right.show:not(:has(#panels-container.expanded)) { box-shadow: -1px 0 0 rgb(0 0 0 / 0.06), -6px 0 18px rgb(0 0 0 / 0.08); }
+
+/* ---- the panel: a card beside the page ---- */
+#browser.vm-on #panels-container.expanded .panel-group {
+  margin: 4px 0;
+  border-radius: var(--vm-r-lg);
+  background: var(--pn-surface);
+  box-shadow: var(--pn-shadow);
+  overflow: hidden;
+}
+#browser.vm-on #panels-container.expanded .panel-group .panel {
+  /* Vivaldi's own colours, as its panel code reads them, mapped onto the card's. */
+  --colorBg: var(--pn-surface);
+  --colorBgAlpha: var(--pn-surface);
+  --colorBgAlphaHeavy: var(--pn-well);
+  --colorBgAlphaHeavier: var(--pn-hover);
+  --colorBgDarker: var(--pn-well);
+  --colorBgFaded: var(--pn-well);
+  --colorBgLighter: var(--pn-field);
+  --colorBgIntense: var(--pn-field);
+  --colorFg: var(--pn-text);
+  --colorFgFaded: var(--pn-muted);
+  --colorFgAlpha: var(--pn-line);
+  --colorBorder: var(--pn-line);
+  --colorHighlightBgAlpha: var(--pn-select);
+  background: transparent;
+  color: var(--pn-text);
+  padding: 14px 12px 0;
+}
+/* Opening (or switching) a panel: its contents arrive with a short slide from the bar's side. */
+#browser.vm-on #panels-container.expanded .panel-group .panel:not(.hidden) { animation: vm-panel-in 220ms cubic-bezier(0.2, 0.9, 0.3, 1); }
+@keyframes vm-panel-in { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: none; } }
+
+/* Header: a medium title, the close button a quiet icon. */
+#browser.vm-on #panels-container .panel header { margin-bottom: 8px; }
+#browser.vm-on #panels-container .panel header h1 { font-size: var(--vm-fs-4); font-weight: 600; letter-spacing: -0.01em; margin-bottom: 12px; color: var(--pn-text); }
+#browser.vm-on #panels-container .panel header .close {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--vm-r-sm);
+  color: var(--pn-muted);
+  opacity: 1;
+}
+#browser.vm-on #panels-container .panel header .close:hover { background: var(--pn-hover); color: var(--pn-text); }
+
+/* Fields: borderless wells, like the sidebar's address field; white while you type. */
+#browser.vm-on #panels-container .panel :is(header input, input.cardview, textarea, .UrlField input, select:not(.sortselector-dropdown)) {
+  background: var(--pn-well) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: var(--vm-r-md) !important;
+  color: var(--pn-text);
+  outline: none;
+}
+#browser.vm-on #panels-container .panel header input { height: 30px; padding: 0 10px; font-size: var(--vm-fs-3); }
+#browser.vm-on #panels-container .panel :is(header input, input.cardview, textarea, .UrlField input):focus {
+  background: var(--pn-field) !important;
+  box-shadow: 0 0 0 1px var(--pn-line), 0 0 0 3px color-mix(in srgb, var(--vm-space-select, var(--vm-accent)) 25%, transparent) !important;
+}
+#browser.vm-on #panels-container .panel :is(input, textarea)::placeholder { color: var(--pn-muted); opacity: 1; }
+#browser.vm-on #panels-container .panel .select-wrapper { border: 0; background: none; }
+
+/* Toolbar buttons (+, −, folder, pause, clear...): loose icons, no bordered groups. */
+#browser.vm-on #panels-container .panel :is(header, .notes-editor) .toolbar .ToolbarButton-Button,
+#browser.vm-on #panels-container .panel .webpanel-header .ToolbarButton-Button {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: var(--vm-r-sm) !important;
+  color: var(--pn-muted);
+}
+#browser.vm-on #panels-container .panel :is(header, .notes-editor) .toolbar .ToolbarButton-Button:hover:not(:disabled) { background: var(--pn-hover) !important; color: var(--pn-text); }
+#browser.vm-on #panels-container .panel header .toolbar .toolbar-group { gap: 2px; border: 0; box-shadow: none; }
+
+/* "Sort by": plain small text, no grey bar. */
+#browser.vm-on #panels-container .panel .sortselector { background: transparent; border: 0; margin: 0 0 6px; }
+#browser.vm-on #panels-container .panel .sortselector-dropdown {
+  background: transparent;
+  color: var(--pn-muted);
+  font-size: var(--vm-fs-2);
+  font-weight: 500;
+  padding-left: 4px;
+}
+#browser.vm-on #panels-container .panel .sortselector-button { background: transparent; color: var(--pn-muted); border-radius: var(--vm-r-sm); }
+#browser.vm-on #panels-container .panel .sortselector-button:hover { background: var(--pn-hover); color: var(--pn-text); }
+
+/* Rows: the sidebar's hover wash, the selected row in the space's color, quiet counts. */
+#browser.vm-on #panels-container .panel .tree-row { border-radius: var(--vm-r-md); color: var(--pn-text); }
+#browser.vm-on #panels-container .panel .tree-row:hover { background: var(--pn-hover); }
+#browser.vm-on #panels-container .panel .tree-row.tree-row-selected,
+#browser.vm-on #panels-container .panel .tree-row.tree-row-selected:hover { background: var(--pn-select) !important; color: var(--pn-text) !important; }
+#browser.vm-on #panels-container .panel .tree-row.tree-row-selected :is(.title, .time, .DownloadItem, .DownloadItem-FileSize, .text) { color: inherit !important; }
+/* Window panel: its rows paint their own label; the tab on screen is a quiet well instead of an outline. */
+#browser.vm-on #panels-container .panel .tree-row-selected .window-entry { background: transparent !important; }
+#browser.vm-on #panels-container .panel .window-entry.active-tab { outline: 0 !important; }
+#browser.vm-on #panels-container .panel .tree-row:has(> .window-entry.active-tab):not(.tree-row-selected) { background: var(--pn-well) !important; }
+#browser.vm-on #panels-container .panel .tree-row-selected:not(.tree-row-selected--first) { border-top-left-radius: 0; border-top-right-radius: 0; }
+#browser.vm-on #panels-container .panel .tree-row-selected:not(.tree-row-selected--last) { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+#browser.vm-on #panels-container .panel :is(.item-count, .time, .DownloadItem-FileSize) { color: var(--pn-muted) !important; }
+#browser.vm-on #panels-container .panel .item-count { background: transparent !important; border: 0 !important; font-size: var(--vm-fs-1); font-weight: 500; font-variant-numeric: tabular-nums; }
+#browser.vm-on #panels-container .panel .expand-icon { opacity: 0.55; }
+#browser.vm-on #panels-container .panel .DownloadItem-ProgressBar { accent-color: var(--vm-space-select, var(--vm-accent)); border-radius: 2px; }
+
+/* Detail cards under a list (a bookmark, a download, a note): a hairline above, then the card's fields. */
+#browser.vm-on #panels-container .panel :is(.panel-bookmarks-edit, .download-editor, .notes-editor) { border-top: 1px solid var(--pn-line); margin-top: 4px; }
+#browser.vm-on #panels-container .panel .SlideBar.SlideBar--FullWidth { opacity: 0; }
+#browser.vm-on #panels-container .panel :is(.download-panel.title, .panel-timefield, .panel-pathfield, .speed) { color: var(--pn-muted); }
+#browser.vm-on #panels-container .panel .download-panel.title { color: var(--pn-text); font-weight: 600; }
+#browser.vm-on #panels-container .panel .preview { border: 0 !important; border-radius: var(--vm-r-md); background: var(--pn-well) !important; }
+
+/* Buttons (Restart, Show in Finder, Translate, Copy, Clear...): Vivarc's quiet wells. */
+#browser.vm-on #panels-container .panel :is(input.action-button, input[type="button"], input[type="submit"], .TranslatePanel-ShowTranslateHistory button, .TranslatePanel-BottomToolbar button) {
+  height: 28px;
+  padding: 0 12px;
+  border: 0 !important;
+  border-radius: var(--vm-r-md) !important;
+  background: var(--pn-well) !important;
+  box-shadow: none !important;
+  color: var(--pn-text) !important;
+  font-size: var(--vm-fs-3);
+  font-weight: 500;
+}
+#browser.vm-on #panels-container .panel :is(input.action-button, input[type="button"], input[type="submit"], .TranslatePanel-ShowTranslateHistory button, .TranslatePanel-BottomToolbar button):hover:not(:disabled) { background: var(--pn-press) !important; }
+#browser.vm-on #panels-container .panel :is(input, button):disabled { opacity: 0.45; }
+#browser.vm-on #panels-container .panel input[type="checkbox"] { accent-color: var(--vm-space-select, var(--vm-accent)); }
+
+/* Translate: the two text areas as wells. */
+#browser.vm-on #panels-container .panel :is(.TranslatePanel-SrcText, .TranslatePanel-TranslatedText) { padding: 10px 12px; border-radius: var(--vm-r-lg) !important; font-size: var(--vm-fs-3); line-height: 1.45; }
+#browser.vm-on #panels-container .panel .credits { color: var(--pn-muted); font-size: var(--vm-fs-1); }
+
+/* Empty panels (Notes, Reading list): a smaller, fainter picture and the text in the muted ink. */
+#browser.vm-on #panels-container .panel :is(.note-empty-state, .panel-empty-state) { color: var(--pn-muted); }
+#browser.vm-on #panels-container .panel :is(.note-empty-state, .panel-empty-state) :is(svg, img) { opacity: 0.55; transform: scale(0.8); }
+#browser.vm-on #panels-container .panel :is(.note-empty-state, .panel-empty-state) h1 { font-size: var(--vm-fs-4); font-weight: 600; color: var(--pn-text); }
+#browser.vm-on #panels-container .panel .faded-text { color: var(--pn-muted); font-size: var(--vm-fs-2); }
+
+/* Scrollbars: thin, in the ink. */
+#browser.vm-on #panels-container .panel ::-webkit-scrollbar-thumb { background-color: var(--pn-press); border-radius: 8px; }
+
+/* The page steps aside for an open panel instead of lying under it, sliding over with the panel. */
+#browser.vm-on:not(.fullscreen, .vm-little-arc) #webview-container {
+  margin-right: calc(4px + var(--vm-panels-push, 0px));
+  transition: margin-right 200ms cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* "+" (Customize the panel bar): a popover like Vivarc's menus, its fields wells; the switches keep the accent the
+   Vivarc settings use. */
+#browser.vm-on #panels-container .CustomizePanelPopup {
+  --colorBg: var(--pn-surface);
+  --colorBgLighter: var(--pn-field);
+  --colorFg: var(--pn-text);
+  --colorFgFaded: var(--pn-muted);
+  background: var(--pn-surface);
+  color: var(--pn-text);
+  border-radius: var(--vm-r-xl);
+  box-shadow: var(--vm-shadow-pop);
+}
+#browser.vm-on #panels-container .CustomizePanelPopup h1 { font-size: var(--vm-fs-4); font-weight: 600; }
+#browser.vm-on #panels-container .CustomizePanelPopup .info { color: var(--pn-muted); font-size: var(--vm-fs-2); }
+#browser.vm-on #panels-container .CustomizePanelPopup input.address {
+  background: var(--pn-well) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: var(--vm-r-md) !important;
+}
+#browser.vm-on #panels-container .CustomizePanelPopup input.address:focus {
+  background: var(--pn-field) !important;
+  box-shadow: 0 0 0 1px var(--pn-line), 0 0 0 3px color-mix(in srgb, var(--vm-space-select, var(--vm-accent)) 25%, transparent) !important;
+}
+#browser.vm-on #panels-container .CustomizePanelPopup .FormButton { background: var(--pn-well); border: 0; box-shadow: none; border-radius: var(--vm-r-md); }
+#browser.vm-on #panels-container .CustomizePanelPopup .FormButton:hover { background: var(--pn-press); }
+#browser.vm-on #panels-container .CustomizePanelPopup-Item { border-radius: var(--vm-r-md); }
+#browser.vm-on #panels-container .CustomizePanelPopup-Item:hover { background: var(--pn-hover); }
+#browser.vm-on #panels-container .CustomizePanelPopup hr { border: 0; border-top: 1px solid var(--pn-line); }
+#browser.vm-on #panels-container .CustomizePanelPopup .reorder { opacity: 0.4; }
