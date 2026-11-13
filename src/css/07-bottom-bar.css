@@ -7,3 +7,7 @@
 }
 #browser.vm-on.vm-compact-bottom #tabs-tabbar-container .toolbar-tabbar-after .button-toolbar { padding-bottom: 0 !important; }
 
+/* The bottom toolbar takes what the tabs leave, and Vivaldi hides a toolbar's flexible spacers once it is under
+   60px tall (@container narrow_toolbar): with a long list of tabs the profile button and Downloads then fell
+   together in the middle, over the space dots. The spacers stay, so the buttons keep to the edges. */
+#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-after .tabbar-nested-buttons > .toolbar-spacer-flexible { display: flex !important; }

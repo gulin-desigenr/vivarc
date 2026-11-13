@@ -8,7 +8,8 @@
 // is all in 14-start.js.
   const cfg = window.__vm.config;
   const BLANK = /^(chrome|vivaldi):\/\/(newtab|vivaldi-webui\/startpage)/;
-  const bottomToolbar = () => (window.__vm.settings.get("compactBottomBar") ? 35 : 64);
+  // Room left under the tabs for the bottom toolbar: its 37px buttons (compact) sit exactly where they do with few tabs.
+  const bottomToolbar = () => (window.__vm.settings.get("compactBottomBar") ? 40 : 64);
 
   const store = window.__vm.store;
   const openFolders = new Set();
