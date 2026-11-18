@@ -47,17 +47,26 @@
   const keepLoose = async (tab) => {
     const source = await chrome.tabs.get(tab.openerTabId).catch(() => null);
     const group = tabStackId(source);
-    if (!group || !vivaldi?.tabsPrivate?.move) return;
-    for (let i = 0; i < 10; i++) { // Vivaldi stacks the new tab a moment after creating it
-      const now = await chrome.tabs.get(tab.id).catch(() => null);
-      if (!now) return;
-      if (tabStackId(now) === group) {
-        await vivaldi.tabsPrivate.move({ tabIds: [tab.id], target: "last", tweaks: ["ungroup"], debug: "Vivarc.keepLoose" });
+    if (group) await outOfStack(tab.id, group);
+  };
+  // Vivaldi's "Open links within current tab stack" stacks a new tab a moment after creating it, in the stack of the
+  // tab it came from or, for a tab the mod creates, of the tab on screen. This takes it out again (group: only that
+  // stack; omitted: any). Returns whether it moved the tab.
+  const outOfStack = async (tabId, group) => {
+    if (!vivaldi?.tabsPrivate?.move) return false;
+    for (let i = 0; i < 10; i++) {
+      const now = await chrome.tabs.get(tabId).catch(() => null);
+      if (!now) return false;
+      const stack = tabStackId(now);
+      if (stack && (!group || stack === group)) {
+        await vivaldi.tabsPrivate.move({ tabIds: [tabId], target: "last", workspaceId: spacesOf.of(now) || null,
+          tweaks: ["ungroup"], debug: "Vivarc.outOfStack" });
         refresh(false);
-        return;
+        return true;
       }
       await new Promise((r) => setTimeout(r, 100));
     }
+    return false;
   };
 
   // ---- Tidy Tabs ----

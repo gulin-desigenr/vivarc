@@ -44,6 +44,8 @@
     const tab = await chrome.tabs.create({ url: node.url });
     await writeExt(tab.id, { [pinLinks.PIN]: node.id });
     recordHome(tab.id, node.id);
+    // A pinned link or favorite has its own row: its tab never joins the stack of the tab that was on screen.
+    outOfStack(tab.id).catch((e) => console.warn("[vivarc] pinned tab stack:", e));
     try {
       const fresh = await chrome.tabs.get(tab.id);
       if (state.workspaces?.length && spacesOf.of(fresh) !== space) {
