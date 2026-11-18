@@ -1,6 +1,13 @@
   // ---- drag and drop ----
   let drag = null;
+  let dragPoint = null;
   let refreshAfterDrag = false;
+  // A zero screen coordinate is Chromium's "unknown" dragend position on macOS, not a reliable drop point.
+  const pointOf = (e) => Number.isFinite(e?.screenX) && Number.isFinite(e?.screenY) && (e.screenX !== 0 || e.screenY !== 0)
+    ? { x: e.screenX, y: e.screenY } : null;
+  const outsideWindow = (point, bounds) => !!point && !!bounds &&
+    (point.x < bounds.left || point.y < bounds.top || point.x >= bounds.left + bounds.width || point.y >= bounds.top + bounds.height);
+  window.__vm.dragOutsideWindow = outsideWindow;
   // The window a chrome.tabs event belongs to, or undefined when the event does not say.
   const eventWindowId = (ev, [first, second, third]) => ({
     onCreated: first?.windowId, onUpdated: third?.windowId, onActivated: first?.windowId,
@@ -23,6 +30,7 @@
     node.draggable = true;
     node.addEventListener("dragstart", (e) => {
       drag = payload;
+      dragPoint = pointOf(e);
       e.dataTransfer.effectAllowed = "move";
       e.dataTransfer.setData("text/plain", payload.url || "");
       closeMenu();
@@ -33,12 +41,27 @@
         document.querySelector("#browser")?.classList.add("vm-dragging");
       });
     });
-    node.addEventListener("dragend", () => {
+    node.addEventListener("drag", (e) => { dragPoint = pointOf(e) || dragPoint; });
+    node.addEventListener("dragend", async (e) => {
+      const data = drag;
+      const point = pointOf(e) || dragPoint;
       drag = null;
+      dragPoint = null;
       if (refreshAfterDrag) refresh(true);
       node.classList.remove("dragging");
       document.querySelector("#browser")?.classList.remove("vm-dragging");
       clearDrop();
+      // Dropped outside the window (nothing took it): the tab moves to a new window there, like Chrome's.
+      if (data?.type === "tab" && !data.tab.pinned && e.dataTransfer?.dropEffect === "none") {
+        try {
+          const bounds = await chrome.windows.getCurrent();
+          if (outsideWindow(point, bounds)) {
+            // Detach one tab from its stack before Vivaldi transfers it to the new window.
+            if (tabStackId(data.tab)) await unstack([data.tab.id]);
+            await chrome.windows.create({ tabId: data.tab.id, left: point.x, top: point.y, focused: true, type: "normal" });
+          }
+        } catch (err) { console.warn("[vivarc] tear out tab:", err); }
+      }
     });
   };
 
