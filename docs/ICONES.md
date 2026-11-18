@@ -35,6 +35,7 @@ A área vem de uma estimativa automática: os textos em volta de cada uso do íc
 - Grupo 1 (`24-icons.css`): Extensões, Recarregar e Parar na linha de cima da sidebar; Alternar painel, Downloads e Atualização na linha de baixo; Feeds, Modo de leitura, Traduzir e Favorito (vazio e preenchido) na barra de endereço; o fechar dos painéis.
 - Grupo 2 (`24-icons.css`): barras dos painéis (adicionar, remover, nova pasta, limpar, pausar, retomar, marcar como lido, opções), barra do editor de notas (captura, anexo, Markdown, abrir em aba) e a seta de todos os menus suspensos (`.select-wrapper::after`), nos painéis, nos diálogos e nas Configurações.
 - Grupo 3 (`24-icons.css` e `21-panels.css`): balões da barra e do endereço. Informações do site (cadeado, cookies, configurações, link externo, JavaScript, relatório de privacidade, engrenagem e a seta das linhas), Traduzir (fechar, opções), perfil (seta, gerenciar perfis, convidado) e o seletor de pasta do favorito (busca, pastas e chevrons das árvores, os mesmos dos painéis).
+- Grupo 4 (`24-icons.css`): Configurações. Os 22 ícones coloridos das seções viraram ícones de linha numa cor só, escolhidos pelo fim do id da linha (`[id$="__general"]` etc.), e os botões de dentro das páginas (adicionar, remover, subir e descer item, fechar o aviso de doação) são achados pelo desenho do Vivaldi.
 - Tudo o que o Vivarc desenha por conta própria: sidebar, command bar, pastas, Little Vivarc, configurações do Vivarc (`src/js/10-sidebar/12-icons.js` e glifos no CSS).
 
 ## Prioridade para redesenhar
