@@ -1,5 +1,5 @@
 /* Command palette and menus: neutral surfaces follow Vivaldi's light/dark theme, independently of each space tint. */
-#browser.vm-on :is(#vm-cmd, .dialog-javascript, .modal-tabswitcher, .vm-menu, .vm-theme-pop, #vm-copied, .vm-rename-float, .vm-little-menu) {
+#browser.vm-on :is(#vm-cmd, .dialog-javascript, .modal-tabswitcher, .vm-menu, .vm-theme-pop, #vm-copied, .vm-rename-float, .vm-little-menu, .find-in-page, .dialog-download, .permission-popup) {
   --cmd-surface: #fafbfc;
   --cmd-text: #20242b;
   --cmd-muted: #5f6672;
@@ -7,7 +7,7 @@
   --cmd-selected: #dfedfb;
   --cmd-shadow: 0 20px 60px rgba(20, 28, 38, .28), 0 2px 8px rgba(20, 28, 38, .12);
 }
-#browser.vm-on.theme-dark :is(#vm-cmd, .dialog-javascript, .modal-tabswitcher, .vm-menu, .vm-theme-pop, #vm-copied, .vm-rename-float, .vm-little-menu) {
+#browser.vm-on.theme-dark :is(#vm-cmd, .dialog-javascript, .modal-tabswitcher, .vm-menu, .vm-theme-pop, #vm-copied, .vm-rename-float, .vm-little-menu, .find-in-page, .dialog-download, .permission-popup) {
   --cmd-surface: #24262d;
   --cmd-text: #f1f2f4;
   --cmd-muted: #b3b9c3;

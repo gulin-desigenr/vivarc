@@ -1,0 +1,392 @@
+/* Page prompts (Find in page, Download prompt, Permission request): styled to match Vivarc's
+   command bar card surface (--cmd-surface, --cmd-line, --cmd-shadow, --vm-r-xl).
+   Tokens are registered in src/css/16-command-bar-sizes.css.
+   Real DOM classes and ids found:
+   - Find in page: .find-in-page-wrapper, .find-in-page, .fip-input-label, .fip-input-container,
+     .fip-results, .toolbar-group, .button-toolbar, .button-narrow, .fip-checkbox-label.
+   - Download prompt: #modal-bg.dialog-download, .modal-wrapper, .dialog-header,
+     #modal-dialog-title.dialog-title, .dialog-content, .label, .selectable, .autosave,
+     .dialog-footer, input.primary.
+   - Site permissions: .addressfield-popup-container.permission-popup.button-popup,
+     .addressfield-popup, .addressfield-popup-header, .permission-icon,
+     #popup-label-permissionprompt, .dialog-footer, .permission-query-container,
+     .permission-buttons, .geo-notice.
+*/
+
+/* ==========================================================================
+   1. Find in page (Cmd+F)
+   Floating card pinned to the top-right of the active page view.
+   In split view / tiling, each page view (.webpageview) pins its own card.
+   ========================================================================== */
+#browser.vm-on .find-in-page-wrapper {
+  position: absolute !important;
+  top: 12px !important;
+  right: 20px !important;
+  z-index: 100 !important;
+  background: transparent !important;
+  border: 0 !important;
+  pointer-events: none !important;
+}
+#browser.vm-on .find-in-page {
+  pointer-events: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  height: 38px !important;
+  max-width: calc(100% - 24px) !important;
+  box-sizing: border-box !important;
+  flex-wrap: nowrap !important;
+  padding: 0 8px 0 10px !important;
+  border: 1px solid var(--cmd-line) !important;
+  border-radius: var(--vm-r-xl) !important;
+  background: var(--cmd-surface) !important;
+  color: var(--cmd-text) !important;
+  box-shadow: var(--cmd-shadow) !important;
+  font-size: var(--vm-fs-3) !important;
+}
+#browser.vm-on .find-in-page .fip-input-label {
+  display: none !important;
+}
+#browser.vm-on .find-in-page .fip-input-container {
+  display: flex !important;
+  align-items: center !important;
+  height: 26px !important;
+  padding: 0 8px !important;
+  border: 1px solid var(--cmd-line) !important;
+  border-radius: var(--vm-r-md) !important;
+  background: transparent !important;
+  margin: 0 !important;
+  min-width: 90px !important;
+  flex: 0 1 140px !important;
+}
+#browser.vm-on .find-in-page .fip-input-container:focus-within {
+  border-color: transparent !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--vm-accent) 55%, transparent) !important;
+}
+#browser.vm-on .find-in-page .fip-input-container input[type="search"] {
+  border: 0 !important;
+  outline: none !important;
+  background: transparent !important;
+  color: var(--cmd-text) !important;
+  font-family: inherit !important;
+  font-size: var(--vm-fs-3) !important;
+  min-width: 50px !important;
+  width: 100% !important;
+  height: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+#browser.vm-on .find-in-page .fip-input-container input[type="search"]::placeholder {
+  color: var(--cmd-muted) !important;
+}
+#browser.vm-on .find-in-page .fip-results {
+  color: var(--cmd-muted) !important;
+  font-size: var(--vm-fs-2) !important;
+  font-weight: 500 !important;
+  margin-left: 6px !important;
+  white-space: nowrap !important;
+  font-variant-numeric: tabular-nums !important;
+}
+#browser.vm-on .find-in-page .toolbar-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+#browser.vm-on .find-in-page .button-toolbar {
+  margin: 0 !important;
+}
+#browser.vm-on .find-in-page button {
+  width: 26px !important;
+  height: 26px !important;
+  max-width: 26px !important;
+  max-height: 26px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: var(--vm-r-sm) !important;
+  background: transparent !important;
+  color: var(--cmd-muted) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transition: background-color 120ms, color 120ms !important;
+}
+#browser.vm-on .find-in-page button:hover {
+  background: color-mix(in srgb, var(--cmd-text) 8%, transparent) !important;
+  color: var(--cmd-text) !important;
+}
+#browser.vm-on .find-in-page button svg {
+  width: 14px !important;
+  height: 14px !important;
+  fill: currentColor !important;
+}
+#browser.vm-on .find-in-page label.toolbar-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 0 4px !important;
+  color: var(--cmd-muted) !important;
+  font-size: var(--vm-fs-1) !important;
+  cursor: pointer !important;
+  user-select: none !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+  flex-shrink: 1 !important;
+}
+#browser.vm-on .find-in-page label.toolbar-group:hover {
+  color: var(--cmd-text) !important;
+}
+#browser.vm-on .find-in-page label.toolbar-group input[type="checkbox"] {
+  accent-color: var(--vm-accent) !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+}
+#browser.vm-on .find-in-page label.toolbar-group .fip-checkbox-label {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  max-width: 180px !important;
+}
+
+/* ==========================================================================
+   2. Download Prompt (.dialog-download)
+   Centred card matching .dialog-javascript (18-page-dialogs.css).
+   ========================================================================== */
+#browser.vm-on .dialog-download {
+  width: min(440px, calc(100vw - 32px)) !important;
+  height: fit-content !important;
+  inset: 0 !important;
+  margin: auto !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+#browser.vm-on .dialog-download .modal-wrapper {
+  overflow: hidden;
+  padding: 20px 22px 18px;
+  border: 1px solid var(--cmd-line);
+  border-radius: var(--vm-r-xl);
+  background: var(--cmd-surface);
+  color: var(--cmd-text);
+  box-shadow: var(--cmd-shadow);
+  font-size: var(--vm-fs-3);
+}
+#browser.vm-on .dialog-download .dialog-header {
+  padding: 0;
+  margin: 0 0 14px;
+  border: 0;
+  background: none;
+}
+#browser.vm-on .dialog-download .dialog-title {
+  margin: 0;
+  color: var(--cmd-text);
+  font-size: var(--vm-fs-4);
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#browser.vm-on .dialog-download .dialog-content {
+  padding: 0;
+  margin: 0;
+  background: none;
+}
+#browser.vm-on .dialog-download .dialog-content p {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 6px;
+  font-size: var(--vm-fs-2);
+  line-height: 1.45;
+}
+#browser.vm-on .dialog-download .dialog-content .label {
+  color: var(--cmd-muted);
+  font-weight: 500;
+}
+#browser.vm-on .dialog-download .dialog-content .selectable {
+  color: var(--cmd-text);
+  word-break: break-all;
+}
+#browser.vm-on .dialog-download .dialog-content .autosave {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+  color: var(--cmd-muted);
+  font-size: var(--vm-fs-2);
+  cursor: pointer;
+  user-select: none;
+}
+#browser.vm-on .dialog-download .dialog-content .autosave input[type="checkbox"] {
+  accent-color: var(--vm-accent);
+  margin: 0;
+  cursor: pointer;
+}
+#browser.vm-on .dialog-download .dialog-footer {
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 18px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+#browser.vm-on .dialog-download .dialog-footer input {
+  min-width: 72px;
+  height: 30px;
+  margin: 0;
+  padding: 0 14px;
+  border: 1px solid var(--cmd-line);
+  border-radius: var(--vm-r-md);
+  background: transparent;
+  color: var(--cmd-text);
+  font: inherit;
+  font-size: var(--vm-fs-3);
+  font-weight: 500;
+  box-shadow: none;
+  cursor: pointer;
+  transition: background-color 120ms, filter 120ms;
+}
+#browser.vm-on .dialog-download .dialog-footer input:hover {
+  background: color-mix(in srgb, var(--cmd-text) 7%, transparent);
+}
+#browser.vm-on .dialog-download .dialog-footer input:is(.primary, [type="submit"]) {
+  border-color: transparent;
+  background: var(--vm-accent);
+  color: var(--vm-accent-fg);
+}
+#browser.vm-on .dialog-download .dialog-footer input:is(.primary, [type="submit"]):hover {
+  filter: brightness(1.08);
+}
+#browser.vm-on .dialog-download .dialog-footer input:is(:focus, :focus-visible) {
+  outline: none;
+}
+#browser.vm-on .dialog-download .dialog-footer input:not(.primary):focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vm-accent) 35%, transparent);
+}
+
+/* ==========================================================================
+   3. Site Permission Request (.permission-popup)
+   Clean popover card anchored to the address bar.
+   ========================================================================== */
+#browser.vm-on .addressfield-popup-container.permission-popup {
+  border: 1px solid var(--cmd-line) !important;
+  border-radius: var(--vm-r-xl) !important;
+  background: var(--cmd-surface) !important;
+  color: var(--cmd-text) !important;
+  box-shadow: var(--cmd-shadow) !important;
+  overflow: hidden !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup::before,
+#browser.vm-on .addressfield-popup-container.permission-popup::after {
+  display: none !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .addressfield-popup {
+  padding: 18px 20px 16px !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .addressfield-popup-header {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  margin: 0 0 14px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .permission-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  flex: none !important;
+  color: var(--vm-accent) !important;
+  margin-top: 1px !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .permission-icon svg {
+  width: 18px !important;
+  height: 18px !important;
+  fill: currentColor !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .addressfield-popup-header h1 {
+  margin: 0 !important;
+  color: var(--cmd-text) !important;
+  font-size: var(--vm-fs-3) !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .dialog-footer {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .permission-query-container {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .permission-buttons {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .geo-notice {
+  margin-right: auto !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .geo-notice a {
+  color: var(--cmd-muted) !important;
+  font-size: var(--vm-fs-1) !important;
+  text-decoration: none !important;
+  transition: color 120ms !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .geo-notice a:hover {
+  color: var(--cmd-text) !important;
+  text-decoration: underline !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .permission-buttons input {
+  min-width: 72px !important;
+  height: 30px !important;
+  margin: 0 !important;
+  padding: 0 14px !important;
+  border: 1px solid var(--cmd-line) !important;
+  border-radius: var(--vm-r-md) !important;
+  background: transparent !important;
+  color: var(--cmd-text) !important;
+  font: inherit !important;
+  font-size: var(--vm-fs-3) !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+  cursor: pointer !important;
+  transition: background-color 120ms, filter 120ms !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .permission-buttons input:hover {
+  background: color-mix(in srgb, var(--cmd-text) 7%, transparent) !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .permission-buttons input:is(.primary, [type="submit"]) {
+  border-color: transparent !important;
+  background: var(--vm-accent) !important;
+  color: var(--vm-accent-fg) !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .permission-buttons input:is(.primary, [type="submit"]):hover {
+  filter: brightness(1.08) !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .permission-buttons input:is(:focus, :focus-visible) {
+  outline: none !important;
+}
+#browser.vm-on .addressfield-popup-container.permission-popup .permission-buttons input:not(.primary, [type="submit"]):focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vm-accent) 35%, transparent) !important;
+}
