@@ -31,8 +31,8 @@
   box-shadow: var(--vm-pill-shadow);
 }
 /* Vivaldi's Tabs button draws its chevron inside a box: just the chevron, like the other toolbar glyphs. */
-/* Back and Forward get Dia's chevrons instead of Vivaldi's long arrows. Reload keeps Vivaldi's icon: the same button
-   turns into Stop while a page loads, with nothing but its icon and title to tell. */
+/* Back and Forward get Dia's chevrons instead of Vivaldi's long arrows. Reload (and Stop) are redrawn with the other
+   Vivaldi icons in 24-icons.css. */
 #browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before :is([data-name="TabButton"], [data-name="Back"], [data-name="Forward"]) .button-icon svg { display: none; }
 #browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before :is([data-name="TabButton"], [data-name="Back"], [data-name="Forward"]) .button-icon::before {
   content: "";
@@ -73,8 +73,6 @@
 #browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .UrlFragment-Wrapper .UrlFragment--Lowlight { display: none; }
 #browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .button-toolbar:not(.button-addressfield) { opacity: 0; transition: opacity 120ms; }
 #browser.vm-on #tabs-tabbar-container .UrlBar-AddressField:is(:hover, :focus-within) .button-toolbar { opacity: 1; }
-#browser.vm-on #tabs-tabbar-container .UrlBar-AddressField .BookmarkButton-Button svg { filter: grayscale(1); }
-#browser.vm-on #tabs-tabbar-container .toolbar-tabbar-before [data-name="Reload"] .button-icon { opacity: 0.8; }
 #browser.vm-on #tabs-tabbar-container .toolbar-tabbar-after .button-toolbar > button { opacity: 0.7; transition: opacity 120ms; }
 #browser.vm-on #tabs-tabbar-container .toolbar-tabbar-after .button-toolbar > button:hover { opacity: 1; }
 /* Vivaldi's update button writes its state ("Update failed", "Restart to update") next to its icon, over the space

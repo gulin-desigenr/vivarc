@@ -68,7 +68,7 @@
   color: var(--cmd-text);
 }
 
-/* Preserve Vivaldi's select arrow and any widths set by the dialog. */
+/* Keep any widths set by the dialog. A select's arrow is on its wrapper (redrawn in 24-icons.css). */
 #browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper .dialog-content
   :is(input:is(:not([type]), [type="text"], [type="search"], [type="url"], [type="email"], [type="password"], [type="number"], [type="tel"]), select, textarea) {
   border: 1px solid var(--cmd-line);
