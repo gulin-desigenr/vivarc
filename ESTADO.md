@@ -62,6 +62,7 @@ Atualizado em 11/11/2026 (Vivaldi 8.3.4191.35).
 - Link fixado ou favorito aberto com a aba atual numa pilha abre a aba só na lista de Pinned: o "Open links within current tab stack" do Vivaldi também punha essa aba na pilha da aba em tela (sem `openerTabId`, então o `keepLoose` não a pegava), e ela aparecia nos dois lugares. `openPin` tira a aba da pilha logo depois de criá-la (`outOfStack` em `06-stacks.js`).
 - Arrastar uma aba solta para fora da janela a move para uma nova janela normal do mesmo perfil, posicionada no ponto de soltura quando o Vivaldi fornece coordenadas válidas; uma aba em pilha sai dela sozinha. Se for a última aba, o Vivaldi fecha a janela de origem. Linhas de pins/favoritos continuam sendo arrastes de bookmark e não abrem janela.
 - Telas nativas de página (busca Cmd+F, pedido de download e permissões de site, em `src/css/22-page-prompts.css`) adaptadas ao padrão visual do Vivarc: superfícies de cartão da command bar (`--cmd-surface`, `--cmd-line`, `--cmd-shadow`, cantos de 12 px), botões em pílula com ação padrão preenchida no acento do Vivaldi e suporte aos temas claro e escuro.
+- Diálogos modais nativos (`src/css/23-modal-dialogs.css`) usam o cartão da command bar em claro e escuro, com campos e ação padrão no acento do Vivaldi e fundo suavemente esmaecido quando o diálogo pede. O rodapé segue a ordem do macOS, com a ação padrão à direita, Cancelar à esquerda dela e controles auxiliares junto à margem esquerda.
 
 ## Desenvolvimento
 

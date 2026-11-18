@@ -1,0 +1,229 @@
+/* Slide, float and anchor keep their native position and sizing. Page prompts and the tab
+   switcher already have their own cards. */
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper {
+  /* Native widgets inside the card still read Vivaldi's theme variables. */
+  --colorBg: var(--cmd-surface);
+  --colorBgLight: var(--cmd-surface);
+  --colorBgLightIntense: var(--cmd-surface);
+  --colorBgIntense: var(--cmd-surface);
+  --colorBgIntenser: var(--cmd-surface);
+  --colorBgDark: var(--cmd-line);
+  --colorBorder: var(--cmd-line);
+  --colorFg: var(--cmd-text);
+  --colorFgIntense: var(--cmd-text);
+  --colorFgFaded: var(--cmd-muted);
+  --colorFgFadedMore: var(--cmd-muted);
+
+  border: 1px solid var(--cmd-line);
+  border-radius: var(--vm-r-xl);
+  background: var(--cmd-surface);
+  color: var(--cmd-text);
+  box-shadow: var(--cmd-shadow);
+  color-scheme: light;
+  font-size: var(--vm-fs-3);
+}
+
+#browser.vm-on.theme-dark #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper {
+  color-scheme: dark;
+}
+
+/* Some dialogs put their sections inside a form or another container. Match the section
+   classes while leaving the native content layout and scroll containers in place. */
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  :is(.dialog-header:not(.buttons), .dialog-double-header) {
+  border-color: transparent;
+  background: transparent;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  > :is(.dialog-header:not(.buttons), .dialog-double-header),
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  > :is(form, div) > :is(.dialog-header:not(.buttons), .dialog-double-header):first-child {
+  padding-block: 16px 8px;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  :is(.dialog-header, .dialog-double-header) > :is(.dialog-title, h1, h2, h3) {
+  color: var(--cmd-text);
+  font-size: var(--vm-fs-4);
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper .dialog-content {
+  line-height: 1.45;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper button.close {
+  border-radius: var(--vm-r-sm);
+  background: transparent;
+  color: var(--cmd-muted);
+  opacity: 1;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper button.close:is(:hover, :active) {
+  background: color-mix(in srgb, var(--cmd-text) 8%, transparent);
+  color: var(--cmd-text);
+}
+
+/* Preserve Vivaldi's select arrow and any widths set by the dialog. */
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper .dialog-content
+  :is(input:is(:not([type]), [type="text"], [type="search"], [type="url"], [type="email"], [type="password"], [type="number"], [type="tel"]), select, textarea) {
+  border: 1px solid var(--cmd-line);
+  border-radius: var(--vm-r-md);
+  background-color: transparent;
+  background-image: none;
+  color: var(--cmd-text);
+  font-size: var(--vm-fs-3);
+  box-shadow: none;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper .dialog-content
+  :is(input:is(:not([type]), [type="text"], [type="search"], [type="url"], [type="email"], [type="password"], [type="number"], [type="tel"]), select:not([size], [multiple])) {
+  min-height: 32px;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper .dialog-content
+  :is(input:is(:not([type]), [type="text"], [type="search"], [type="url"], [type="email"], [type="password"], [type="number"], [type="tel"]), textarea)::placeholder {
+  color: var(--cmd-muted);
+  opacity: 1;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper .dialog-content
+  :is(input:is(:not([type]), [type="text"], [type="search"], [type="url"], [type="email"], [type="password"], [type="number"], [type="tel"]), select, textarea):focus {
+  border-color: transparent;
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--vm-accent) 55%, transparent);
+}
+
+/* The bookmark picker overlays a text input as its label. The select owns the border. */
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper .bookmark-folder-picker input[type="text"] {
+  border-color: transparent;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper .bookmark-folder-picker select {
+  color: transparent;
+}
+
+/* Vivaldi paints these controls by hand. Let the native indicator pick up accent-color. */
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  :is(.dialog-content, .dialog-footer) input:is([type="checkbox"], [type="radio"]) {
+  appearance: auto;
+  accent-color: var(--vm-accent);
+  background: none;
+  box-shadow: none;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  :is(.dialog-content, .dialog-footer) input[type="checkbox"]::before,
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  :is(.dialog-content, .dialog-footer) input[type="checkbox"]::after {
+  content: none;
+}
+
+/* Chrome follows the displayed flex order for Tab. Keep secondary actions in their original
+   sequence and move the committing action to the trailing edge, including destructive confirms. */
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper .dialog-footer {
+  gap: 8px;
+  border-top: 0;
+  background: transparent;
+  reading-flow: flex-visual;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  .dialog-footer:has(> :is(button, input):is(.danger, .primary, [type="submit"])) {
+  justify-content: flex-end;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  .dialog-footer > :is(button, input).danger {
+  order: 1;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  .dialog-footer > :is(button, input):is(.primary, [type="submit"]) {
+  order: 2;
+}
+
+/* Use one auto margin after the auxiliary controls, so multiple items stay together. */
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  .dialog-footer > :is(label, a, p, .in-progress, input:is([type="checkbox"], [type="radio"])) {
+  margin-inline-end: 0;
+  order: -1;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  .dialog-footer > :nth-last-child(1 of :is(label, a, p, .in-progress, input:is([type="checkbox"], [type="radio"]))) {
+  margin-inline-end: auto;
+}
+
+/* Match the page prompts' secondary typography so checkbox labels leave room for the actions. */
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper .dialog-footer > label {
+  font-size: var(--vm-fs-2);
+}
+
+/* Sticky footers retain their native positioning and block padding. */
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper .dialog-footer:not(.dialog-footer-sticky) {
+  padding-block: 8px 16px;
+}
+
+/* Import and editing dialogs also have text actions in the body, next to the fields. */
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  :is(.dialog-footer > :is(button:not(.close), input:is([type="button"], [type="submit"], [type="reset"])), .dialog-content input[type="button"]):not(.circular) {
+  border: 1px solid var(--cmd-line);
+  border-radius: var(--vm-r-md);
+  background: transparent;
+  color: var(--cmd-text);
+  font-size: var(--vm-fs-3);
+  font-weight: 500;
+  box-shadow: none;
+  transition: background-color 120ms, filter 120ms;
+}
+
+/* A minimum height leaves room for wrapped localized labels in compact dialogs. */
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  .dialog-footer > :is(button:not(.close), input:is([type="button"], [type="submit"], [type="reset"])):not(.circular) {
+  min-height: 30px;
+  padding-inline: 14px;
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  :is(.dialog-footer > :is(button:not(.close), input:is([type="button"], [type="submit"], [type="reset"])), .dialog-content input[type="button"]):not(.circular):hover:enabled {
+  background: color-mix(in srgb, var(--cmd-text) 7%, transparent);
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  :is(.dialog-footer > :is(button:not(.close), input:is([type="button"], [type="submit"], [type="reset"])), .dialog-content input[type="button"]):not(.circular):is(.primary, [type="submit"]) {
+  border-color: transparent;
+  background: var(--vm-accent);
+  color: var(--vm-accent-fg);
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  :is(.dialog-footer > :is(button:not(.close), input:is([type="button"], [type="submit"], [type="reset"])), .dialog-content input[type="button"]):not(.circular):is(.primary, [type="submit"]):hover:enabled {
+  filter: brightness(1.08);
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  :is(.dialog-footer > :is(button:not(.close), input:is([type="button"], [type="submit"], [type="reset"])), .dialog-content input[type="button"]):not(.circular).danger:not(.primary, [type="submit"]) {
+  border-color: var(--vm-danger);
+  color: color-mix(in srgb, var(--vm-danger), var(--cmd-text) 35%);
+}
+
+#browser.vm-on #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher)) > .modal-wrapper
+  :is(.dialog-footer > :is(button:not(.close), input:is([type="button"], [type="submit"], [type="reset"])), .dialog-content input[type="button"]):not(.circular):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--vm-accent) 55%, transparent);
+}
+
+/* Float dialogs already render a scrim as a sibling. Keep the dimming gentle and leave
+   transparent overlays to handle clicks without dimming slide and anchor dialogs. */
+#browser.vm-on .modal-faded-background:has(+ #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher))) {
+  background-color: rgb(18 22 30 / 0.19);
+}
+
+#browser.vm-on.theme-dark .modal-faded-background:has(+ #modal-bg:not(:where(.dialog-javascript, .dialog-download, .modal-tabswitcher))) {
+  background-color: rgb(0 0 0 / 0.27);
+}
