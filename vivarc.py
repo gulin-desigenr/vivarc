@@ -686,6 +686,34 @@ def restart_app(app):
     subprocess.run(["open", "-a", app], check=False)
 
 
+# Vivarc's icon on Vivaldi.app, for the Dock and Finder. macOS keeps it as the bundle's custom icon (NSWorkspace
+# setIcon), which a Vivaldi update replaces with the new bundle, so every apply (and the reminder's reapply) sets it
+# again. Only the real Vivaldi: the dev copy keeps Vivaldi's icon, so the two are told apart in the Dock.
+ICON_FILE = os.path.join(HERE, "src", "icon", "Vivarc.icns")
+SET_ICON_JXA = ('function run(argv) { ObjC.import("AppKit"); '
+                'const image = argv[1] ? $.NSImage.alloc.initWithContentsOfFile(argv[1]) : $(); '
+                'return $.NSWorkspace.sharedWorkspace.setIconForFileOptions(image, argv[0], 0); }')
+
+
+def real_vivaldi(app):
+    try:
+        with open(os.path.join(app, "Contents", "Info.plist"), "rb") as f:
+            return plistlib.load(f).get("CFBundleIdentifier") == "com.vivaldi.Vivaldi"
+    except (OSError, plistlib.InvalidFileException):
+        return False
+
+
+def set_app_icon(app, icon=ICON_FILE, run=subprocess.run):
+    """Put Vivarc's icon on Vivaldi.app (icon=None takes it off). False when skipped or macOS refused."""
+    if not real_vivaldi(app) or (icon and not os.path.exists(icon)):
+        return False
+    try:
+        out = run(["osascript", "-l", "JavaScript", "-e", SET_ICON_JXA, app, icon or ""], capture_output=True, text=True)
+    except OSError:
+        return False
+    return out.stdout.strip() == "true"
+
+
 def ask_restart():
     script = ('display dialog "Vivaldi was updated, so Vivarc was put back. Restart Vivaldi now to load it?" '
               'with title "Vivarc" buttons {"Later", "Restart Vivaldi"} default button "Restart Vivaldi" giving up after 600')
@@ -708,6 +736,7 @@ def reapply_quietly(app):
         apply_js(app, resources, with_peek_installed())
     except PermissionError:
         return False
+    set_app_icon(app)
     return True
 
 
@@ -767,6 +796,7 @@ def cmd_install(args):
         apply_js(app, resources, not args.no_peek)
     except PermissionError as error:
         permission_hint(error)
+    set_app_icon(app)
     write_update_command(UPDATE_COMMAND)
     write_update_app(UPDATE_APP, UPDATE_COMMAND)
     write_uninstall_command(UNINSTALL_COMMAND)
@@ -791,6 +821,7 @@ def cmd_apply(args):
         apply_js(args.app, resources, with_peek_installed())
     except PermissionError as error:
         permission_hint(error)
+    set_app_icon(args.app)
     say(f"Re-applied to Vivaldi {app_version(args.app)}" + (". Restart Vivaldi to see it." if vivaldi_running() else ""))
     if getattr(args, "offer_restart", False) is True and app_running(args.app) and ask_restart():
         restart_app(args.app)
@@ -909,6 +940,7 @@ def cmd_uninstall(args):
             os.remove(bundle)
     except PermissionError as error:
         permission_hint(error)
+    set_app_icon(args.app, icon=None)
     remove_update_command(UPDATE_COMMAND)
     remove_update_command(LEGACY_UPDATE_COMMAND)
     remove_update_app(UPDATE_APP)

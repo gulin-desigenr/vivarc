@@ -62,8 +62,4 @@ A área vem de uma estimativa automática: os textos em volta de cada uso do íc
 
 ## Ícone do app (Dock)
 
-O Vivaldi usa `Contents/Resources/Assets.car` (`CFBundleIconName = AppIcon`), com `app.icns` como reserva (`CFBundleIconFile`). Dá para trocar pelo nosso no mesmo `apply` que já reinjeta o Vivarc. A reinstalação automática já observa o `Info.plist` e reaplica depois de cada atualização do Vivaldi, então o ícone voltaria junto. São necessários três cuidados:
-
-- O ícone precisa entrar nos dois lugares (o `Assets.car` gerado a partir de um `.icon`/`.appiconset` com `actool`, e o `app.icns`), com backup em `~/.vivarc/backup` como o resto. Depois é preciso tocar o app (`touch`) e limpar o cache de ícones do Dock.
-- A escrita dentro do `Vivaldi.app` já é a que o macOS só permite pelo Terminal (App Management). O ícone entra no mesmo fluxo do `Put Vivarc back.command`, sem pedir nada novo.
-- O Vivaldi Dev tem que continuar com o ícone próprio, para os dois não se confundirem no Dock.
+O ícone do Vivarc (`src/icon/vivarc-icon.svg`, gerado em `src/icon/Vivarc.icns`) segue a grade de ícones do macOS: um quadrado arredondado de 824 px com o degradê do logo do Vivarc (#7b6cf6 → #e86fb0) e um V branco num traço só, com o braço direito curvado como um arco. `install`, `apply` e a reinstalação automática (`reapply_quietly`) o colocam no `Vivaldi.app` como ícone personalizado do pacote, pelo `NSWorkspace setIcon` (JavaScript for Automation, sem dependências). Uma atualização do Vivaldi troca o pacote e leva o ícone junto; a reinstalação automática o devolve, no mesmo fluxo que reinjeta o Vivarc. O `Assets.car` e o `app.icns` do Vivaldi não são tocados, e o `uninstall` tira o ícone. O Vivaldi Dev fica com o ícone do Vivaldi, para os dois não se confundirem no Dock. O Dock mostra o ícone novo quando o Vivaldi reabre.
