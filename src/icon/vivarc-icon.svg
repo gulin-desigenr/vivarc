@@ -1,24 +1,44 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <!-- Vivarc's app icon, on Apple's macOS icon grid: an 824px rounded square, the Vivarc logo's gradient, and a V drawn
-       as one stroke whose right arm curls over like an arc (Vivaldi + Arc). -->
-  <defs>
-    <linearGradient id="bg" x1="0.15" y1="0" x2="0.85" y2="1">
-      <stop offset="0" stop-color="#7b6cf6"/>
-      <stop offset="1" stop-color="#e86fb0"/>
-    </linearGradient>
-    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fff" stop-opacity="0.22"/>
-      <stop offset="0.5" stop-color="#fff" stop-opacity="0"/>
-    </linearGradient>
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
-      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#1a1030" flood-opacity="0.28"/>
-    </filter>
-    <filter id="mark" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#3a1d6e" flood-opacity="0.25"/>
-    </filter>
-  </defs>
-  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)" filter="url(#shadow)"/>
-  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#sheen)"/>
-  <path d="M280 352 L452 690 Q474 734 496 690 L602 482 C662 364 742 360 752 420"
-        fill="none" stroke="#fff" stroke-width="92" stroke-linecap="round" stroke-linejoin="round" filter="url(#mark)"/>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<!-- Vivarc's app icon, drawn in Figma ([GULIN.CO] APPs, page Vivarc, "Vivaldi icon (original, editable)"): Vivaldi's
+     icon with the Vivarc gradient. Exported as is; vivarc.icns places it on Apple's icon grid. -->
+<g clip-path="url(#clip0_74_2)">
+<path d="M256 507.586C366.345 507.586 427.696 507.586 467.42 467.421C507.586 427.697 507.586 366.345 507.586 256C507.586 145.655 507.586 84.3034 467.42 44.5793C427.696 4.41379 366.345 4.41379 256 4.41379C145.655 4.41379 84.3032 4.41379 44.5791 44.5793C4.41357 84.3034 4.41357 145.655 4.41357 256C4.41357 366.345 4.41357 427.697 44.5791 467.421C84.3032 507.586 145.655 507.586 256 507.586Z" fill="#EF3939"/>
+<path d="M256 507.586C366.345 507.586 427.696 507.586 467.42 467.421C507.586 427.697 507.586 366.345 507.586 256C507.586 145.655 507.586 84.3034 467.42 44.5793C427.696 4.41379 366.345 4.41379 256 4.41379C145.655 4.41379 84.3032 4.41379 44.5791 44.5793C4.41357 84.3034 4.41357 145.655 4.41357 256C4.41357 366.345 4.41357 427.697 44.5791 467.421C84.3032 507.586 145.655 507.586 256 507.586Z" fill="url(#paint0_linear_74_2)"/>
+<g filter="url(#filter0_dddd_74_2)">
+<path d="M388.414 122.703C370.88 105.228 350.076 91.3765 327.189 81.9409C304.303 72.5053 279.782 67.6699 255.026 67.7109C230.271 67.7519 205.766 72.6684 182.91 82.1798C160.055 91.6911 139.297 105.611 121.821 123.145C86.527 158.556 66.7456 206.537 66.8284 256.533C66.9112 306.529 86.8513 354.444 122.262 389.738C157.673 425.032 205.654 444.813 255.65 444.73C305.646 444.648 353.561 424.708 388.855 389.297C424.149 353.886 443.931 305.904 443.848 255.909C443.765 205.913 423.825 157.997 388.414 122.703ZM377.38 209.655L284.249 371.641C278.511 381.793 270.124 387.972 258.648 388.414C245.849 389.297 235.697 384 229.076 372.524L170.373 270.566L134.621 208.772C131.766 204.104 130.183 198.77 130.029 193.3C129.876 187.83 131.157 182.415 133.746 177.594C136.335 172.773 140.141 168.714 144.786 165.821C149.431 162.928 154.752 161.301 160.221 161.103C166.076 160.723 171.914 162.068 177.013 164.97C182.112 167.873 186.248 172.206 188.911 177.434L214.952 222.897L233.931 255.559C243.2 271.007 256.883 279.834 274.98 281.159C300.58 282.483 324.855 263.945 327.945 236.579L328.386 231.283C328.386 222.455 326.621 214.952 323.09 207.89C320.692 203.585 319.359 198.77 319.201 193.846C319.043 188.922 320.065 184.031 322.181 179.582C324.298 175.133 327.448 171.255 331.368 168.27C335.288 165.286 339.865 163.283 344.717 162.428C348.877 161.538 353.175 161.517 357.342 162.365C361.51 163.213 365.458 164.913 368.938 167.358C372.419 169.802 375.357 172.939 377.569 176.572C379.781 180.204 381.219 184.255 381.793 188.469C382.576 195.819 381.032 203.229 377.38 209.655Z" fill="white"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_dddd_74_2" x="61.8281" y="58.7106" width="461.021" height="436.02" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="3" dy="2"/>
+<feGaussianBlur stdDeviation="4"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_74_2"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="14" dy="6"/>
+<feGaussianBlur stdDeviation="7.5"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.17 0"/>
+<feBlend mode="normal" in2="effect1_dropShadow_74_2" result="effect2_dropShadow_74_2"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="31" dy="15"/>
+<feGaussianBlur stdDeviation="10.5"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.1 0"/>
+<feBlend mode="normal" in2="effect2_dropShadow_74_2" result="effect3_dropShadow_74_2"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="55" dy="26"/>
+<feGaussianBlur stdDeviation="12"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.03 0"/>
+<feBlend mode="normal" in2="effect3_dropShadow_74_2" result="effect4_dropShadow_74_2"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect4_dropShadow_74_2" result="shape"/>
+</filter>
+<linearGradient id="paint0_linear_74_2" x1="480.947" y1="538.081" x2="-84.9416" y2="129.668" gradientUnits="userSpaceOnUse">
+<stop stop-color="#9787F6"/>
+<stop offset="1" stop-color="#E270B3"/>
+</linearGradient>
+<clipPath id="clip0_74_2">
+<rect width="512" height="512" fill="white"/>
+</clipPath>
+</defs>
 </svg>
