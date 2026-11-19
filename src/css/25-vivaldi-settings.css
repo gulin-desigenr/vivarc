@@ -1,0 +1,140 @@
+/* Vivaldi's own settings (the window or tab of .vivaldi-settings), in the look of Vivarc's settings (13-settings-window.css):
+   a grey side list where the open section is a white pill, and each section of the page a white card with its title
+   in sentence case. Vivaldi's lists are virtual (row heights set by its code), so the side list only changes colours,
+   corners and spacing, never heights. The controls keep Vivaldi's drawing, which already follows the accent colour. */
+#browser.vm-on .vivaldi-settings {
+  --set-bg: #f5f5f7;
+  --set-side: #ececef;
+  --set-card: #fff;
+  --set-text: #1d1d1f;
+  --set-muted: #8e8e93;
+  --set-line: rgb(0 0 0 / 0.06);
+  --set-field: rgb(0 0 0 / 0.045);
+  background: var(--set-bg);
+  color: var(--set-text);
+  font-size: var(--vm-fs-3);
+  /* The side list as wide as Vivarc's settings list, so "Privacy and Security" and its translations fit on a line. */
+  grid-template-columns: 212px 1fr;
+}
+#browser.vm-on.theme-dark .vivaldi-settings {
+  --set-bg: #1f1f23;
+  --set-side: #26262b;
+  --set-card: #2c2c31;
+  --set-text: #f2f2f5;
+  --set-muted: #9a9aa2;
+  --set-line: rgb(255 255 255 / 0.08);
+  --set-field: rgb(255 255 255 / 0.06);
+}
+
+/* Side list */
+#browser.vm-on .vivaldi-settings .settings-sidebar {
+  background: var(--set-side);
+  border-right: 1px solid var(--set-line);
+  color: var(--set-text);
+}
+#browser.vm-on .vivaldi-settings .settings-navigation-header { background: transparent; border: 0; }
+#browser.vm-on .vivaldi-settings .settings-navigation { padding: 0 8px; }
+#browser.vm-on .vivaldi-settings .settings-search {
+  height: 30px;
+  border: 0;
+  border-radius: var(--vm-r-md);
+  background: var(--set-field);
+  box-shadow: none;
+  color: var(--set-text);
+  font-size: var(--vm-fs-3);
+  outline: none;
+}
+#browser.vm-on .vivaldi-settings .settings-search::placeholder { color: var(--set-muted); opacity: 1; }
+#browser.vm-on .vivaldi-settings .settings-search:focus {
+  background: var(--set-card);
+  box-shadow: 0 0 0 1px var(--set-line), 0 0 0 3px color-mix(in srgb, var(--vm-accent) 25%, transparent);
+}
+#browser.vm-on .vivaldi-settings .settings-navigation .tree-row {
+  border-radius: var(--vm-r-md);
+  background: transparent;
+  color: var(--set-text);
+}
+#browser.vm-on .vivaldi-settings .settings-navigation .tree-row:hover { background: color-mix(in srgb, var(--set-text) 6%, transparent); }
+#browser.vm-on .vivaldi-settings .settings-navigation .tree-row.tree-row-selected,
+#browser.vm-on .vivaldi-settings .settings-navigation .tree-row.tree-row-selected:hover {
+  background: var(--set-card) !important;
+  box-shadow: var(--vm-pill-shadow);
+  color: var(--set-text) !important;
+}
+#browser.vm-on .vivaldi-settings .settings-navigation .button-category { color: inherit; background: transparent; }
+
+/* Pages: each section a card */
+#browser.vm-on .vivaldi-settings .settings-content { background: var(--set-bg); color: var(--set-text); }
+#browser.vm-on .vivaldi-settings .setting-section { margin: 0; padding: 0; border: 0; background: transparent; }
+/* A section holds one or more titled parts (General has Startup and Exit): each part is a card. */
+#browser.vm-on .vivaldi-settings .setting-section > div {
+  margin: 0 0 16px;
+  padding: 18px 20px 20px;
+  border: 0;
+  border-radius: var(--vm-r-xl);
+  background: var(--set-card);
+  box-shadow: 0 0 0 1px var(--set-line);
+}
+#browser.vm-on .vivaldi-settings .setting-section > div:empty { display: none; }
+/* The donation line sits over the top right corner of the page: the first card starts under it. */
+#browser.vm-on .vivaldi-settings .settings-content:has(> .settings-donation-suggestion) { padding-top: 56px; }
+#browser.vm-on .vivaldi-settings .setting-section h2 {
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+  color: var(--set-text);
+  font-size: var(--vm-fs-5);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+#browser.vm-on .vivaldi-settings .setting-section h3 {
+  color: var(--set-text);
+  font-size: var(--vm-fs-3);
+  font-weight: 600;
+}
+#browser.vm-on .vivaldi-settings .setting-section :is(p, .info) { color: var(--set-muted); }
+#browser.vm-on .vivaldi-settings .setting-section p.info { font-size: var(--vm-fs-2); }
+#browser.vm-on .vivaldi-settings .setting-section label { color: var(--set-text); }
+#browser.vm-on .vivaldi-settings .setting-section a { color: var(--vm-accent); }
+
+/* Fields and buttons, as in Vivarc's dialogs (23-modal-dialogs.css). */
+#browser.vm-on .vivaldi-settings .settings-content :is(input:is(:not([type]), [type="text"], [type="search"], [type="url"], [type="email"], [type="password"], [type="number"]), textarea) {
+  border: 1px solid var(--set-line);
+  border-radius: var(--vm-r-md);
+  background-color: var(--set-field);
+  background-image: none;
+  color: var(--set-text);
+  box-shadow: none;
+  outline: none;
+}
+#browser.vm-on .vivaldi-settings .settings-content :is(input:is(:not([type]), [type="text"], [type="search"], [type="url"], [type="email"], [type="password"], [type="number"]), textarea):focus {
+  border-color: transparent;
+  background-color: var(--set-card);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--vm-accent) 55%, transparent);
+}
+#browser.vm-on .vivaldi-settings .settings-content :is(input:is(:not([type]), [type="text"], [type="search"], [type="url"], [type="email"], [type="password"], [type="number"]), textarea)::placeholder { color: var(--set-muted); opacity: 1; }
+#browser.vm-on .vivaldi-settings .settings-content select {
+  border: 1px solid var(--set-line);
+  border-radius: var(--vm-r-md);
+  background-color: var(--set-card);
+  background-image: none;
+  color: var(--set-text);
+  box-shadow: none;
+}
+#browser.vm-on .vivaldi-settings .settings-content :is(input:is([type="button"], [type="submit"]), button:not(.close, .transparent, .button-toolbar, [class*="Toggle"])) {
+  border: 1px solid var(--set-line);
+  border-radius: var(--vm-r-md);
+  background: var(--set-card);
+  background-image: none;
+  color: var(--set-text);
+  font-weight: 500;
+  box-shadow: 0 1px 1px rgb(0 0 0 / 0.04);
+}
+#browser.vm-on .vivaldi-settings .settings-content :is(input:is([type="button"], [type="submit"]), button:not(.close, .transparent, .button-toolbar, [class*="Toggle"])):hover:enabled {
+  background: color-mix(in srgb, var(--set-text) 5%, var(--set-card));
+}
+#browser.vm-on .vivaldi-settings .settings-content :is(input, button, select):focus-visible { outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--vm-accent) 55%, transparent); }
+
+/* The donation line at the top: a quiet caption. */
+#browser.vm-on .vivaldi-settings .settings-donation-suggestion { background: transparent; color: var(--set-muted); }

@@ -40,6 +40,7 @@ Prioridade: **A** aparece no uso diário; **B** aparece às vezes; **C** é raro
 | Outros diálogos do componente modal, inclusive avisos de mídia, Razer Chroma e perfil em repositório Git | `#modal-bg` com `.modal-wrapper` | `23-modal-dialogs.css` |
 | Painéis da direita, inclusive "Customize Panel" | `#panels-container`, `.CustomizePanelPopup` | `21-panels.css` |
 | Quick Commands do Vivaldi | `.quick-command*` | substituídos pela command bar do Vivarc |
+| Configurações do Vivaldi | `.vivaldi-settings` | `25-vivaldi-settings.css` |
 
 ## Ainda com o visual do Vivaldi
 
@@ -101,7 +102,6 @@ Prioridade: **A** aparece no uso diário; **B** aparece às vezes; **C** é raro
 
 | Prio | Tela | Classe | Observação |
 | --- | --- | --- | --- |
-| A | Configurações do Vivaldi | `.vivaldi-settings`, `.setting-*` | página grande; o Vivarc só redesenhou as próprias configurações |
 | B | Gerenciadores (favoritos, notas, histórico, downloads em aba) | `.manager-editor`, `.NotesManager-*`, `.download-*` | páginas `vivaldi://` desenhadas pela UI |
 | B | Editor de tema | `.ThemeEditor*` | em Configurações; o Vivarc tem o próprio editor de tema por space |
 | C | Boas-vindas e onboarding | `.welcome-*`, `.onboarding` | primeiro uso |
